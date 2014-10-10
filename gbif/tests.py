@@ -95,7 +95,7 @@ def OLDvalidateNfix(c):
 
 
 print "This is a test for git"
-
+print "Halalalala"
 # #===============================================================================
 #for i in c._meta.get_all_field_names():
 #    print "%s : %s | %s internal: %s" %(i,getattr(c,i),type(getattr(c,i)),c._meta.get_field_by_name(i)[0].get_internal_type())

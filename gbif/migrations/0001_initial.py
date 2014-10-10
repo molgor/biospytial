@@ -1,0 +1,86 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='Occurrence',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('id_gbif', models.IntegerField()),
+                ('dataset_id', models.CharField(max_length=40)),
+                ('institution_code', models.CharField(max_length=10)),
+                ('collection_code', models.CharField(max_length=10)),
+                ('catalog_number', models.CharField(max_length=15)),
+                ('basis_of_record', models.CharField(max_length=15)),
+                ('scientific_name', models.CharField(max_length=50)),
+                ('scientific_name_author', models.CharField(max_length=35)),
+                ('taxon_id', models.IntegerField()),
+                ('kingdom', models.CharField(max_length=15)),
+                ('phylum', models.CharField(max_length=25)),
+                ('_class', models.CharField(max_length=25)),
+                ('_order', models.CharField(max_length=25)),
+                ('family', models.CharField(max_length=25)),
+                ('genus', models.CharField(max_length=25)),
+                ('specific_epithet', models.CharField(max_length=35)),
+                ('kingdom_id', models.IntegerField()),
+                ('phylum_id', models.IntegerField()),
+                ('class_id', models.IntegerField()),
+                ('order_id', models.IntegerField()),
+                ('family_id', models.IntegerField()),
+                ('genus_id', models.IntegerField()),
+                ('species_id', models.IntegerField()),
+                ('country_code', models.CharField(max_length=7)),
+                ('latitude', models.FloatField()),
+                ('longitude', models.FloatField()),
+                ('year', models.IntegerField()),
+                ('month', models.IntegerField()),
+                ('event_date', models.DateTimeField()),
+                ('elevation_in_meters', models.FloatField()),
+                ('depth_in_meters', models.FloatField()),
+                ('verbatim_scientific_name', models.CharField(max_length=40)),
+                ('taxon_rank', models.IntegerField()),
+                ('verbatim_kingdom', models.CharField(max_length=25)),
+                ('verbatim_phylum', models.CharField(max_length=25)),
+                ('verbatim_class', models.CharField(max_length=25)),
+                ('verbatim_order', models.CharField(max_length=25)),
+                ('verbatim_family', models.CharField(max_length=25)),
+                ('verbatim_genus', models.CharField(max_length=25)),
+                ('verbatim_specific_epithet', models.CharField(max_length=25)),
+                ('verbatim_infraspecific_epithet', models.CharField(max_length=25)),
+                ('verbatim_latitude', models.FloatField()),
+                ('verbatim_longitude', models.FloatField()),
+                ('coordinate_precision', models.FloatField()),
+                ('maximum_elevation_in_meters', models.FloatField()),
+                ('minimum_elevation_in_meters', models.FloatField()),
+                ('elevation_precision', models.FloatField()),
+                ('minimum_depth_in_meters', models.FloatField()),
+                ('maximum_depth_in_meters', models.FloatField()),
+                ('depth_precision', models.FloatField()),
+                ('continent_ocean', models.FloatField()),
+                ('state_province', models.CharField(max_length=40)),
+                ('county', models.CharField(max_length=40)),
+                ('country', models.CharField(max_length=40)),
+                ('recorded_by', models.CharField(max_length=40)),
+                ('locality', models.CharField(max_length=45)),
+                ('verbatim_year', models.IntegerField()),
+                ('verbatim_month', models.IntegerField()),
+                ('day', models.IntegerField()),
+                ('verbatim_basis_of_record', models.CharField(max_length=35)),
+                ('identified_by', models.CharField(max_length=45)),
+                ('date_identified', models.DateTimeField()),
+                ('created', models.DateTimeField()),
+                ('modified', models.DateTimeField()),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+    ]

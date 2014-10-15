@@ -47,17 +47,19 @@ header = f.readline()
 line = f.readline()
 counter = 0
 cnt = 1
-while line:    
-    l_uno = line.split('\t')
-    c = Occurrence(*l_uno)
-    line = f.readline()
-    c.insertOccurrence()
-    counter += 1
-    if counter == 1000:
-        r = cnt * counter
-        print "Llevo %s" %r
-        counter = 0
-        cnt += 1
+#===============================================================================
+# while line:    
+#     l_uno = line.split('\t')
+#     c = Occurrence(*l_uno)
+#     line = f.readline()
+#     c.insertOccurrence()
+#     counter += 1
+#     if counter == 1000:
+#         r = cnt * counter
+#         print "Llevo %s" %r
+#         counter = 0
+#         cnt += 1
+#===============================================================================
 
 
 
@@ -67,7 +69,7 @@ def OLDvalidateNfix(c):
         internalType = c._meta.get_field_by_name(f)[0].get_internal_type()
         if isinstance(getattr(c,f),str) and ('Char' not in internalType):
             logger.warn("inv�lido")
-            print "esta definido como: %s pero debe ser %s" %('str',internalType)
+            print "esta definido como: %s pero debe ser %s" %('str', sinternalType)
             if 'Float' in internalType:
                 try:
                     setattr(c,f,float(getattr(c,f)))
@@ -96,8 +98,7 @@ def OLDvalidateNfix(c):
 
 print "This is a test for git"
 print "Halalalala"
-
-print " sEgunds prueba de git. por algo se empieza no?"
+print "Esto es nuevo"
 # #===============================================================================
 #for i in c._meta.get_all_field_names():
 #    print "%s : %s | %s internal: %s" %(i,getattr(c,i),type(getattr(c,i)),c._meta.get_field_by_name(i)[0].get_internal_type())

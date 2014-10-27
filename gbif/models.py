@@ -281,4 +281,7 @@ class Occurrence(models.Model):
     def __unicode__(self):
         return u'<GBIF Occurrence: %s  scientific_name: %s>\n Kingdom: %s \n,\t Phylum: %s \n,\t \t Order: %s,\n \t \t \t Class: %s, \n \t \t \t \t Family: %s, \n \t \t \t \t \t Location: %s<\GBIF Occurrence>' %(self.id,self.scientific_name,self.kingdom,self.phylum,self._order,self._class,self.family,self.geom)
         
+        
+
+#fkfgsdkjfdkjfgdskljdfgsklj
                 

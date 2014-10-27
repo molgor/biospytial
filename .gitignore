@@ -1,5 +1,5 @@
 #Ignore file for ignoring files
-manage.py
+#manage.py
 
 #Log files
 logs/

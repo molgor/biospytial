@@ -61,11 +61,29 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         #'django.db.backends.postgresql_psycopg2',
+        'NAME': 'gbif',                      
+        'USER': 'gbif',
+        'PASSWORD': 'biology',
+        'HOST': 'geodata'
+    },            
+             
+    'local': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        #'django.db.backends.postgresql_psycopg2',
         'NAME': 'masterthesis',                      
         'USER': 'juan',
         'PASSWORD': '',
         'HOST': 'localhost'
-    }
+    },
+    'operational': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        #'django.db.backends.postgresql_psycopg2',
+        'NAME': 'gbif',                      
+        'USER': 'gbif',
+        'PASSWORD': 'biology',
+        'HOST': 'geodata'
+    }             
+    
 }
 
 LOGGING = {

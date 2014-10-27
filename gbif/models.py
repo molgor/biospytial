@@ -31,7 +31,7 @@ from django.forms import ModelForm
 
 
 
-class Occurrence(models.Model):
+class Occurrence_test(models.Model):
     chars = {'l1':15,'l2':15,'l3':25,'l4':100,'l5':60,'l6':70,'l7':100}
     id = models.AutoField(primary_key=True, db_column="id_gbif")
 #     id_gbif = models.IntegerField()
@@ -201,5 +201,84 @@ class Occurrence(models.Model):
                 desc = self.getfullDescription()
                 msg = "Data did not fit with in the varchars limits. \n Description: %s" %desc
                 logger_ins.critical(msg)
-                
+         
+         
+         
+class Occurrence(models.Model):
+    chars = {'l1':15,'l2':15,'l3':25,'l4':100,'l5':60,'l6':70,'l7':100}
+    id = models.AutoField(primary_key=True, db_column="id_gbif")
+#     id_gbif = models.IntegerField()
+    dataset_id = models.CharField(db_index=True, max_length=chars['l5'],blank=True, null=True)
+    institution_code = models.CharField(db_index=True, max_length=chars['l1'],blank=True, null=True)
+    collection_code = models.CharField(db_index=True, max_length=chars['l1'],blank=True, null=True)
+    catalog_number = models.CharField(db_index=True, max_length=chars['l2'],blank=True, null=True)
+    basis_of_record = models.CharField(db_index=True, max_length=chars['l2'],blank=True, null=True)
+    scientific_name = models.CharField(db_index=True, max_length=chars['l7'],blank=True, null=True)
+    #scientific_name_author = models.CharField(db_index=True, max_length=chars['l4'],blank=True, null=True)
+    #taxon_id = models.IntegerField(blank=True, null=True)
+    kingdom = models.CharField(db_index=True, max_length=chars['l2'],blank=True, null=True)
+    phylum = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    _class = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    _order = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    family = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    genus = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    specific_epithet = models.CharField(db_index=True, max_length=chars['l4'],blank=True, null=True)
+    kingdom_id = models.IntegerField(db_index=True,blank=True, null=True)
+    phylum_id = models.IntegerField(db_index=True,blank=True, null=True)
+    class_id = models.IntegerField(db_index=True,blank=True, null=True)
+    order_id = models.IntegerField(db_index=True,blank=True, null=True)
+    family_id = models.IntegerField(db_index=True,blank=True, null=True)
+    genus_id = models.IntegerField(db_index=True,blank=True, null=True)
+    species_id = models.IntegerField(db_index=True,blank=True, null=True)
+    country_code = models.CharField(db_index=True, max_length=7,blank=True, null=True)
+    latitude = models.FloatField(db_index=True,blank=True, null=True)
+    longitude = models.FloatField(db_index=True,blank=True, null=True)
+    year = models.IntegerField(db_index=True,blank=True, null=True)
+    month = models.IntegerField(db_index=True,blank=True, null=True)
+    event_date = models.DateTimeField(db_index=True,blank=True, null=True)
+    #elevation_in_meters = models.FloatField(db_index=True,blank=True, null=True)
+    #depth_in_meters = models.FloatField(db_index=True,blank=True, null=True)
+    #verbatim_scientific_name = models.CharField(db_index=True,max_length=chars['l5'],blank=True, null=True)
+    #taxon_rank = models.IntegerField(db_index=True,blank=True, null=True)
+    #verbatim_kingdom = models.CharField(db_index=True,max_length=chars['l3'],blank=True, null=True)
+    #verbatim_phylum = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    #verbatim_class = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    #verbatim_order = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    #verbatim_genus = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    #verbatim_family = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    #verbatim_specific_epithet = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    #verbatim_infraspecific_epithet = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    #verbatim_latitude = models.FloatField(db_index=True,blank=True, null=True)
+    #verbatim_longitude = models.FloatField(db_index=True,blank=True, null=True)
+    #coordinate_precision = models.FloatField(db_index=True,blank=True, null=True)
+    #maximum_elevation_in_meters = models.FloatField(db_index=True,blank=True, null=True)
+    #minimum_elevation_in_meters = models.FloatField(db_index=True,blank=True, null=True)
+    #elevation_precision = models.FloatField(db_index=True,blank=True, null=True)
+    #minimum_depth_in_meters = models.FloatField(db_index=True,blank=True, null=True)
+    #maximum_depth_in_meters = models.FloatField(db_index=True,blank=True, null=True)
+    #depth_precision = models.FloatField(db_index=True,blank=True, null=True)
+    #continent_ocean = models.FloatField(db_index=True,blank=True, null=True)
+    state_province = models.CharField(db_index=True,max_length=chars['l5'],blank=True, null=True)
+    county = models.CharField(db_index=True,max_length=chars['l5'],blank=True, null=True)
+    country = models.CharField(db_index=True,max_length=chars['l5'],blank=True, null=True)
+    #recorded_by  = models.CharField(db_index=True,max_length=chars['l5'],blank=True, null=True)
+    #locality  = models.CharField(db_index=True,max_length=chars['l6'],blank=True, null=True)
+    #verbatim_month = models.IntegerField(db_index=True,blank=True, null=True)
+    #verbatim_year = models.IntegerField(db_index=True,blank=True, null=True)
+    #day = models.IntegerField(db_index=True,blank=True, null=True)
+    #verbatim_basis_of_record  = models.CharField(db_index=True,max_length=chars['l4'],blank=True, null=True)
+    #date_identified = models.DateTimeField(db_index=True,blank=True, null=True)
+    #identified_by  = models.CharField(db_index=True,max_length=chars['l6'],blank=True, null=True)
+    #created = models.DateTimeField(db_index=True,blank=True, null=True)
+    geom = models.PointField()
+    #modified = models.DateTimeField(db_index=True,blank=True, null=True)
+    objects = models.GeoManager()
+    
+    class Meta:
+        managed = False
+        db_table = "gbif_occurrence"
+ 
+    def __unicode__(self):
+        return u'<GBIF Occurrence: %s  scientific_name: %s>\n Kingdom: %s \n,\t Phylum: %s \n,\t \t Order: %s,\n \t \t \t Class: %s, \n \t \t \t \t Family: %s, \n \t \t \t \t \t Location: %s<\GBIF Occurrence>' %(self.id,self.scientific_name,self.kingdom,self.phylum,self._order,self._class,self.family,self.geom)
+        
                 

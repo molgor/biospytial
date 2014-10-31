@@ -279,9 +279,55 @@ class Occurrence(models.Model):
         db_table = "gbif_occurrence"
  
     def __unicode__(self):
-        return u'<GBIF Occurrence: %s  scientific_name: %s>\n Kingdom: %s \n,\t Phylum: %s \n,\t \t Order: %s,\n \t \t \t Class: %s, \n \t \t \t \t Family: %s, \n \t \t \t \t \t Location: %s<\GBIF Occurrence>' %(self.id,self.scientific_name,self.kingdom,self.phylum,self._order,self._class,self.family,self.geom)
-        
+        return u'<GBIF Occurrence: %s  scientific_name: %s>\n Kingdom: %s \n,\t Phylum: %s \n,\t \t Order: %s,\n \t \t \t Class: %s, \n \t \t \t \t Family: %s, \n \t \t \t \t \t Location: s<\GBIF Occurrence>' %(self.id,self.scientific_name,self.kingdom,self.phylum,self._order,self._class,self.family) #,self.geom)
         
 
-#fkfgsdkjfdkjfgdskljdfgsklj
+    def getfullDescription(self):
+        """
+        Retrieves the total description of the fields for the this. registry.
+        """
+        fields =  self._meta.get_all_field_names()
+        cadena = ["<GBIF/: Occurrence %s --%s />\n" %(self.id,self.scientific_name)]
+        for f in fields:
+            c = "\t < %s: %s />\n" %(f,getattr(self,f))
+            cadena.append(c)
+        return reduce(lambda x,y : x+y,cadena)    
+
+
+
+class Especies(models.Model):
+    chars = {'l1':15,'l2':15,'l3':25,'l4':100,'l5':60,'l6':70,'l7':100}
+    id = models.AutoField(primary_key=True, db_column="id_gbif")
+    scientific_name = models.CharField(db_index=True, max_length=chars['l7'],blank=True, null=True)
+    kingdom = models.CharField(db_index=True, max_length=chars['l2'],blank=True, null=True)
+    phylum = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    _class = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    _order = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    family = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    genus = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
+    kingdom_id = models.IntegerField(db_index=True,blank=True, null=True)
+    phylum_id = models.IntegerField(db_index=True,blank=True, null=True)
+    class_id = models.IntegerField(db_index=True,blank=True, null=True)
+    order_id = models.IntegerField(db_index=True,blank=True, null=True)
+    family_id = models.IntegerField(db_index=True,blank=True, null=True)
+    genus_id = models.IntegerField(db_index=True,blank=True, null=True)
+    species_id = models.IntegerField(db_index=True,blank=True, null=True)
+    n_occurs = models.IntegerField(db_index=True,blank=True, null=True)
+    geom = models.PolygonField()
+    objects = models.GeoManager()
+    
+    class Meta:
+        managed = False
+        db_table = 'tests\".\"species'
+ 
+    def __unicode__(self):
+        return u'<GBIF Especies Quotient: %s  scientific_name: %s>\n Kingdom: %s \n,\t Phylum: %s \n,\t \t Order: %s,\n \t \t \t Class: %s, \n \t \t \t \t Family: %s, \n \t \t \t \t \t Location: %s<\GBIF Occurrence>' %(self.id,self.scientific_name,self.kingdom,self.phylum,self._order,self._class,self.family,self.geom)
+        
+
+
+
+
+#id_gbif integer, kingdom character varying, _order character varying, _class character varying, family character varying, scientific_name character varying, kingdom_id integer, phylum_id integer, order_id integer, class_id integer, family_id integer, species_id integer, n_occurs bigint, geom geometry) AS
+
+
                 

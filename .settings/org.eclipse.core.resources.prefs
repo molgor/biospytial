@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
+encoding//gbif/migratedata_beta4django.py=utf-8
 encoding//gbif/models.py=utf-8
 encoding//gbif/tests.py=utf-8
 encoding//sketches/models.py=utf-8

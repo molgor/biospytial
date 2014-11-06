@@ -121,6 +121,10 @@ LOGGING = {
             'handlers': ['file'],
             'level': 'ERROR',
         },
+        'biospatial.gbif': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
     }
 }
 

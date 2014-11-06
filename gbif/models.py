@@ -22,8 +22,10 @@ import logging
 from django.test import TestCase
 from django.conf import settings
 import dateutil.parser
+from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 
-logger_ins = logging.getLogger('biospatial.gbif.insertion')
+
+logger = logging.getLogger('biospatial.gbif')
 
 
 from django.forms import ModelForm
@@ -295,39 +297,364 @@ class Occurrence(models.Model):
 
 
 
-class Especies(models.Model):
-    chars = {'l1':15,'l2':15,'l3':25,'l4':100,'l5':60,'l6':70,'l7':100}
-    id = models.AutoField(primary_key=True, db_column="id_gbif")
-    scientific_name = models.CharField(db_index=True, max_length=chars['l7'],blank=True, null=True)
-    kingdom = models.CharField(db_index=True, max_length=chars['l2'],blank=True, null=True)
-    phylum = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
-    _class = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
-    _order = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
-    family = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
-    genus = models.CharField(db_index=True, max_length=chars['l3'],blank=True, null=True)
-    kingdom_id = models.IntegerField(db_index=True,blank=True, null=True)
-    phylum_id = models.IntegerField(db_index=True,blank=True, null=True)
-    class_id = models.IntegerField(db_index=True,blank=True, null=True)
-    order_id = models.IntegerField(db_index=True,blank=True, null=True)
-    family_id = models.IntegerField(db_index=True,blank=True, null=True)
-    genus_id = models.IntegerField(db_index=True,blank=True, null=True)
-    species_id = models.IntegerField(db_index=True,blank=True, null=True)
-    n_occurs = models.IntegerField(db_index=True,blank=True, null=True)
-    geom = models.PolygonField()
-    objects = models.GeoManager()
+
+
+class Level:
+    """
+    Basic level class
+    """
+    def __init__(self,LocalQuerySet,n=0,levelname='',level=0):
+        self.abundance = 0
+        self.levelname = levelname
+        self.level = level
+        self.QuerySet = LocalQuerySet
+        self.name = 'N.A'
+        self.id = 'N.A'
+
+
+
+
+class Specie(Level):
+    """
+    This is the Species class
+    """
     
-    class Meta:
-        managed = False
-        db_table = 'tests\".\"species'
- 
-    def __unicode__(self):
-        return u'<GBIF Especies Quotient: %s  scientific_name: %s>\n Kingdom: %s \n,\t Phylum: %s \n,\t \t Order: %s,\n \t \t \t Class: %s, \n \t \t \t \t Family: %s, \n \t \t \t \t \t Location: %s<\GBIF Occurrence>' %(self.id,self.scientific_name,self.kingdom,self.phylum,self._order,self._class,self.family,self.geom)
+    def __init__(self,localQuerySet,species_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=7,levelname='Specie')
+        self.occurrences = 'N.A.'
+        self.geometry = 'N.A.'
+        self.setInfo(species_metadata)
+
+
+    def setInfo(self,dict_from_queryset_annotation):
+        """
+        Given a QuerySet it fills all the occurrences
+        """
+        try:
+            ok = dict_from_queryset_annotation
+            self.abundance = ok['ab']
+            self.name = ok['name']
+            self.id = ok['species_id']
+            self.geometry = ok['points']
+            self.occurrences = self.QuerySet.filter(species_id=self.id)
+        except:
+            logger.error("This is not a GBIF Query Set")
+            return False
+
+    
+    def setNeighbors(self,list_occurrences):
+        """
+        A list of occurrences
+        """
+        #self.occurrences = list_occurrences
+        pass
+
+
+    def __repr__(self):
         
+        cad =  u'<gbif.Specie: Id = %s > %s \n \t <n_occurrences> %s </n_occurrences> \n </gbif.Specie>\n' %(self.id,self.name,self.abundance)
+        return cad.encode('utf-8')
+    def __str__(self):
+        return self.__repr__()
 
 
+class Genus(Level):
+    """
+    Basic class for Genus Level
+    """
+    def __init__(self,localQuerySet,genus_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=6,levelname='Genus')
+        self.species = []
+        self.geometry = 'N.A.'
+        self.setInfo(genus_metadata)      
+    
+    
+    def getSpeciesMetadata(self):
+        """
+        Returns metadata for all species at a specific genus
+        """
+        species = self.QuerySet.filter(genus_id=self.id).values('species_id').annotate(points=Collect('geom'),ab=Count('species_id'),name=Min('scientific_name'))
+        return species
+    
+    
+    def setInfo(self,genus_metadata):
+        """
+        Set the data for genus as a list of species.
+        """
+        try:
+            self.id = genus_metadata['genus_id']
+            self.name = genus_metadata['name']
+            self.geometry = genus_metadata['points']
+            self.abundance = genus_metadata['ab']
+        except:
+            logger.error('This is not a metadata object for genus')
+            return False
+        species = self.getSpeciesMetadata()
+        for specie_metadata in species:
+            self.species.append(Specie(self.QuerySet,specie_metadata))
+        self.abundance = self.QuerySet.filter(genus_id=self.id).distinct('species_id').count()
+        return True
+    
+    def getChildrenNames(self):
+        """
+        Returns the list of species
+        """
+        return map(lambda bicho : bicho['name'],self.species)
+        
+    def __repr__(self):
+        head = u'<gbif.Genus: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.species))
+        feet = u'\t <N.Species> %s </> \n </gbif.Genus>' %self.abundance
+        cad = head.encode('utf-8') + body+ feet.encode('utf-8')
+        return cad
 
+    def test__repr__(self):
+        head = u'<gbif.Genus: Id = %s > %s \n' %(self.id,self.name)
+        body = reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.species)
+        feet = u'\t <N.Species> %s </> \n </gbif.Genus>' %self.abundance
+        #cad = head.encode('utf-8') + body+ feet.encode('utf-8')
+        return head.encode('utf-8') , str(body) , feet.encode('utf-8')
 
+ 
+    def __str__(self):
+        return self.__repr__()
+     
 #id_gbif integer, kingdom character varying, _order character varying, _class character varying, family character varying, scientific_name character varying, kingdom_id integer, phylum_id integer, order_id integer, class_id integer, family_id integer, species_id integer, n_occurs bigint, geom geometry) AS
 
+class Family(Level):
+    """
+    Basic class for Family Level
+    """
+    def __init__(self,localQuerySet,family_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=5,levelname='Family')
+        self.genera = []
+        self.geometry = 'N.A.'
+        self.setInfo(family_metadata)  
+        
+    def getGenusMetadata(self):
+        """
+        Returns metadata for all genus of a specific family
+        """
+        genera = self.QuerySet.filter(family_id=self.id).values('genus_id').annotate(points=Collect('geom'),ab=Count('genus_id'),name=Min('genus'))
+        return genera
+    
+    def setInfo(self,family_metadata):
+        """
+        Set family features as a list of f.
+        """
+        try:
+            self.id = family_metadata['family_id']
+            self.name = family_metadata['name']
+            self.geometry = family_metadata['points']
+            self.abundance = family_metadata['ab']
+        except:
+            logger.error('This is not a metadata object for family')
+            return False
+        genera = self.getGenusMetadata()
+        for genus_metadata in genera:
+            self.genera.append(Genus(self.QuerySet,genus_metadata))
+        self.abundance = self.QuerySet.filter(family_id=self.id).distinct('genus_id').count()
+        return True
+    
+    def __repr__(self):
+        head = u'<gbif.Family: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.genera))
+        feet = u'\t <N.Genera> %s </> \n </gbif.Family>' %self.abundance
+        return head.encode('utf-8') + body + feet.encode('utf-8')
+    
+    
+class Order(Level):
+    """
+    Basic class for the Order Level
+    """
+    def __init__(self,localQuerySet,order_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=4,levelname='Order')
+        self.families = []
+        self.geometry = 'N.A.'
+        self.setInfo(order_metadata)  
+        
+    def getFamiliesMetadata(self):
+        """
+        Returns metadata for all families of a specific class
+        """
+        families = self.QuerySet.filter(order_id=self.id).values('family_id').annotate(points=Collect('geom'),ab=Count('family_id'),name=Min('family'))
+        return families
+    
+    def setInfo(self,order_metadata):
+        """
+        Set family features as a list of f.
+        """
+        try:
+            logger.debug('\t \t'+str(order_metadata))
+            self.id = order_metadata['order_id']
+            self.name = order_metadata['name']
+            self.geometry = order_metadata['points']
+            self.abundance = order_metadata['ab']
+        except:
+            logger.error('This is not a metadata object for Order')
+            return False
+        families = self.getFamiliesMetadata()
+        for family_metadata in families:
+            self.families.append(Family(self.QuerySet,family_metadata))
+        self.abundance = self.QuerySet.filter(order_id=self.id).distinct('family_id').count()
+        return True
+    
+    def __repr__(self):
+        head = u'<gbif.Order: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.families))
+        feet = u'\t <N.Families> %s </> \n </gbif.Order>' %self.abundance
+        return head.encode('utf-8') + body + feet.encode('utf-8')
+        
 
-                
+class Class(Level):
+    """
+    Basic class for the Class Level
+    """
+    def __init__(self,localQuerySet,class_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=3,levelname='Class')
+        self.orders = []
+        self.geometry = 'N.A.'
+        self.setInfo(class_metadata)  
+        
+    def getOrdersMetadata(self):
+        """
+        Returns metadata for all classes of a specific order
+        """
+        orders = self.QuerySet.filter(class_id=self.id).values('order_id').annotate(points=Collect('geom'),ab=Count('order_id'),name=Min('_order'))
+        return orders    
+
+    def setInfo(self,class_metadata):
+        """
+        Set family features as a list of f.
+        """
+        try:
+            logger.debug('\t'+str(class_metadata))
+            self.id = class_metadata['class_id']
+            self.name = class_metadata['name']
+            self.geometry = class_metadata['points']
+            self.abundance = class_metadata['ab']
+        except:
+            logger.error('This is not a metadata object for Class')
+            return False
+        orders = self.getOrdersMetadata()
+        for order_metadata in orders:
+            self.orders.append(Order(self.QuerySet,order_metadata))
+        self.abundance = self.QuerySet.filter(class_id=self.id).distinct('order_id').count()
+        return True
+    
+    def __repr__(self):
+        head = u'<gbif.Class: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.orders))
+        feet = u'\t <N.Orders> %s </> \n </gbif.Class>' %self.abundance
+        return head.encode('utf-8') + body + feet.encode('utf-8')
+
+
+class Phylum(Level):
+    """
+    Basic class for the Phylum Level 
+    """
+    def __init__(self,localQuerySet,phylum_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=2,levelname='Phylum')
+        self.classes = []
+        self.geometry = 'N.A.'
+        self.setInfo(phylum_metadata)  
+        
+    def getClassesMetadata(self):
+        """
+        Returns metadata for all classes of a specific order
+        """
+        classes = self.QuerySet.filter(phylum_id=self.id).values('class_id').annotate(points=Collect('geom'),ab=Count('class_id'),name=Min('_class'))
+        return classes    
+
+    def setInfo(self,phylum_metadata):
+        """
+        Set family features as a list of f.
+        """
+        try:
+            logger.debug(phylum_metadata)
+            self.id = phylum_metadata['phylum_id']
+            self.name = phylum_metadata['name']
+            self.geometry = phylum_metadata['points']
+            self.abundance = phylum_metadata['ab']
+        except:
+            logger.error('This is not a metadata object for Phylum')
+            return False
+        classes = self.getClassesMetadata()
+        for class_metadata in classes:
+            self.classes.append(Class(self.QuerySet,class_metadata))
+        self.abundance = self.QuerySet.filter(phylum_id=self.id).distinct('class_id').count()
+        return True
+    
+    def __repr__(self):
+        head = u'<gbif.Phylum: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.classes))
+        feet = u'\t <N.Classes> %s </> \n </gbif.Phylum>' %self.abundance
+        return head.encode('utf-8') + body + feet.encode('utf-8')    
+ 
+    
+
+class Kingdom(Level):
+    """
+    Basic class for Kingdom Level
+    """
+    
+    def __init__(self,localQuerySet,kingdom_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=1,levelname='Kingdom')
+        self.phyla = []
+        self.geometry = 'N.A.'
+        self.setInfo(kingdom_metadata)  
+        
+    def getPhylaMetadata(self):
+        """
+        Returns metadata for all phyla of a specific kingdom
+        """
+        phyla = self.QuerySet.filter(kingdom_id=self.id).values('phylum_id').annotate(points=Collect('geom'),ab=Count('phylum_id'),name=Min('phylum'))
+        return phyla    
+
+    def setInfo(self,kingdom_metadata):
+        """
+        Set kingdom features as a list of features.
+        """
+        try:
+            logger.debug(kingdom_metadata)
+            self.id = kingdom_metadata['kingdom_id']
+            self.name = kingdom_metadata['name']
+            self.geometry = kingdom_metadata['points']
+            self.abundance = kingdom_metadata['ab']
+        except:
+            logger.error('This is not a metadata object for Kingdom')
+            return False
+        phyla = self.getPhylaMetadata()
+        for phylum_metadata in phyla:
+            self.phyla.append(Phylum(self.QuerySet,phylum_metadata))
+        self.abundance = self.QuerySet.filter(kingdom_id=self.id).distinct('phylum_id').count()
+        return True
+    
+    def __repr__(self):
+        head = u'<gbif.Kingdom: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.phyla))
+        feet = u'\t <N.Phyla> %s </> \n </gbif.Kingdom>' %self.abundance
+        return head.encode('utf-8') + body + feet.encode('utf-8')     
+ 
+    

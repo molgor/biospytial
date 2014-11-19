@@ -1,0 +1,206 @@
+%% ----------------------------------------------------------------
+%% Introduction.tex
+%% ---------------------------------------------------------------- 
+
+
+\chapter*{Biodiversty accross scales\\ \small{Research proposal by Juan Escamilla}} \label{Meeting:Second}
+
+\hl{Pete:}
+My intention here is to give the necessary tools and motivations for the work disregarding the overall motivation of why it's important to study biodiversity and why its change through scale and space; which will be included in the introduction.
+
+\hl{I think this can be used in the methodology}
+
+
+\section{Motivations}
+A model is an abstraction of reality \citep{smith-env-mod}.\index{model} With the appropriate treatment, it can be embedded into a well founded mathematical theory. Mathematical theories rely on the fact that are formal systems and are developed with precision and rigour to be consistent and complete \hl{Need good reference}. Translating the real object into a mathematical object allows the inheritance of its properties, consequences and consistencies to analyse, explain and expect behaviours. Always limited by the context and scope bounded by the mathematical theory and the abstraction process.   
+
+\section{Foundations}
+\paragraph{}
+In order to give the model a state of formality, it is necessary to build a clear framework based on assumptions, hypotheses and axioms. 
+In this work, an {\em assumption} is considered to be any limiting fact that depends on the reality of the problem. For instance, any issue concerning the quality of the input data. E.g. {\em bias in sampling, erroneous classification, non existent data, etc.}\index{assumption}
+
+An {\em axiom} is any proposition that cannot be proof because of: i) it is {\em self-evident} (e.g. life in Earth has a spatial component) or ii) there is a scientific theory\footnote{In this case the Theory of Evolution} that supports it as valid and for the purposes of this work it is not necessary to proof it. E.g. {\em All organisms have a common ancestor}. \index{axiom}
+
+A {\em hypothesis} is any proposition that will be proven in this work. The hypothesis will make use of the axioms, assumptions, other hypothesis and results from other works, namely references.\index{hypothesis}
+
+\subsection{Research questions}
+This section is still an outline.
+
+One of the oldest questions in ecology has been: {\em How does composition of communities occur?} This question has been tried to be answered describing the community in terms of the diversity of organisms that inhabit an area and historically the unit of choice for measuring it has been the Species \citep{wilson-diversity}. 
+\citet{pavoine-2011} demonstrated how species, trait and phylogenetic diversity can be combined together from large to local spatial scales to reveal the historical, deterministic and stochastic processes that impact the compositions of local communities.
+These structures had revealed essential details that might act simultaneously in the assembly of species communities. Details that can serve for answering questions about the distribution of the phylogenetic structures through different biomes; The fragmentation and symmetry of these structures through scale and space; and the loss of species and phylogenetic diversity driven by human impacts.
+
+Therefore the questions addressed in this work are:
+\begin{itemize}
+\item How does biodiversity, together with its structure differ from biome to biome? \\
+Are there similarities between taxonomic levels?
+\item How do bio-climatic factors affect the distribution and structure of biodiversity through biomes, space and spatial resolution?
+\item Is there any fragmentation (or continuity) thresholds within the taxonomic structure?
+\item How do human populations affect biodiversity and which taxonomic level is most influenced by?
+\end{itemize}
+
+\subsection{Formalisms}
+In order to answer these main research questions it is necessary to develop a common language without ambiguities and to the maximum extent as possible with mathematical formalism. 
+
+\subsubsection{Axioms}
+
+\begin{axiom}[Common Ancestor]
+Every two living beings (organisms) in Earth are phylogenetically related. It means that there is a relationship of ancestry. This relationship implies that in the past they belonged to the same species.
+\end{axiom}
+This axiom guarantees that every pair of organisms are comparable in the evolutionary sense. The former axiom can be changed to satisfy other type of relationship between organisms only when this relationship makes the organisms comparable as well.  
+
+\begin{axiom}[Uniqueness of Common Ancestor]
+There is only one most recent common ancestor for every two organisms.
+\end{axiom}
+This axiom implies that it is not possible to have two or more immediate common ancestors. In this sense speciation, the evolutionary process in which a new species arise, is a bifurcation from a pre-existant specie. Also this axiom prevents ambiguity in lineages. i.e A species has one and only one linage (taxonomic chain).
+   
+\begin{axiom}[ Last Universal Ancestor (LUA)]
+There is a universal ancestor of all living species in Earth. This is the most recent organism from which all living organisms in Earth descends\footnote{ It is estimated that this organism could had lived in the Paleoarchean Era (3.8 -3.5 billion years ago) \citep{Glansdorff-2008}.}.
+\end{axiom}
+This axiom states that there is a minimal element in the set of all organisms and as such every organism in Earth is related to this primordial living being.
+ 
+\begin{axiom}[Taxonomic relationship] 
+The hierarchical ordering of: {\em kingdom, phylum, class, order, family ,genus} and {\em species} is based on the {\em Natural Method} of biologic classification (systematic). Its main objective is to preserve ancestry. Therefore a taxonomic relationship is a relationship of ancestry that groups organisms with likelihood of being descendant from a common ancestor.
+\end{axiom}
+ This is the link between the systematic taxonomy and the evolutionary relationships. The classification is a continuous process performed by experts in different fields and it is always subject to modifications.
+\begin{axiom}
+Life happens in Earth and has a spatial component. \hl{(You've used a better phrase but I don't remember)}
+\end{axiom}
+This is the link between biology and spatial analysis.
+
+\begin{axiom}[Life is conspicuous]
+Life is conspicuous in all the surface of the Earth. Meaning that any area (with reasonable size) on the surface of the Earth contains a non-empty set of living beings.
+\end{axiom}
+This is a strong assumption for the model. Its main purpose is to ease the analysis and model's develop by supposing that the {\em living phenomenon} is continuous in the surface of the Earth. A more interesting but complex to formulate (from the mathematical point of view) is the use of a probabilistic space \hl{pending for results in first round} See \citep{amari_infogeometry} Information geometry SUPER INTERESTING!! .
+
+
+\subsubsection{Assumptions}
+These assumptions are some of the many that could be involved in the modelling. 
+e.g. stationarity when correlating with bioclimatic variables.
+\hl{This section will be prone to modifications until the end of the results.}
+ 
+Assumptions for the GBIF-data:
+\begin{itemize}
+\item The GBIF database is valid for the axioms proposed in the above section. Therefore the data extracted from it can be used in the model.
+
+\item The classification (taxonomy) of occurrences in the database is accurate and preserve phylogenetic relationships (common ancestry) [This is a hard assumption because there is not enough evidence to support this for all described species. Nevertheless,  the higher the level the more likely to be true but depends a lot on each group.]
+
+\item The analysis will not discriminate synonym species. Different names for the same specie will be considered as different species.
+\end{itemize}
+
+
+\subsubsection{First definitions}
+\begin{definition}[Biologic Species]:
+Two organisms that in natural conditions are able to reproduce and have fertile offspring are members of the same class. This class is called biologic specie.
+\end{definition}
+
+\begin{definition}
+Let $V(G)$ be a set and $E(G) \subseteq V(G) \times V(G) $.
+A graph $G$ is duple given by $(V(G),E(G))$.
+$V(G)$ is the set of vertices of the graph and $E(G)$ is the set of edges. 
+\end{definition}
+
+\begin{definition}
+Let $G$ be a graph. $G'$ is a subgraph of $G$ ($G' \subseteq G$) if and only if $V(G') \subseteq V(G)$ and $E(G') \subseteq E(G)$.
+\end{definition}
+
+\begin{definition}
+If for every $u,v \in V(G)$ there exist a path that connects them then $G$ is say to be connected. If that path is unique for every $u,v$ then $G$ is acyclic (without cycles).    
+\end{definition}
+
+\begin{definition}
+A tree $T$ is a connected and non-cyclic graph.
+\end{definition}
+ 
+\begin{definition}
+Let $T$ be a tree. A subtree $T'$ is a subgraph of $T$ such that is also a tree.
+\end{definition}
+
+
+Every tree follows a hierarchy given by a partially order set.
+The Taxonomic Tree is a tree given by the hierarchy of taxonomic relationship.
+
+\subsubsection{First theoretical results}
+
+\begin{lemma}
+There is a unique Taxonomic Tree of all life on Earth. This tree is called The Tree of Life.
+\end{lemma}
+\begin{proof}
+All organisms have Common Ancestor. Because of this is possible to build taxonomic relationships based on this comparison. The Uniqueness of this common ancestor and the existence of LUA implies that: i) there is just one path that connects any pair of species (vertices) and ii) the graph is connected.
+\end{proof}
+
+\begin{lemma}[Local Tree] 
+For any area in Earth it is possible to derive a unique Taxonomic Tree.
+\end{lemma}
+\begin{proof}
+Because Life is Conspicuous it is possible to find organisms in any place. By the axioms of Common Ancestor and Taxonomic Relationship it is possible to build a taxonomic hierarchy between the group of organisms within that place. Because Axiom of LUA there is only one tree that represents these taxonomic /ancestry relationships.
+\end{proof}
+
+\begin{proposition}
+For a given area\footnote{Any open set contained in the surface Earth. Earth can be considered as a compact surface embedded in $\mathbb{R}^3$ } in Earth, the taxonomic tree derived from it is a subtree of the Tree of Life.
+\end{proposition} 
+\begin{proof}
+Let $T$ be the Tree of Life and $T(A)$ the local tree in the area $A$. $A \subseteq Earth$. $T(A)$ is a tree because of lemma 1.14. $T(A)$ is based on the same taxonomy given by the species in $A$ (which are leaves in the tree) therefore all the edges of $T(A)$ are in $T$. The species in $A$ is a subset of all the species in the $Earth$ otherwise the $Earth$ would not be the $Earth$ and there exist another greater set that could be called $Earth$.
+\end{proof}
+
+\begin{corollary}
+If $A$ = $Earth$ then $T(A)$ = Tree of Life.
+\begin{proof}
+Let $A = Earth$. This implies that all species in $A$ are in $Earth$ and vice versa.
+$V(T(Earth)) = V(Tree of Life)$ and the taxonomic chain (path) of $V(T(Earth))$ is the same as in $V(Tree of Life)$ because it is unique. Therefore $Tree of Life = T(Earth)$
+\end{proof}
+\end{corollary}
+
+\subsection{Methods needed}
+This is just an outline
+There are several steps needed to answer the main questions.
+
+\begin{itemize}
+\item \st{Translate occurrences to a tree-structure}
+\item Use tree handling libraries (current)
+\item Generate a global grid with different spatial resolutions minimum 4km or 1km but it's too heavy.(current)
+\item Develop a method for counting occurrences within a grid cell (boolean, count and proportion) (current).
+\item Develop a method for measuring connectivity at grid-cell level. \\
+How about an algorithm for percolation?
+\item Look for a good-standarized-highly-referenced biomes' map.
+\item Implement the diversity indexes proposed in \citet{pavoine-2011}
+\item Load bio-climatic data.
+\item Geostatistics on bio-clim, point statistics and machine learning coupled with the biodiversity distances.
+\item Relate human activity.
+\end{itemize}
+
+Desirable analysis:
+\begin{itemize}
+\item Colocation networks at different taxonomic levels.
+
+\end{itemize}
+%
+%\fref{Figure:figex} shows why this is the case.
+%\begin{figure}[!htb]
+%  \centering
+%  \includegraphics[width=8cm]{figure}
+%  \caption{A colourful picture.}
+%  \label{Figure:figex}
+%\end{figure}
+%
+%This page shows you a subfigure example in \fref{Figure:figsubex}.
+%\begin{figure}[!htb]
+%  \centering
+%  \subfigure[The left caption]{
+%    \includegraphics[width=4.2cm]{figure}
+%    \label{Figure:figsubex:left}
+%  }
+%  \subfigure[The right caption]{
+%    \includegraphics[width=4.2cm]{figure}
+%    \label{Figure:figsubex:right}
+%  }
+%  \caption{A doubly colourful picture.}
+%  \label{Figure:figsubex}
+%\end{figure}
+%
+%Example of~\eref{eq:equation1}.
+%\begin{equation}
+%y = ax^2 + bx + c
+%\label{eq:equation1}
+%\end{equation}
+%

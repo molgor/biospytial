@@ -3,3 +3,14 @@
 
 #Log files
 logs/
+
+thesis/template
+
+*.log
+
+*.out
+
+*.aux
+*.lof
+*.lot
+*.toc

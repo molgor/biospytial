@@ -351,12 +351,14 @@ class Specie(Level):
         """
         #self.occurrences = list_occurrences
         pass
-
-
+    
+    
     def __repr__(self):
         
-        cad =  u'<gbif.Specie: Id = %s > %s \n \t <n_occurrences> %s </n_occurrences> \n </gbif.Specie>\n' %(self.id,self.name,self.abundance)
+        cad =  u'<gbif:Specie> Id = %s </gbif:Specie>\n \t <gbif:Name> %s </gbif:Name>\n \t \t <gbif:n_occurrences> %s </gbif:n_occurrences>\n' %(self.id,self.name,self.abundance)
         return cad.encode('utf-8')
+    
+    
     def __str__(self):
         return self.__repr__()
 
@@ -407,19 +409,21 @@ class Genus(Level):
         """
         return map(lambda bicho : bicho['name'],self.species)
         
+    #===========================================================================
+    # def __repr__(self):
+    #     head = u'<gbif.Genus: Id = %s > %s \n' %(self.id,self.name)
+    #     body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.species))
+    #     feet = u'\t <N.Species> %s </> \n </gbif.Genus>' %self.abundance
+    #     cad = head.encode('utf-8') + body+ feet.encode('utf-8')
+    #     return cad
+    #===========================================================================
+
     def __repr__(self):
-        head = u'<gbif.Genus: Id = %s > %s \n' %(self.id,self.name)
+        head = u'<gbif:genus> \n <gbif:genus_id> %s </gbif:genus_id>\n \t <gbif:name> %s </gbif:name>\n' %(self.id,self.name)
         body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.species))
-        feet = u'\t <N.Species> %s </> \n </gbif.Genus>' %self.abundance
+        feet = u'\t <gbif:n_especies> %s </gbif:n_especies> \n </gbif.genus>' %self.abundance
         cad = head.encode('utf-8') + body+ feet.encode('utf-8')
         return cad
-
-    def test__repr__(self):
-        head = u'<gbif.Genus: Id = %s > %s \n' %(self.id,self.name)
-        body = reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.species)
-        feet = u'\t <N.Species> %s </> \n </gbif.Genus>' %self.abundance
-        #cad = head.encode('utf-8') + body+ feet.encode('utf-8')
-        return head.encode('utf-8') , str(body) , feet.encode('utf-8')
 
  
     def __str__(self):

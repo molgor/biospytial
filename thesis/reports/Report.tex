@@ -1,0 +1,57 @@
+%% ----------------------------------------------------------------
+%% Report.tex
+%% ---------------------------------------------------------------- 
+\documentclass{ecsreport}      % Use the Report Style
+\graphicspath{{../Figures/}}   % Location of your graphics files
+\usepackage{natbib}            % Use Natbib style for the refs.
+\usepackage{soul}
+
+%% \removecolourlinks    % Uncomment this command to remove colour from any links
+%\input{Definitions}            % Include your abbreviations
+%% ----------------------------------------------------------------
+\begin{document}
+%\frontmatter
+\title      {Taxonomic structures for measuring biodiversity in similar biomes across spatial resolutions}
+\authors  
+             {\href{mailto:jmem1a@soton.ac.uk}{Juan M. Escamilla Molgora}}
+\department  {Geography and the Environment}
+\group       {GEM Masters program}
+\addresses  {\groupname\\\deptname\\\univname}
+\date       {\today}
+\subject    {Ecosystem Science, Ecology, Evolutionary Biology, Geostatistics}
+\keywords   {}
+%\maketitle
+%\begin{abstract}
+%
+%\end{abstract}
+%\tableofcontents
+%\listoffigures
+%\listoftables
+
+%% -----------------------
+%% lstpatch.sty
+%% -----------------------
+%% lstpatch cannot be distributed with these files. I believe it is only needed if the
+%% \lstlistoflistings is used. So this has been turned off by default. Re-add if required:
+%% \usepackage{lstpatch}
+%% \lstlistoflistings
+%% You will need to download lstpatch, possibly from:
+%% http://web.mit.edu/texsrc/source/latex/listings/lstpatch.sty
+%% -----------------------
+
+
+
+%\acknowledgements{Thanks to no one.}
+%\listofsymbols{ll}{$w$ & The weight vector}
+%\mainmatter
+%% ----------------------------------------------------------------
+%\include{reports/report2}
+\include{reports/methodology}
+%\include{Conclusions}
+%\appendix
+%\include{AppendixA}
+%\backmatter
+\bibliographystyle{apalike}
+\bibliography{reports/gem_masters}
+\end{document}
+%% ----------------------------------------------------------------

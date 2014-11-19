@@ -111,13 +111,13 @@ kingdoms = biome.values('kingdom_id').annotate(points=Collect('geom'),ab=Count('
 r=species[0]
 s=Specie(biome,r)
 
-#genus = map(lambda g : Genus(biome,g),genuses[1:10])
+genus = map(lambda g : Genus(biome,g),genuses[1:10])
 
 #fams = map(lambda f : Family(biome,f),families[1:10])
 
 #classex = map(lambda c: Class(biome,c),classes[1:6])
 #phyls = map(lambda p: Phylum(biome,p),phylums[1:2])
-kings = map(lambda k : Kingdom(biome,k),kingdoms[1:2])
+#kings = map(lambda k : Kingdom(biome,k),kingdoms[1:2])
 #orderes = map(lambda o: Order(biome,o),orders[1:10])
 
 

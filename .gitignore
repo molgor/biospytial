@@ -4,6 +4,10 @@
 #Log files
 logs/
 
+*.shp
+*.shx
+*.dbf
+
 thesis/template
 
 *.log

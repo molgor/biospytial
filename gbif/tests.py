@@ -107,7 +107,7 @@ import numpy as np
 
 class Taxonomy:
     """
-    DEfines the taxonomic groups with in one biome.
+    DEfines the taxonomic groups within one biome.
     The objective here is to make it elegant enough so everything are aueries without execution.
     """
     def __init__(self,biome,geometry='',id=0):
@@ -176,6 +176,22 @@ class Taxonomy:
         
         return self.richness
     
+
+    def generatePDI(self,level='species',type='richness'):
+        """
+        This method calculates partial diversity index based on the index level and the type.
+        type =  richness :: richness index.
+                abundance :: 
+                relative_abundance
+        """
+        if type == 'richness':
+            import biodiversity.richness as rich
+            pdi = rich(self)
+            try:
+                return pdi[level]
+            except:
+                logger.error("level selected non existent (used %s)" %level)
+            
     
     
     def getFreqs(self,sel='richness'):
@@ -332,74 +348,12 @@ biosphere = Occurrence.objects.all()
 #cells = m64.objects.values('id','cell').all()
 #cells = map(lambda m : m.cell , m64.objects.all())
 
-for i in range(8,17):
-    logger.info("Comenzando con mesh %s" %i)
-    mesh = initMesh(i)
-    taxs_list = analizeBiomeinMesh(biosphere,mesh)
-    createShapefile(taxs_list,name='taxs_'+str(i))
+#for i in range(8,17):
+ #   logger.info("Comenzando con mesh %s" %i)
+  #  mesh = initMesh(i)
+   # taxs_list = analizeBiomeinMesh(biosphere,mesh)
+    #createShapefile(taxs_list,name='taxs_'+str(i))
 
-#biomes_m64 = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),str(cell['cell']),cell['id']),cells)
-
-#taxs_64 = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2]), biomes_m64 )
-
-#map(lambda tax: tax.summary(),taxs_64)
-
-
-
-#===============================================================================
-# #Method for generating the shapefile object
-# from osgeo import ogr
-# from shapely.geometry import Polygon
-# 
-# # Now convert it to a shapefile with OGR    
-# driver = ogr.GetDriverByName('Esri Shapefile')
-# ds = driver.CreateDataSource('test_64mesh')
-# layer = ds.CreateLayer('test_64', None, ogr.wkbPolygon)
-# # Add one attribute
-# layer.CreateField(ogr.FieldDefn('id', ogr.OFTInteger))
-# 
-# layer.CreateField(ogr.FieldDefn('occurrence', ogr.OFTInteger))
-# layer.CreateField(ogr.FieldDefn('species', ogr.OFTInteger))
-# layer.CreateField(ogr.FieldDefn('genera', ogr.OFTInteger))
-# layer.CreateField(ogr.FieldDefn('families', ogr.OFTInteger))
-# layer.CreateField(ogr.FieldDefn('orders', ogr.OFTInteger))
-# layer.CreateField(ogr.FieldDefn('classes', ogr.OFTInteger))
-# layer.CreateField(ogr.FieldDefn('phyla', ogr.OFTInteger))
-# layer.CreateField(ogr.FieldDefn('kingdoms', ogr.OFTInteger))
-# 
-# defn = layer.GetLayerDefn()
-# 
-# logger.info('Initializing map creation')
-# ## If there are multiple geometries, put the "for" loop here
-# for tax in taxs_64:
-#     d = tax.richness
-#     feat = ogr.Feature(defn)
-#     feat.SetField('id', tax.gid)
-#     logger.info('id')
-#     feat.SetField('occurrence',d['occurrences'])
-#     logger.info('occ')
-#     feat.SetField('species', d['species'])
-#     logger.info('sp')
-#     feat.SetField('genera', d['genera'])
-#     logger.info('gn')
-#     feat.SetField('families', d['families'])
-#     logger.info('fam')
-#     feat.SetField('orders', d['orders'])
-#     logger.info('ord')
-#     feat.SetField('classes', d['classes'])
-#     logger.info('cls')
-#     feat.SetField('phyla', d['phyla'])
-#     logger.info('phy')
-#     feat.SetField('kingdoms', d['kingdoms'])
-#     logger.info('king')
-#     geom = ogr.CreateGeometryFromWkt(tax.biomeGeometry)
-#     feat.SetGeometry(geom)
-#     logger.info('geom')
-#     layer.CreateFeature(feat)
-#     feat = geom = None
-# # Save and close everything
-# ds = layer = feat = geom = None
-#===============================================================================
 
 
 #tax = Taxonomy(biome1) 

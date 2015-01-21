@@ -30,7 +30,7 @@ logger = logging.getLogger('biospatial.gbif')
 # Create your tests here.
 
 
-
+from gbif.buildtree import getTOL
 
 
 
@@ -115,12 +115,12 @@ class Taxonomy:
         Biome is a local query set of the gbif occurrence instance
         """
         self.occurrences = biome.all()
-        self.species =  biome.values('species_id').annotate(points=Collect('geom'),ab=Count('species_id'),name=Min('scientific_name'))
-        self.genera  = biome.values('genus_id').annotate(points=Collect('geom'),ab=Count('genus_id'),name=Min('genus'))
-        self.families = biome.values('family_id').annotate(points=Collect('geom'),ab=Count('family_id'),name=Min('family'))
-        self.classes  = biome.values('class_id').annotate(points=Collect('geom'),ab=Count('class_id'),name=Min('_class'))
-        self.orders = biome.values('order_id').annotate(points=Collect('geom'),ab=Count('order_id'),name=Min('_order'))
-        self.phyla = biome.values('phylum_id').annotate(points=Collect('geom'),ab=Count('phylum_id'),name=Min('phylum'))
+        self.species =  biome.values('species_id').annotate(points=Collect('geom'),ab=Count('species_id'),name=Min('scientific_name'),parent_id=Min('genus_id'))
+        self.genera  = biome.values('genus_id').annotate(points=Collect('geom'),ab=Count('genus_id'),name=Min('genus'),parent_id=Min('family_id'))
+        self.families = biome.values('family_id').annotate(points=Collect('geom'),ab=Count('family_id'),name=Min('family'),parent_id=Min('order_id'))
+        self.orders = biome.values('order_id').annotate(points=Collect('geom'),ab=Count('order_id'),name=Min('_order'),parent_id=Min('class_id'))
+        self.classes  = biome.values('class_id').annotate(points=Collect('geom'),ab=Count('class_id'),name=Min('_class'),parent_id=Min('phylum_id'))
+        self.phyla = biome.values('phylum_id').annotate(points=Collect('geom'),ab=Count('phylum_id'),name=Min('phylum'),parent_id=Min('kingdom_id'))
         self.kingdoms = biome.values('kingdom_id').annotate(points=Collect('geom'),ab=Count('kingdom_id'),name=Min('kingdom'))
         self.rich_occurrences = 0
         self.rich_species = 0
@@ -141,7 +141,7 @@ class Taxonomy:
             }
         self.biomeGeometry = geometry
         self.gid = id
-        
+        self.tree = []
 
     def summary(self):
         """
@@ -150,31 +150,31 @@ class Taxonomy:
         inf = logger.info
         noc = self.occurrences.count()
         inf('Number of occurrences in this biome: %s' %noc)
-        nsp = self.species.count()
-        inf('Number of species in this biome: %s' %nsp)
-        ngn = self.genera.count()
-        inf('Number of genera in this biome: %s' %ngn)   
-        nfa = self.families.count()
-        inf('Number of families in this biome: %s' %nfa)
-        nor = self.orders.count()
-        inf('Number of orders in this biome: %s' %nor)        
-        ncl = self.classes.count()
-        inf('Number of classes in this biome: %s' %ncl)
-        nph = self.phyla.count()
-        inf('Number of orders in this biome: %s' %nph)
-        nki = self.kingdoms.count()
-        inf('Number of kingdoms in this biome %s' %nki)
-        self.richness ={ 'occurrences' : noc,
-               'species' : nsp,
-            'genera' : ngn,
-            'families': nfa,
-            'classes' : ncl,
-            'orders' : nor,
-            'phyla' : nph,
-            'kingdoms' : nki
-            }
+        #nsp = self.species.count()
+        #ngn = self.genera.count()
+        #inf('Number of species in this biome: %s' %nsp)
+        #inf('Number of genera in this biome: %s' %ngn)   
+        #nfa = self.families.count()
+        #inf('Number of families in this biome: %s' %nfa)
+        #nor = self.orders.count()
+        #inf('Number of orders in this biome: %s' %nor)        
+        #ncl = self.classes.count()
+        #inf('Number of classes in this biome: %s' %ncl)
+        #nph = self.phyla.count()
+        #inf('Number of orders in this biome: %s' %nph)
+        #nki = self.kingdoms.count()
+        #inf('Number of kingdoms in this biome %s' %nki)
+        #self.richness ={ 'occurrences' : noc,
+        #       'species' : nsp,
+        #    'genera' : ngn,
+        #    'families': nfa,
+        #    'classes' : ncl,
+        #    'orders' : nor,
+        #    'phyla' : nph,
+        #    'kingdoms' : nki
+        #    }
         
-        return self.richness
+        #return self.richness
     
 
     def generatePDI(self,level='species',type='richness'):
@@ -237,6 +237,12 @@ class Taxonomy:
         plt.show()
         return ax
         
+
+    def getTree(self):
+        """
+        Calculates the tree. Is a ETE2 data type
+        """
+        self.tree = getTOL(self)
 
     
 def createShapefile(taxonomy_list,name='default_name',store='out_maps'):
@@ -315,6 +321,7 @@ def analizeBiomeinMesh(biosphere,mesh):
     #cells = map(lambda m : m.cell , m64.objects.all())
     biomes_mesh = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),str(cell['cell']),cell['id']),cells)
     taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2]), biomes_mesh )
+    
     map(lambda tax: tax.summary(),taxs_list)
     return taxs_list    
     
@@ -343,15 +350,19 @@ biosphere = Occurrence.objects.all()
 
 #biome = biosphere.filter(geom__intersects=plgn)
 
-#biome1 = biosphere.filter(geom__intersects=polygon)
-#m64 = initMesh(11)
-#cells = m64.objects.values('id','cell').all()
-#cells = map(lambda m : m.cell , m64.objects.all())
+biome1 = biosphere.filter(geom__intersects=polygon)
+# Initialize mesh
+m64 = initMesh(11)
+cells = m64.objects.values('id','cell').all()
+cells = map(lambda m : m.cell , m64.objects.all())
 
+spatial_scales = {}
 #for i in range(8,17):
- #   logger.info("Comenzando con mesh %s" %i)
-  #  mesh = initMesh(i)
-   # taxs_list = analizeBiomeinMesh(biosphere,mesh)
+for i in range(12,13):    
+    logger.info("Comenzando con mesh %s" %i)
+    mesh = initMesh(i)
+    taxs_list = analizeBiomeinMesh(biosphere,mesh)
+    spatial_scales[i] = taxs_list
     #createShapefile(taxs_list,name='taxs_'+str(i))
 
 

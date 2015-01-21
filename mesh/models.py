@@ -70,16 +70,7 @@ class mesh(models.Model):
         #inv_map = {v: k for k, v in self.scales.items()}
         sc = self._meta.db_table
         return sc
-    
-    #===========================================================================
-    # def setScaleLevel(self,levelint):
-    #     """
-    #     Changes the table /grid
-    #     """
-    #     table_name = self.scales[levelint]
-    #     self._meta.db_table = table_name
-    #===========================================================================
-    
+      
     def __repr__(self):
         """
         String representation of the object 
@@ -88,5 +79,31 @@ class mesh(models.Model):
         return a
     
     
-
-
+class NestedMesh:
+    """
+    Class that defines a gemetrical datatype with nested grid cells. 
+    """
+    def __init__(self,id,start_level=10,end_level=11):
+        """
+        I'm the constructor: start_level = (Integer) level of aggregation.
+        end_level :: bottom of the nesting grid.
+        id = id value of the cel in the starting grid.
+        """
+        self.levels = {}
+        m1 = initMesh(start_level)
+        #Filter with appropiate id
+        cell1 = m1.objects.get(id=id)
+        self.levels[start_level] = cell1
+        for level in range(start_level+1,end_level+1):
+            m_temp = initMesh(level)
+            #within functions perfectly in this situation
+            cells=m_temp.objects.filter(cell__within=cell1.cell)
+            self.levels[level]=cells
+            
+        
+        
+        
+        
+        
+        
+        

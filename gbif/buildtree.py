@@ -56,7 +56,7 @@ def getGenera(taxonomy_queryset):
           
 def getFamilies(taxonomic_queryset,genera_tree):
     """
-    Taxonomic queryset es un agregado. objeto de Taxonomy
+    Taxonomic queryset aggregated of class Taxonomy
     genera_tree is the tree obtained from building of genera.
     """
     tax = taxonomic_queryset
@@ -151,9 +151,6 @@ def getClasses(taxonomic_queryset,orders_tree):
         phylumTree.add_child(child=classTree)
     return phylumTree  
 
-
-
-
 def getPhyla(taxonomic_queryset,classes_tree):
     """
     Taxonomic queryset es un agregado. objeto de Taxonomy
@@ -219,7 +216,6 @@ def getKingdoms(taxonomic_queryset,phyla_tree):
     return TreeOfLife  
 
 
-
 def getTOL(taxonomic_queryset):
     """
     Gives the complete tree of life
@@ -232,18 +228,4 @@ def getTOL(taxonomic_queryset):
 
 
 
-def test_in_grid(tax_list_cell):
-    """
-    Only for testing purposes
-    """
-    cells = tax_list_cell
-    trees = []
-    for cell in cells:
-        t = getTOL(cell)
-        trees.append(t)
-    return trees
-
-
-#tax_list = spatial_scales[12]
-#tax_list.sort(key=lambda tax : len(tax.occurrences))
 

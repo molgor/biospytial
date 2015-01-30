@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
-Models for GBIF objects. 
+Models for mesh objects. 
 
 """
 
-__author__ = "Juan Escamilla M�lgora"
-__copyright__ = "Copyright 2014, JEM"
+__author__ = "Juan Escamilla Mólgora"
+__copyright__ = "Copyright 2015, JEM"
 __license__ = "GPL"
 __version__ = "2.2.1"
 __mantainer__ = "Juan"
@@ -25,11 +25,11 @@ import dateutil.parser
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 
 
-logger = logging.getLogger('biospatial.gbif')
+logger = logging.getLogger('biospatial.mesh')
 
 
 from django.forms import ModelForm
-# Model for GBIF as given by Ra�l Jimenez
+
 
 
 def initMesh(Intlevel):
@@ -69,6 +69,7 @@ class mesh(models.Model):
         """
         #inv_map = {v: k for k, v in self.scales.items()}
         sc = self._meta.db_table
+        self.tablename = sc
         return sc
       
     def __repr__(self):
@@ -81,7 +82,7 @@ class mesh(models.Model):
     
 class NestedMesh:
     """
-    Class that defines a gemetrical datatype with nested grid cells. 
+    Class that defines a geometrical datatype with nested grid cells. 
     """
     def __init__(self,id,start_level=10,end_level=11):
         """
@@ -90,15 +91,23 @@ class NestedMesh:
         id = id value of the cel in the starting grid.
         """
         self.levels = {}
+        self.table_names = {}
         m1 = initMesh(start_level)
         #Filter with appropiate id
-        cell1 = m1.objects.get(id=id)
+        try:
+            cell1 = m1.objects.get(id=id)
+        except:
+            logger.error("Selected id does not exist in selected grid")
+            return None
         self.levels[start_level] = cell1
+        self.table_names[start_level] = m1._meta.db_table
         for level in range(start_level+1,end_level+1):
             m_temp = initMesh(level)
             #within functions perfectly in this situation
             cells=m_temp.objects.filter(cell__within=cell1.cell)
             self.levels[level]=cells
+            self.table_names[level] = m_temp._meta.db_table
+            del(m_temp)
             
         
         

@@ -128,7 +128,11 @@ LOGGING = {
     }
 }
 
+###### EXTENDED SETTINGS
+TAXONOMIC_LEVELS = ['gid','occurrence','species','families','genera','orders','classes','phyla','kingdoms']
+TAXONOMIC_TREE_KEYS = ['sp','gns','fam','ord','cls','phy','kng']
 
+#######################
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
 

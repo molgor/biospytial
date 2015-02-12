@@ -1,0 +1,80 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--     <link rel="stylesheet" href="style.css" /> -->
+    <title>Tree viewer</title>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+  	<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+ 	<script src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+  <script>
+  $(document).ready(function() {
+    $( "#tree_menu" ).menu();
+	$("a").hover(function() {
+		$("#treeview_area").html($("<img>").attr("src",this.href));
+  		//alert('popo')
+		});
+  });
+  </script>
+  <style type="text/css">
+  #tree-area {
+  	position: absolute;
+  	height: 800px;
+  	width: 700px;
+  	
+  
+  
+  }
+  	#tree_menu {
+  		position:relative;
+  		height: 500px;
+  		width: 200px;
+  		float: right; 
+  	}
+  	
+  	#treeview_area {
+  		position: relative;
+  		float: left;
+  		width: 490px;
+  		height: 100% ;
+  		top: 0px;
+  	}
+  	
+  	#treeview_area img
+		{
+		max-width:100%; 
+		max-height:100%;
+		margin:auto;
+		display:block;
+		}
+  </style>
+</head>
+
+<body>
+    <div id="sidebar">
+    <h1>Local Tree of Life </h1>
+    <h2></h2>
+        <ul>
+            <li> Tree generated at level {{ taxonomic_level }}</li>
+            <li> In the GID {{ gid }}</li>
+            <li> In the grid {{grid_level}} </li>
+        </ul>
+    </div>
+
+    <div id="tree-area">
+    <ul id="tree_menu">
+    {% for dic in image_path %}
+    <li href="{% static trees %}trees/{{ dic }}">
+    <a href="{% static trees %}trees/{{ dic.path }}"alt="loading tree">{{ dic.name }}</a>
+    </li>
+{% empty %}
+    <li>No occurrence found</li>
+{% endfor %}
+        </ul>
+
+    <div id="treeview_area">
+    <img src="">
+    </div>
+        </div>
+</body>
+</html>

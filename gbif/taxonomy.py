@@ -41,6 +41,61 @@ import matplotlib.pyplot as plt
 import numpy as np
   
 
+def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False):
+    """
+    This function performs a spatial intersection and initialize Taxonomy objects with the geometry given by [mesh].
+    [biosphere] is a Geoqueryset of gbif occurrences. [mesh] is a mesh type.
+    Returns a Taxonomy list ready to use by createShapefile.
+    """
+    taxs_list = []
+    if isinstance(mesh,GeoQuerySet):
+        cells = mesh.values('id','cell').all()
+        try:
+            biomes_mesh = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),cell['cell'],cell['id']),cells)
+        except:
+            logger.error("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] biosphere is not a Geoquery instance model of GBIF")
+        taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2]), biomes_mesh )
+        #logger.info(type(taxs_list))
+        if generate_tree_now:
+            logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
+            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),taxs_list)        
+        return taxs_list 
+    else:
+        cell = mesh.cell
+        taxs = Taxonomy(biosphere.filter(geom__intersects=cell),geometry=cell,id=upper_level_grid_id)
+        #logger.info(type(taxs_list))
+        if generate_tree_now:
+            logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
+            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),[taxs])         
+        return [taxs]   
+
+
+def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,generate_tree_now=False):
+    """
+    This function returns a nested taxonomies dictionary with the distinct gbif objects in each Cell.
+    The id_in_grid is the index of the parent.
+    start_level is the parent level of the mesh (See implementation in the mesh model)
+    end_level is the last level in the nest. The bottom.
+    [biosphere] is a Geoqueryset of gbif occurrences. 
+    Returns a nested taxonomies dictionary 
+    NOTE: The id_in_grid should be a valid index number in the set of the parent mesh.
+    """
+    meshes = NestedMesh(id_in_grid,start_level=start_level,end_level=end_level)
+    nested_taxonomies ={} 
+    for mesh in meshes.levels.keys():   
+        logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinNestedGrid] Embeding local biomes in grid ")
+        m = meshes.levels[mesh]
+        tablename = meshes.table_names[mesh]
+        #taxs_list = embedTaxonomyInGrid(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now)
+        taxs = GriddedTaxonomy(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now,grid_name=tablename)
+        #taxs_list = taxs.taxonomies
+        nested_taxonomies[mesh] = taxs
+    return nested_taxonomies 
+
+
+
+
+
 class Taxonomy:
     """
     Defines the taxonomic groups within one biome.
@@ -82,6 +137,7 @@ class Taxonomy:
         self.gid = id
         self.forest = {}
         self.JacobiM = [] #This is the attribute of the Jacobian matrix calculated with respect to the distance of another matrix.
+        self.vectorJacobi = [] # This is the vector form of the determinants at each submatrix.
         
     def calculateRichness(self):
         """
@@ -116,8 +172,9 @@ class Taxonomy:
         
         return self.richness
 
-    def distanceToTree(self,taxonomic_forest):
+    def distanceToTree_deprec(self,taxonomic_forest,update_inner_attributes=True):
         """
+        Deprecated: This method does the Robinson_foulds metric. It has been found to be not a good metric for the purposes of measuring diffrence accros scales.
         This function calculates the distance from this object to the taxonomic_forest given as input.
         The distance is based on an a given metric between all the partial trees.
         """
@@ -130,9 +187,41 @@ class Taxonomy:
                 d = self.forest[i].robinson_foulds(taxonomic_forest[j],unrooted_trees=True)[0]
                 F1.append(float(d))
             Jacobian.append(F1)
-        self.JacobiM = np.matrix(Jacobian)
-        self.Jacobi = np.linalg.det(self.JacobiM)
-        return self.JacobiM   
+        if update_inner_attributes:
+            self.JacobiM = np.matrix(Jacobian)
+            self.Jacobi = np.linalg.det(self.JacobiM)
+        return np.matrix(Jacobian)  
+
+
+    def distanceToTree(self,parent_taxonomic_forest,update_inner_attributes=True):
+        """
+        This method implements the metric scale tree distance proposed by Escamilla-Mólgora (2015).
+        parent_taxonomic_forest is the forest that is going to be compared with. 
+        """ 
+        Jacobian =[]
+        for level_j in settings.TAXONOMIC_TREE_KEYS :
+            # gradient at level level
+            gradLevel = []
+            for level_i in settings.TAXONOMIC_TREE_KEYS:
+                # nj is the number of elements in the big scale J
+                nj = float(len(parent_taxonomic_forest[level_j].get_leaves()))                
+                # ni is the number of elements in the current tree (forest)
+                ni = float(len(self.forest[level_i].get_leaves()))
+                d_ij = ((nj - ni)/(nj + ni))
+                if d_ij < 0:
+                    logger.info("[biospatial.gbif.taxonomy.distanceToTree] The parent tree has less nodes than the current one.\n Perhaps the analysis is not spatially nested.")
+                gradLevel.append(d_ij)
+            Jacobian.append(gradLevel)
+        if update_inner_attributes:
+            self.JacobiM = np.matrix(Jacobian)
+            submatrices_of_jacobian = map(lambda i : self.JacobiM[0:i,0:i],range(1,len(settings.TAXONOMIC_LEVELS)))
+            self.vectorJacobi = map(lambda M :np.linalg.det(M),submatrices_of_jacobian) 
+            
+        return np.matrix(Jacobian) 
+        
+    #def distanceToTree
+
+
     
     def generatePDI(self,level='species',type='richness'):
         """
@@ -147,7 +236,7 @@ class Taxonomy:
             try:
                 return pdi[level]
             except:
-                logger.error("level selected non existent (used %s)" %level)
+                logger.error("[biospatial.gbif.taxonomy.distanceToTree] level selected non existent (used %s)" %level)
                
     def getFreqs(self,sel='richness'):
         """
@@ -176,9 +265,9 @@ class Taxonomy:
                 values = map(lambda tup : tup[0] / float(tup[1]) , zip(val2,val1))
                 color = 'g'
         except:
-            logger.error("No data values for richness. \n Hint: Run Summary()")
+            logger.error("[biospatial.gbif.taxonomy.getFreq] No data values for richness. \n Hint: Run Summary()")
         else:
-            logger.error("Selection not valid")
+            logger.error("[biospatial.gbif.taxonomy.getFreq] Selection not valid")
             return False
         fig, ax = plt.subplots()
         bar = ax.bar(ind, values, width, color=color)
@@ -216,76 +305,32 @@ class Taxonomy:
                 leaf.detach()
             return new_tree       
                     
-        logger.info('Pruning to genus level')
+        #logger.info('Pruning to genus level')
         try:
             self.forest['gns']= prune_level(self.forest['sp'])
         except:
-            logger.info('species level does not exist for this taxonomy (grid cell). Calculating it now!')
+            logger.info('[gbif.taxonomy.obtainPartialTrees()] Species level does not exist for this taxonomy (grid cell). Calculating it now!')
             self.forest['sp'] = getTOL(self)
             self.obtainPartialTrees()
-        logger.info('Pruning to family level')
+        logger.info('[gbif.taxonomy.obtainPartialTrees()] Pruning trees')
         self.forest['fam']= prune_level(self.forest['gns'])
-        logger.info('Pruning to order level')
+        #logger.info('Pruning to order level')
         self.forest['ord']= prune_level(self.forest['fam'])
-        logger.info('Pruning to class level')
+        #logger.info('Pruning to class level')
         self.forest['cls']= prune_level(self.forest['ord'])        
-        logger.info('Pruning to phylum level')
+        #logger.info('Pruning to phylum level')
         self.forest['phy']= prune_level(self.forest['cls'])
-        logger.info('Pruning to kingdom level')
+        #logger.info('Pruning to kingdom level')
         self.forest['kng']= prune_level(self.forest['phy'])                
 
-
-
-def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False):
-    """
-    This function performs a spatial intersection and initialize Taxonomy objects with the geometry given by [mesh].
-    [biosphere] is a Geoqueryset of gbif occurrences. [mesh] is a mesh type.
-    Returns a Taxonomy list ready to use by createShapefile.
-    """
-    taxs_list = []
-    if isinstance(mesh,GeoQuerySet):
-        cells = mesh.values('id','cell').all()
-        try:
-            biomes_mesh = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),cell['cell'],cell['id']),cells)
-        except:
-            logger.error("biosphere is not a Geoquery instance model of GBIF")
-        taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2]), biomes_mesh )
-        #logger.info(type(taxs_list))
-        if generate_tree_now:
-            logger.info("generate_tree_now flag activated. Generating tree as well")
-            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),taxs_list)        
-        return taxs_list 
-    else:
-        cell = mesh.cell
-        taxs = Taxonomy(biosphere.filter(geom__intersects=cell),geometry=cell,id=upper_level_grid_id)
-        #logger.info(type(taxs_list))
-        if generate_tree_now:
-            logger.info("generate_tree_now flag activated. Generating tree as well")
-            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),[taxs])         
-        return [taxs]   
-
-
-def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,generate_tree_now=False):
-    """
-    This function returns a nested taxonomies dictionary with the distinct gbif objects in each Cell.
-    The id_in_grid is the index of the parent.
-    start_level is the parent level of the mesh (See implementation in the mesh model)
-    end_level is the last level in the nest. The bottom.
-    [biosphere] is a Geoqueryset of gbif occurrences. 
-    Returns a nested taxonomies dictionary 
-    NOTE: The id_in_grid should be a valid index number in the set of the parent mesh.
-    """
-    meshes = NestedMesh(id_in_grid,start_level=start_level,end_level=end_level)
-    nested_taxonomies ={} 
-    for mesh in meshes.levels.keys():   
-        logger.info("Embeding local biomes in grid ")
-        m = meshes.levels[mesh]
-        tablename = meshes.table_names[mesh]
-        #taxs_list = embedTaxonomyInGrid(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now)
-        taxs = GriddedTaxonomy(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now,grid_name=tablename)
-        #taxs_list = taxs.taxonomies
-        nested_taxonomies[mesh] = taxs
-    return nested_taxonomies 
+    def maximumDistance(self):
+        """
+        This method calculates the maximum distance considering an empty tree.
+        """
+        from ete2 import Tree
+        t = Tree(name='LUCA_root')
+        empty_forest = {'sp':t,'gns':t,'fam':t,'ord':t,'cls':t,'phy':t,'kng':t}
+        return self.distanceToTree(empty_forest,update_inner_attributes=False)
 
 
 class GriddedTaxonomy:
@@ -324,55 +369,109 @@ class GriddedTaxonomy:
     def createShapefile(self,option='richness',store='out_maps'):
         """
         This function creates a shapefile using a selected attribute.
+        option is the attribute to export.
+        Currently implemented:
+            richness (default) gives the counts of occurrences at each taxonomic level.
+            jacobi: gives the determinant of the distance (Escamilla) matrix and sub-matrices from the 7x7 size to the 2x2.
+                    a layer for each determinant of each submatrix.
         """
+        import ipdb
+        def selectRichness(layer):
+            # This is for option richness
+            for key in settings.TAXONOMIC_LEVELS:
+                layer.CreateField(ogr.FieldDefn(key,ogr.OFTInteger))        
+            defn = layer.GetLayerDefn()
+                   
+            ## If there are multiple geometries, put the "for" loop here
+            for tax in self.taxonomies:
+                #logger.debug("there are %s taxonomies" %(len(self.taxonomies)))
+                tax.calculateRichness()
+                try:
+                    #ipdb.set_trace()
+                    d = tax.richness
+                    feat = ogr.Feature(defn)
+                    feat.SetField('gid', tax.gid)
+                    
+                    #logger.debug('gid')
+                    feat.SetField('occurrence',d['occurrences'])
+                    feat.SetField('species', d['species'])
+                    #logger.info('occ')
+                    #logger.info('sp')
+                    feat.SetField('genera', d['genera'])
+                    #logger.info('gn')
+                    feat.SetField('families', d['families'])
+                    #logger.info('fam')
+                    feat.SetField('orders', d['orders'])
+                    #logger.info('ord')
+                    feat.SetField('classes', d['classes'])
+                    #logger.info('cls')
+                    feat.SetField('phyla', d['phyla'])
+                    #logger.info('phy')
+                    feat.SetField('kingdoms', d['kingdoms'])
+                    #logger.info('king')
+                    geom = ogr.CreateGeometryFromWkt(tax.biomeGeometry.wkt)
+                    feat.SetGeometry(geom)
+                    #logger.info('geom')
+                    layer.CreateFeature(feat)
+                    feat = geom = None
+                except:
+                    logger.error('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n\n Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                    return False
+            return True
+            
+                    
         #Method for generating the shapefile object
+        
+        
+        def selectJacobi(layer):
+            # Calculate distance.
+            keys = ['s','sg','sgf','sgfo','sgfoc','sgfocp','sgfocpk']
+            for key in keys:
+                layer.CreateField(ogr.FieldDefn(key,ogr.OFTInteger))        
+            defn = layer.GetLayerDefn()
+                   
+            ## If there are multiple geometries, put the "for" loop here
+            for idx,tax in enumerate(self.taxonomies):
+                #logger.debug("there are %s taxonomies" %(len(self.taxonomies)))
+                if not isinstance(tax.JacobiM,np.matrixlib.defmatrix.matrix):
+                    logger.error("[biospatial.gbif.taxonomy.NestedTaxonomy] \nDistance Matrix hasn't been defined.\n Try running NestedTaxonomy.getDistancesAtLevel(level) or GriddedTaxonomy.distanceToTree(arbitray_tax_forest)")
+                    raise Exception("Distance Matrix not defined")
+                    return None
+                else:
+                    try:
+                        #ipdb.set_trace()
+                        d = tax.vectorJacobi
+                        feat = ogr.Feature(defn)
+                        
+                        for i,key in enumerate(keys):
+                            feat.SetField(key,d[i] )
+                        geom = ogr.CreateGeometryFromWkt(tax.biomeGeometry.wkt)
+                        feat.SetGeometry(geom)
+                        #logger.info('geom')
+                        layer.CreateFeature(feat)
+                        feat = geom = None
+                    except:
+                        logger.error('[biospatial.gbif.taxonomy.NestedTaxonomy] \nSomething occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                        return False
+            return True
+        
+        
+        
         from osgeo import ogr
         #from shapely.geometry import Polygon    
         # Now convert it to a shapefile with OGR    
         driver = ogr.GetDriverByName('Esri Shapefile')
         ds = driver.CreateDataSource(store+self.grid_name)
         layer = ds.CreateLayer(option, None, ogr.wkbPolygon)
-        logger.info('Creating Shapefile %s' %option+'@'+store)
-        # This is for option richness
-        for key in settings.TAXONOMIC_LEVELS:
-            layer.CreateField(ogr.FieldDefn(key,ogr.OFTInteger))        
-        defn = layer.GetLayerDefn()
-               
-        ## If there are multiple geometries, put the "for" loop here
-        for tax in self.taxonomies:
-            tax.calculateRichness()
-            try:
-                d = tax.richness
-                feat = ogr.Feature(defn)
-                feat.SetField('gid', tax.gid)
-                #logger.info('gid')
-                feat.SetField('occurrence',d['occurrences'])
-                feat.SetField('species', d['species'])
-                #logger.info('occ')
-                #logger.info('sp')
-                feat.SetField('genera', d['genera'])
-                #logger.info('gn')
-                feat.SetField('families', d['families'])
-                #logger.info('fam')
-                feat.SetField('orders', d['orders'])
-                #logger.info('ord')
-                feat.SetField('classes', d['classes'])
-                #logger.info('cls')
-                feat.SetField('phyla', d['phyla'])
-                #logger.info('phy')
-                feat.SetField('kingdoms', d['kingdoms'])
-                #logger.info('king')
-                geom = ogr.CreateGeometryFromWkt(tax.biomeGeometry.wkt)
-                feat.SetGeometry(geom)
-                #logger.info('geom')
-                layer.CreateFeature(feat)
-                feat = geom = None
-            except:
-                logger.error('Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
-                return False     
+        logger.info('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n Creating Shapefile %s' %option+'@'+store)
+        
+        if option == 'richness':
+            selectRichness(layer)  
+        elif option == 'jacobi':
+            selectJacobi(layer)
         # Save and close everything
         ds = layer = feat = geom = None
-        logger.info('Shapefile Created in %s/%s' %(store,option))
+        logger.info('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n Shapefile Created in %s/%s' %(store,option))
         return True
     
     def mergeGeometries(self):
@@ -401,6 +500,7 @@ class GriddedTaxonomy:
         matrices = map(lambda tax : tax.distanceToTree(taxonomic_forest),self.taxonomies)
         return matrices
 
+        
     
 class NestedTaxonomy:
     """
@@ -414,11 +514,38 @@ class NestedTaxonomy:
     """  
     def __init__(self,id,gbif_geoqueryset,start_level=12,end_level=14,generate_tree_now=True):
         self.levels = embedTaxonomyInNestedGrid(id,gbif_geoqueryset,start_level=start_level,end_level=end_level,generate_tree_now=generate_tree_now) 
-        self.parent = self.levels[self.levels.keys()[0]]
+        self.parent = self.levels[self.levels.keys()[0]].taxonomies[0]
+        self.maxdistances = self.getMaximumDistances()
         
     def __repr__(self):
         cad = '<gbif.taxonomy.NestedTaxonomy instance with levels: %s>' %str(self.levels)    
         return cad
+    
+    def getLevels(self):
+        """
+        Gives the available zooming levels in the current Nested Taxonomy.
+        """
+        a = str(self.levels.keys())
+        logger.info('[biospatial.gbif.taxonomy.NestedTaxonomy]\n Available Levels %s' %a)
+        return a
+        
 
+    def getDistancesAtLevel(self,level,parent_forest='Top'):
+        """
+        This method calculates all the Jacobian matrices comparing the parent tree woth the specfied level.
+        """
+        if parent_forest == 'Top':
+            parent_forest = self.parent.forest
+        try:
+            mats = self.levels[level].distanceToTree(parent_forest)
+            return mats
+        except:
+            logger.error('[biospatial.gbif.taxonomy.NestedTaxonomy] \nSomethng went wrong. Perhaps the selected level doesn\'t exist for this NestedTaxonomy')
+            return None
         
-        
+
+    def getMaximumDistances(self):
+        """
+        This method calculates the maximum distance that a tree has 
+        """
+        pass

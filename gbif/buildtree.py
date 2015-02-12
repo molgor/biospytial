@@ -15,7 +15,7 @@ __status__ = "Prototype"
 from ete2 import Tree
 import logging
 
-logger = logging.getLogger('biospatial.gbif')
+logger = logging.getLogger('biospatial.gbif.buildtree')
 
 
         
@@ -94,6 +94,7 @@ def getOrders(taxonomic_queryset,families_tree):
     orders = tax.orders
     families = tax.families
     classTree = Tree(name='class_root')
+    logger.info("[gbif.buildtree] Collapsing Orders")
     for order in orders:
         class_id = order['parent_id']
         name = order['name']
@@ -101,7 +102,7 @@ def getOrders(taxonomic_queryset,families_tree):
         #Add here the geometric feature (if necessary)
         points = order['points']
         order_id = order['order_id']
-        logger.info("Colapsing Order id: %s" %order_id)
+        #logger.info("Colapsing Order id: %s" %order_id)
         orderTree = Tree(name=name,support=ab)
         orderTree.add_feature('order_id',order_id)
         orderTree.add_feature('level','order')
@@ -128,6 +129,7 @@ def getClasses(taxonomic_queryset,orders_tree):
     classes = tax.classes
     orders = tax.orders
     phylumTree = Tree(name='phylum_root')
+    logger.info("[gbif.buildtree] Collapsing Classes")
     for class_ in classes:
         phylum_id = class_['parent_id']
         name = class_['name']
@@ -135,7 +137,7 @@ def getClasses(taxonomic_queryset,orders_tree):
         #Add here the geometric feature (if necessary)
         points = class_['points']
         class_id = class_['class_id']
-        logger.info("Colapsing Class id: %s" %class_id)
+        #logger.info("Colapsing Class id: %s" %class_id)
         classTree = Tree(name=name,support=ab)
         classTree.add_feature('class_id',class_id)
         classTree.add_feature('level','class')
@@ -160,6 +162,7 @@ def getPhyla(taxonomic_queryset,classes_tree):
     phyla = tax.phyla
     classes = tax.classes
     kingdomTree = Tree(name='kingdom_root')
+    logger.info("[gbif.buildtree] Collapsing Phyla")
     for phylum in phyla:
         kingdom_id = phylum['parent_id']
         name = phylum['name']
@@ -167,7 +170,7 @@ def getPhyla(taxonomic_queryset,classes_tree):
         #Add here the geometric feature (if necessary)
         points = phylum['points']
         phylum_id = phylum['phylum_id']
-        logger.info("Colapsing Phylum: %s" %name)
+        #logger.info("Colapsing Phylum: %s" %name)
         phylumTree = Tree(name=name,support=ab)
         phylumTree.add_feature('phylum_id',phylum_id)
         phylumTree.add_feature('level','phylum')
@@ -192,6 +195,7 @@ def getKingdoms(taxonomic_queryset,phyla_tree):
     kingdoms = tax.kingdoms
     phyla = tax.phyla
     TreeOfLife = Tree(name='LUCA_root')
+    logger.info("[gbif.buildtree] Collapsing Kingdoms")
     for kingdom in kingdoms:
         kingdom_id = 0
         name = kingdom['name']
@@ -199,7 +203,7 @@ def getKingdoms(taxonomic_queryset,phyla_tree):
         #Add here the geometric feature (if necessary)
         points = kingdom['points']
         kingdom_id = kingdom['kingdom_id']
-        logger.info("Colapsing kingdom: %s" %name)
+        #logger.info("Colapsing kingdom: %s" %name)
         kingdomTree = Tree(name=name,support=ab)
         kingdomTree.add_feature('kingdom_id',kingdom_id)
         kingdomTree.add_feature('level','kingdom')

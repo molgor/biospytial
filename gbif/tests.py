@@ -31,6 +31,13 @@ logger = logging.getLogger('biospatial.gbif.general_test')
 import biospatial.settings as settings 
 # Create your tests here.
 
+from ete2 import Tree, TreeStyle
+t = Tree()
+ts = TreeStyle()
+ts.show_leaf_name = True
+ts.mode = "c"
+ts.arc_start = -180 # 0 degrees = 3 o'clock
+ts.arc_span = 360
 
 
 
@@ -182,21 +189,15 @@ biosphere = Occurrence.objects.all()
 
 #for i in range(8,17):
 #nested_taxonomies ={} 
-meshes = NestedMesh(10290,start_level=12,end_level=14)
+#meshes = NestedMesh(10290,start_level=12,end_level=14)
 #nested_taxonomies = embedTaxonomyInNestedGrid(653,biosphere,start_level=10,end_level=14,generate_tree_now=True)
 #nested_taxonomies = embedTaxonomyInNestedGrid(10290,biosphere,start_level=12,end_level=14,generate_tree_now=True)
-nested_taxonomies = NestedTaxonomy(10290,biosphere,start_level=12,end_level=14,generate_tree_now=True)
+nested_taxonomies = NestedTaxonomy(10417,biosphere,start_level=12,end_level=14,generate_tree_now=True)
 
 #parent = nested_taxonomies[12][0]
 sm_f=nested_taxonomies.levels[14].taxonomies[0].forest
 
-b = nested_taxonomies.parent.taxonomies[0]
-big_tree=nested_taxonomies.parent.taxonomies[0].forest
+b = nested_taxonomies.parent
+big_tree=nested_taxonomies.parent.forest
 
-#for mesh in meshes.levels.keys():   
- #   logger.info("Embeding local biomes in grid ")
-  #  m = meshes.levels[mesh]
-   # taxs_list = embedTaxonomyInGrid(biosphere,m,generate_tree_now=True)
-    #nested_taxonomies[mesh] = taxs_list
-    #createShapefile(taxs_list,name='taxs_'+str(i))
-
+turu =NestedMesh(528,start_level=14,end_level=14)

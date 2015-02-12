@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'gbif',
+    'django_pdb',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -48,6 +49,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_pdb.middleware.PdbMiddleware',
 )
 
 ROOT_URLCONF = 'biospatial.urls'
@@ -67,14 +69,16 @@ DATABASES = {
         'HOST': 'geodata'
     },            
              
-    'local': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        #'django.db.backends.postgresql_psycopg2',
-        'NAME': 'masterthesis',                      
-        'USER': 'juan',
-        'PASSWORD': '',
-        'HOST': 'localhost'
-    },
+    #===========================================================================
+    # 'local': {
+    #     'ENGINE': 'django.contrib.gis.db.backends.postgis',
+    #     #'django.db.backends.postgresql_psycopg2',
+    #     'NAME': 'masterthesis',                      
+    #     'USER': 'juan',
+    #     'PASSWORD': '',
+    #     'HOST': 'localhost'
+    # },
+    #===========================================================================
     'operational': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         #'django.db.backends.postgresql_psycopg2',
@@ -132,6 +136,8 @@ LOGGING = {
 TAXONOMIC_LEVELS = ['gid','occurrence','species','families','genera','orders','classes','phyla','kingdoms']
 TAXONOMIC_TREE_KEYS = ['sp','gns','fam','ord','cls','phy','kng']
 
+PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
+
 #######################
 # Internationalization
 # https://docs.djangoproject.com/en/1.7/topics/i18n/
@@ -153,3 +159,19 @@ NULL_DATA_INTEGER = -99999
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
+#STATIC_ROOT = '/var/tmp/trees/'
+
+TEMPLATE_DIRS = (
+    '/Users/juan/git_projects/biospatial/templates/',
+)
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+    '/var/tmp/trees/',
+)
+
+STATICFILES_FINDERS = ( 
+    'django.contrib.staticfiles.finders.FileSystemFinder', 
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder', 
+
+) 

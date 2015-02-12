@@ -48,10 +48,10 @@ def initMesh(Intlevel):
     m = copy.deepcopy(mesh)
     try:
         m._meta.db_table = scales[Intlevel]
-        logger.info('table name %s' %m._meta.db_table)
+        logger.info('[biospatial.mesh] table name %s' %m._meta.db_table)
         return m
     except:
-        logger.error("Selected zoom level not implemented yet")
+        logger.error("[biospatial.mesh] Selected zoom level not implemented yet")
         return False
 
 class mesh(models.Model):
@@ -97,7 +97,7 @@ class NestedMesh:
         try:
             cell1 = m1.objects.get(id=id)
         except:
-            logger.error("Selected id does not exist in selected grid")
+            logger.error("[biospatial.mesh] Selected id does not exist in selected grid")
             return None
         self.levels[start_level] = cell1
         self.table_names[start_level] = m1._meta.db_table

@@ -99,6 +99,7 @@ def showTreeInGrid(request):
         except:
             logger.error('Something went wrong with the image rendering')
         #del(forest)
+    #ipdb.set_trace()
     template = get_template('base.html')
     html = template.render(Context({'gid':gid,'taxonomic_level':taxonomic_level,'grid_level':grid_level,'image_path':filename}))
     response.content=(html)
@@ -142,7 +143,12 @@ def showAllLevelsInTreeInGrid(request):
     import os.path
     tax_levels = ['sp','gns','fam','cls','ord','phy','kng']
     tax_keys = {'sp':'1.Species','gns':'2. Genera','fam':'3. Families','ord':'4. Orders','cls':'5. Classes','phy':'6. Phyla','kng':'7. Kingdoms'}
+    rich_keys = { 'oc':'occurrences','sp' :'species','gns':'genera','fam':'families','cls':'classes','ord':'orders','phy':'phyla','kng':'kingdoms'}
     img_paths = {}
+    #THIS IS VERY VERY WRONG AND I WOULD SUGGEST A REFACTORING like the use of a binary written copy in disk about the object in question (cached)
+    gb=GriddedTaxonomy(biome,cell,generate_tree_now=True)
+    taxonomy = gb.taxonomies[0]
+    mat_complex = taxonomy.calculateIntrinsicComplexity()
     for taxonomic_level in tax_levels:
         head_path = settings.PATH_IMAGES
         filename = "%s-%s-%s.png" %(grid_level,gid,taxonomic_level)
@@ -156,7 +162,7 @@ def showAllLevelsInTreeInGrid(request):
                     logger.info("Gridded taxonomy doesn't found")
             except:
                 gb=GriddedTaxonomy(biome,cell,generate_tree_now=True)
-            forest = gb.taxonomies[0].forest
+            forest = taxonomy.forest
 
             ts = TreeStyle()
             ts.show_leaf_name = True
@@ -170,17 +176,23 @@ def showAllLevelsInTreeInGrid(request):
                 #drawer.exit_gui(1, 1)
                 
                 #logger.info(QtCore.QThreadPool)
-                del(forest[taxonomic_level])
+                #del(forest[taxonomic_level])
             except:
                 logger.error('Something went wrong with the image rendering')
                 
-            img_paths[taxonomic_level] = {'name': tax_keys[taxonomic_level],'path':filename}
+                
+            img_paths[taxonomic_level] = {'name': tax_keys[taxonomic_level],'path':filename,'richness':taxonomy.richness[rich_keys[taxonomic_level]]}
         else:
-            img_paths[taxonomic_level] = {'name': tax_keys[taxonomic_level],'path':filename}
+            img_paths[taxonomic_level] = {'name': tax_keys[taxonomic_level],'path':filename,'richness':taxonomy.richness[rich_keys[taxonomic_level]]}
         #del(forest)
     #ipdb.set_trace()
+    
+    
+    #dic_richness = gb.taxonomies[0].richness
+    det_complex = gb.taxonomies[0].vectorIntrinsic 
     template = get_template('base.html')
-    html = template.render(Context({'gid':gid,'taxonomic_level':taxonomic_level,'grid_level':grid_level,'image_path':sorted(img_paths.itervalues())}))
+    
+    html = template.render(Context({'gid':gid,'taxonomic_level':taxonomic_level,'grid_level':grid_level,'image_path':sorted(img_paths.itervalues()),'complexity':mat_complex.tolist(),'vect_comp':det_complex}))
     response.content=(html)
     #response.content=str(forest[taxonomic_level])
     response.status_code = 200

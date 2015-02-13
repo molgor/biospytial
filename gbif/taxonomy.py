@@ -58,7 +58,8 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
-            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),taxs_list)        
+            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),taxs_list)
+            map(lambda taxonomy: taxonomy.calculateIntrinsicComplexity(),taxs_list)        
         return taxs_list 
     else:
         cell = mesh.cell
@@ -66,7 +67,8 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
-            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),[taxs])         
+            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),[taxs])
+            map(lambda taxonomy: taxonomy.calculateIntrinsicComplexity(),taxs_list)                 
         return [taxs]   
 
 
@@ -138,6 +140,9 @@ class Taxonomy:
         self.forest = {}
         self.JacobiM = [] #This is the attribute of the Jacobian matrix calculated with respect to the distance of another matrix.
         self.vectorJacobi = [] # This is the vector form of the determinants at each submatrix.
+        self.intrinsicM = []
+        self.vectorIntrinsic = []
+        
         
     def calculateRichness(self):
         """
@@ -171,6 +176,38 @@ class Taxonomy:
             }
         
         return self.richness
+
+
+    def calculateIntrinsicComplexity(self):
+        """
+        Intrinsic Complexity is a "measure (need to proof is a measure)" of variabibility from one toxonomic level to another.
+        It is makes reference only to the given (current) tree and not other external object (therefore intrinsic)
+        Returns Matrix
+        """
+        dist = lambda i,j : 1 - float(j - i / j + i)
+        dic = self.calculateRichness()
+        keys = dic.keys()
+        mat = []
+        for i,keyi in enumerate(keys):
+            rows = []
+            for j , keyj in enumerate(keys):
+                i = self.richness[keyi]
+                j = self.richness[keyj]
+                try:
+                    d = dist(i,j)
+                except:
+                    d = float('nan')
+                rows.append(d)
+            mat.append(rows)
+        mat = np.matrix(mat)
+        self.intrinsicM = mat
+        submatrices = map(lambda i : self.intrinsicM[0:i,0:i],range(1,len(self.intrinsicM)))
+        self.vectorIntrinsic = map(lambda M :np.linalg.det(M),submatrices) 
+        return mat
+
+
+
+
 
     def distanceToTree_deprec(self,taxonomic_forest,update_inner_attributes=True):
         """
@@ -455,6 +492,40 @@ class GriddedTaxonomy:
                         return False
             return True
         
+
+        def selectIntrisic(layer):
+            # Calculate distance.
+            keys = ['o','os','osg','osgf','osgfo','osgfoc','osgfocp','osgfocpk']
+            for key in keys:
+                layer.CreateField(ogr.FieldDefn(key,ogr.OFTReal))        
+            defn = layer.GetLayerDefn()
+                   
+            ## If there are multiple geometries, put the "for" loop here
+            for idx,tax in enumerate(self.taxonomies):
+                #logger.debug("there are %s taxonomies" %(len(self.taxonomies)))
+                if not isinstance(tax.intrinsicM,np.matrixlib.defmatrix.matrix):
+                    logger.error("[biospatial.gbif.taxonomy.NestedTaxonomy] \n Intrinsic Matrix hasn't been defined.")
+                    raise Exception("Intrinsic Matrix not defined")
+                    return None
+                else:
+                    try:
+                        #ipdb.set_trace()
+                        d = tax.vectorIntrinsic
+                        feat = ogr.Feature(defn)
+                        
+                        for i,key in enumerate(keys):
+                            feat.SetField(key,d[i] )
+                        geom = ogr.CreateGeometryFromWkt(tax.biomeGeometry.wkt)
+                        feat.SetGeometry(geom)
+                        #logger.info('geom')
+                        layer.CreateFeature(feat)
+                        feat = geom = None
+                    except:
+                        logger.error('[biospatial.gbif.taxonomy.NestedTaxonomy] \nSomething occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                        return False
+            return True
+
+
         
         
         from osgeo import ogr

@@ -17,17 +17,27 @@
   });
   </script>
   <style type="text/css">
-  #tree-area {
+  
+  #bigcontainer {
   	position: absolute;
-  	height: 800px;
+  	height: 1000px;
+  	width: 800px;
+  	
+  }
+  
+  
+  #tree-area {
+  	position: relative;
+  	height: 300px;
   	width: 700px;
+  	float: top;
   	
   
   
   }
   	#tree_menu {
   		position:relative;
-  		height: 500px;
+  		height: 300px;
   		width: 200px;
   		float: right; 
   	}
@@ -47,6 +57,17 @@
 		margin:auto;
 		display:block;
 		}
+		
+	#info_box {
+		position: relative;
+		top: 1px;
+		height: 300px;
+		width: 300px;
+		float: top right;
+		
+	}	
+		
+		
   </style>
 </head>
 
@@ -60,12 +81,12 @@
             <li> In the grid {{grid_level}} </li>
         </ul>
     </div>
-
+<div id="bigcontainer">
     <div id="tree-area">
     <ul id="tree_menu">
     {% for dic in image_path %}
     <li href="{% static trees %}trees/{{ dic }}">
-    <a href="{% static trees %}trees/{{ dic.path }}"alt="loading tree">{{ dic.name }}</a>
+    <a href="{% static trees %}trees/{{ dic.path }}"alt="loading tree">{{ dic.name }} N =  {{ dic.richness }}</a>
     </li>
 {% empty %}
     <li>No occurrence found</li>
@@ -76,5 +97,18 @@
     <img src="">
     </div>
         </div>
+        <div id="info_box">
+        <table>
+  				{% for row in complexity %}
+  				<tr>
+  				{% for col in row %}
+      				<td>{{ col }}</td>
+      			{%endfor %}				
+				</tr>				
+ 						 {% endfor %}
+		</table>
+        </div>
+        </div>
 </body>
 </html>
+

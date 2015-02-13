@@ -192,7 +192,7 @@ biosphere = Occurrence.objects.all()
 #meshes = NestedMesh(10290,start_level=12,end_level=14)
 #nested_taxonomies = embedTaxonomyInNestedGrid(653,biosphere,start_level=10,end_level=14,generate_tree_now=True)
 #nested_taxonomies = embedTaxonomyInNestedGrid(10290,biosphere,start_level=12,end_level=14,generate_tree_now=True)
-nested_taxonomies = NestedTaxonomy(10417,biosphere,start_level=12,end_level=14,generate_tree_now=True)
+nested_taxonomies = NestedTaxonomy(10417,biosphere,start_level=12,end_level=16,generate_tree_now=True)
 
 #parent = nested_taxonomies[12][0]
 sm_f=nested_taxonomies.levels[14].taxonomies[0].forest

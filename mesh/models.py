@@ -42,7 +42,7 @@ def initMesh(Intlevel):
               13 : 'mesh\".\"braz_grid256a',
               14 : 'mesh\".\"braz_grid512a',
               15 : 'mesh\".\"braz_grid1024a',
-              16 : 'mesh\".\"braz_grid20148a',
+              16 : 'mesh\".\"braz_grid2048a',
               17 : 'mesh\".\"braz_grid4096a'
               }
     m = copy.deepcopy(mesh)

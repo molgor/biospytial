@@ -7,7 +7,9 @@ logs/
 *.shp
 *.shx
 *.dbf
-
+*.png
+*.pyc
+*.svg
 thesis/template
 
 *.log

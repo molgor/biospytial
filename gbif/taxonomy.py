@@ -427,7 +427,7 @@ class GriddedTaxonomy:
             # Calculate distance.
             keys = ['s','sg','sgf','sgfo','sgfoc','sgfocp','sgfocpk']
             for key in keys:
-                layer.CreateField(ogr.FieldDefn(key,ogr.OFTInteger))        
+                layer.CreateField(ogr.FieldDefn(key,ogr.OFTReal))        
             defn = layer.GetLayerDefn()
                    
             ## If there are multiple geometries, put the "for" loop here

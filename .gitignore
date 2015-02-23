@@ -4,6 +4,9 @@
 #Log files
 logs/
 
+docs/
+
+
 *.shp
 *.shx
 *.dbf
@@ -20,3 +23,6 @@ thesis/template
 *.lof
 *.lot
 *.toc
+
+*.csv
+

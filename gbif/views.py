@@ -185,14 +185,28 @@ def showAllLevelsInTreeInGrid(request):
         else:
             img_paths[taxonomic_level] = {'name': tax_keys[taxonomic_level],'path':filename,'richness':taxonomy.richness[rich_keys[taxonomic_level]]}
         #del(forest)
-    #ipdb.set_trace()
+    #
     
     
     #dic_richness = gb.taxonomies[0].richness
     det_complex = gb.taxonomies[0].vectorIntrinsic 
     template = get_template('base.html')
+
+    submatrices = map(lambda i : mat_complex[0:i,0:i],range(1,len(mat_complex)))
+    #ipdb.set_trace()
+    import numpy as np
+    #tras = map(lambda mat : np.linalg.eigvals(mat),submatrices)
+    #ipdb.set_trace()
+    try:
+        eigenv = np.linalg.eigvals(mat_complex).tolist()
+        svd = np.linalg.svd(mat_complex).tolist()
+        
+    except:
+        eigenv =[]
+        svd = [[],[],[]]
     
-    html = template.render(Context({'gid':gid,'taxonomic_level':taxonomic_level,'grid_level':grid_level,'image_path':sorted(img_paths.itervalues()),'complexity':mat_complex.tolist(),'vect_comp':det_complex}))
+    #ipdb.set_trace()  
+    html = template.render(Context({'gid':gid,'taxonomic_level':taxonomic_level,'grid_level':grid_level,'image_path':sorted(img_paths.itervalues()),'complexity':mat_complex.tolist(),'vect_comp':det_complex,'eigenv':eigenv,'left_eig_vect':svd[0],'svd':svd[1],'right_eig_vect':svd[2]}))
     response.content=(html)
     #response.content=str(forest[taxonomic_level])
     response.status_code = 200

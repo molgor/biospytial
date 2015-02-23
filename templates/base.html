@@ -29,7 +29,7 @@
   #tree-area {
   	position: relative;
   	height: 300px;
-  	width: 700px;
+  	width: 100%;
   	float: top;
   	
   
@@ -39,7 +39,8 @@
   		position:relative;
   		height: 300px;
   		width: 200px;
-  		float: right; 
+  		float: right;
+  		right: 3px; 
   	}
   	
   	#treeview_area {
@@ -60,13 +61,116 @@
 		
 	#info_box {
 		position: relative;
-		top: 1px;
+		top: 15px;
 		height: 300px;
-		width: 300px;
+		width: 100%;
 		float: top right;
 		
-	}	
+	}
+	
+	.header_2 {
+	
+	}
+	
 		
+	.dist_table {
+	position: relative;
+	margin:0px;
+	padding:0px;
+	width:100%;
+	box-shadow: 10px 10px 5px #888888;
+	border:1px solid #000000;
+	
+	-moz-border-radius-bottomleft:0px;
+	-webkit-border-bottom-left-radius:0px;
+	border-bottom-left-radius:0px;
+	
+	-moz-border-radius-bottomright:0px;
+	-webkit-border-bottom-right-radius:0px;
+	border-bottom-right-radius:0px;
+	
+	-moz-border-radius-topright:0px;
+	-webkit-border-top-right-radius:0px;
+	border-top-right-radius:0px;
+	
+	-moz-border-radius-topleft:0px;
+	-webkit-border-top-left-radius:0px;
+	border-top-left-radius:0px;
+}
+.dist_table table{
+    border-collapse: collapse;
+        border-spacing: 0;
+	width:100%;
+	height:100%;
+	margin:0px;padding:0px;
+}.dist_table tr:last-child td:last-child {
+	-moz-border-radius-bottomright:0px;
+	-webkit-border-bottom-right-radius:0px;
+	border-bottom-right-radius:0px;
+}
+.dist_table table tr:first-child td:first-child {
+	-moz-border-radius-topleft:0px;
+	-webkit-border-top-left-radius:0px;
+	border-top-left-radius:0px;
+}
+.dist_table table tr:first-child td:last-child {
+	-moz-border-radius-topright:0px;
+	-webkit-border-top-right-radius:0px;
+	border-top-right-radius:0px;
+}.dist_table tr:last-child td:first-child{
+	-moz-border-radius-bottomleft:0px;
+	-webkit-border-bottom-left-radius:0px;
+	border-bottom-left-radius:0px;
+}.dist_table tr:hover td{
+	
+}
+.dist_table tr:nth-child(odd){ background-color:#aad4ff; }
+.dist_table tr:nth-child(even)    { background-color:#ffffff; }.dist_table td{
+	vertical-align:middle;
+	
+	
+	border:1px solid #000000;
+	border-width:0px 1px 1px 0px;
+	text-align:left;
+	padding:7px;
+	font-size:12px;
+	font-family:Arial;
+	font-weight:bold;
+	color:#000000;
+}.dist_table tr:last-child td{
+	border-width:0px 1px 0px 0px;
+}.dist_table tr td:last-child{
+	border-width:0px 0px 1px 0px;
+}.dist_table tr:last-child td:last-child{
+	border-width:0px 0px 0px 0px;
+}
+.dist_table tr:first-child td{
+		background:-o-linear-gradient(bottom, #3f7f00 5%, #5fbf00 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #3f7f00), color-stop(1, #5fbf00) );
+	background:-moz-linear-gradient( center top, #3f7f00 5%, #5fbf00 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#3f7f00", endColorstr="#5fbf00");	background: -o-linear-gradient(top,#3f7f00,5fbf00);
+
+	background-color:#3f7f00;
+	border:0px solid #000000;
+	text-align:center;
+	border-width:0px 0px 1px 1px;
+	font-size:14px;
+	font-family:Arial;
+	font-weight:bold;
+	color:#ffffff;
+}
+.dist_table tr:first-child:hover td{
+	background:-o-linear-gradient(bottom, #3f7f00 5%, #5fbf00 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #3f7f00), color-stop(1, #5fbf00) );
+	background:-moz-linear-gradient( center top, #3f7f00 5%, #5fbf00 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#3f7f00", endColorstr="#5fbf00");	background: -o-linear-gradient(top,#3f7f00,5fbf00);
+
+	background-color:#3f7f00;
+}
+.dist_table tr:first-child td:first-child{
+	border-width:0px 0px 1px 0px;
+}
+.dist_table tr:first-child td:last-child{
+	border-width:0px 0px 1px 1px;
+}	
 		
   </style>
 </head>
@@ -98,7 +202,19 @@
     </div>
         </div>
         <div id="info_box">
+        		<div class="header_2">
+		<h1>Intrinsic distance matrix</h1>
+        <div class="dist_table" >
         <table>
+        <tr>
+        	<td> Species </td>
+        	<td> Genera </td>
+        	<td> Families </td>
+        	<td> Orders </td>
+        	<td> Classes </td>
+        	<td> Phyla </td>
+        	<td> Kingdoms </td>
+        </tr>
   				{% for row in complexity %}
   				<tr>
   				{% for col in row %}
@@ -107,7 +223,109 @@
 				</tr>				
  						 {% endfor %}
 		</table>
+		</div>
+		</div>
+		
+		<div class="header_2">
+		<h1>Intrinsic vector</h1>
+		<div class="dist_table">
+		<table>
+        <tr>
+        	<td> Species </td>
+        	<td> Genera </td>
+        	<td> Families </td>
+        	<td> Orders </td>
+        	<td> Classes </td>
+        	<td> Phyla </td>
+        	<td> Kingdoms </td>
+        </tr>		
+  				{% for row in vect_comp %}
+      				<td>{{ row }}</td>
+      			{%endfor %}											       
+		</table>
+		
+		</div>
+		</div>
+		
+		
+				<div class="header_2">
+		<h1>Eigen values for IntrinsicM</h1>
+		<div class="dist_table">
+		<table>
+        <tr>
+        	<td> Species </td>
+        	<td> Genera </td>
+        	<td> Families </td>
+        	<td> Orders </td>
+        	<td> Classes </td>
+        	<td> Phyla </td>
+        	<td> Kingdoms </td>
+        </tr>		
+  				{% for row in eigenv %}
+      				<td>{{ row }}</td>
+      			{%endfor %}											       
+		</table>
+		
+		</div>
+		</div>
+		
+		
+        		<div class="header_2">
+		<h1>Left eigen vectors</h1>
+        <div class="dist_table" >
+        <table>
+        <tr>
+        	<td> Species </td>
+        	<td> Genera </td>
+        	<td> Families </td>
+        	<td> Orders </td>
+        	<td> Classes </td>
+        	<td> Phyla </td>
+        	<td> Kingdoms </td>
+        </tr>
+        
+  				{% for row in left_eig_vect %}
+  				<tr>
+  				{% for col in row %}
+      				<td>{{ col }}</td>
+      			{%endfor %}				
+				</tr>				
+ 						 {% endfor %}
+		</table>
+		</div>
+		</div>		
+		
+				<div class="header_2">
+		<h1>Singular values </h1>
+		<div class="dist_table">
+		<table>
+        <tr>
+        	<td> Species </td>
+        	<td> Genera </td>
+        	<td> Families </td>
+        	<td> Orders </td>
+        	<td> Classes </td>
+        	<td> Phyla </td>
+        	<td> Kingdoms </td>
+        </tr>		
+  				{% for row in svd %}
+      				<td>{{ row }}</td>
+      			{%endfor %}											       
+		</table>
+		
+		</div>
+		</div>
+		
+		
+		
+		
+		
         </div>
+        
+        
+        
+        
+        
         </div>
 </body>
 </html>

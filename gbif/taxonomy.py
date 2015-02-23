@@ -9,7 +9,7 @@ Implementation of class and other necessary functions.
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2015, JEM"
 __license__ = "GPL"
-__version__ = "2.2.1"
+__version__ = "0.2.1"
 __mantainer__ = "Juan"
 __email__ ="molgor@gmail.com"
 __status__ = "Prototype"
@@ -138,7 +138,7 @@ class Taxonomy:
         self.biomeGeometry = geometry
         self.gid = id
         self.forest = {}
-        self.JacobiM = [] #This is the attribute of the Jacobian matrix calculated with respect to the distance of another matrix.
+        self.JacobiM = [] #This is the attribute of the Jacobian matrix calculated with respect to the distance of another taxonomy.
         self.vectorJacobi = [] # This is the vector form of the determinants at each submatrix.
         self.intrinsicM = []
         self.vectorIntrinsic = []
@@ -184,15 +184,20 @@ class Taxonomy:
         It is makes reference only to the given (current) tree and not other external object (therefore intrinsic)
         Returns Matrix
         """
-        dist = lambda i,j : 1 - float(j - i / j + i)
+        #dist = lambda i,j : (1 - (float(j - i) / (j + i)))
+        dist = lambda i,j : (float(i) / j)
         dic = self.calculateRichness()
+        # Needed for order the stupid unordered by default dictonary type :P
+        ordered_keys = settings.TAXONOMIC_TREE_KEYS
+        map_keys = settings.TAXONOMIC_MAPPER_KEYS
+        # NOTE there are not occurrences right now!!
         keys = dic.keys()
         mat = []
-        for i,keyi in enumerate(keys):
+        for keyi in ordered_keys:
             rows = []
-            for j , keyj in enumerate(keys):
-                i = self.richness[keyi]
-                j = self.richness[keyj]
+            for keyj in ordered_keys:
+                i = self.richness[map_keys[keyi]]
+                j = self.richness[map_keys[keyj]]
                 try:
                     d = dist(i,j)
                 except:
@@ -201,8 +206,8 @@ class Taxonomy:
             mat.append(rows)
         mat = np.matrix(mat)
         self.intrinsicM = mat
-        submatrices = map(lambda i : self.intrinsicM[0:i,0:i],range(1,len(self.intrinsicM)))
-        self.vectorIntrinsic = map(lambda M :np.linalg.det(M),submatrices) 
+        submatrices = map(lambda i : self.intrinsicM[0:i,0:i],range(1,len(self.intrinsicM) + 1))
+        self.vectorIntrinsic = np.array(map(lambda M :np.linalg.det(M),submatrices))
         return mat
 
 
@@ -236,22 +241,22 @@ class Taxonomy:
         parent_taxonomic_forest is the forest that is going to be compared with. 
         """ 
         Jacobian =[]
-        for level_j in settings.TAXONOMIC_TREE_KEYS :
+        for level_i in settings.TAXONOMIC_TREE_KEYS :
             # gradient at level level
             gradLevel = []
-            for level_i in settings.TAXONOMIC_TREE_KEYS:
+            for level_j in settings.TAXONOMIC_TREE_KEYS:
                 # nj is the number of elements in the big scale J
                 nj = float(len(parent_taxonomic_forest[level_j].get_leaves()))                
                 # ni is the number of elements in the current tree (forest)
                 ni = float(len(self.forest[level_i].get_leaves()))
-                d_ij = ((nj - ni)/(nj + ni))
+                d_ij = 1 - ((nj - ni)/(nj + ni))
                 if d_ij < 0:
                     logger.info("[biospatial.gbif.taxonomy.distanceToTree] The parent tree has less nodes than the current one.\n Perhaps the analysis is not spatially nested.")
                 gradLevel.append(d_ij)
             Jacobian.append(gradLevel)
         if update_inner_attributes:
             self.JacobiM = np.matrix(Jacobian)
-            submatrices_of_jacobian = map(lambda i : self.JacobiM[0:i,0:i],range(1,len(settings.TAXONOMIC_LEVELS)))
+            submatrices_of_jacobian = map(lambda i : self.JacobiM[0:i,0:i],range(1,len(settings.TAXONOMIC_LEVELS) - 1))
             self.vectorJacobi = map(lambda M :np.linalg.det(M),submatrices_of_jacobian) 
             
         return np.matrix(Jacobian) 
@@ -585,7 +590,7 @@ class NestedTaxonomy:
     """  
     def __init__(self,id,gbif_geoqueryset,start_level=12,end_level=14,generate_tree_now=True):
         self.levels = embedTaxonomyInNestedGrid(id,gbif_geoqueryset,start_level=start_level,end_level=end_level,generate_tree_now=generate_tree_now) 
-        self.parent = self.levels[self.levels.keys()[0]].taxonomies[0]
+        self.parent = self.levels[12].taxonomies[0]
         self.maxdistances = self.getMaximumDistances()
         
     def __repr__(self):

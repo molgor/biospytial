@@ -192,12 +192,93 @@ biosphere = Occurrence.objects.all()
 #meshes = NestedMesh(10290,start_level=12,end_level=14)
 #nested_taxonomies = embedTaxonomyInNestedGrid(653,biosphere,start_level=10,end_level=14,generate_tree_now=True)
 #nested_taxonomies = embedTaxonomyInNestedGrid(10290,biosphere,start_level=12,end_level=14,generate_tree_now=True)
+import pickle 
+
 nested_taxonomies = NestedTaxonomy(10417,biosphere,start_level=12,end_level=16,generate_tree_now=True)
 
+nested_taxonomies.parent.calculateIntrinsicComplexity()
+
+for level in range(12,17):
+    nested_taxonomies.getDistancesAtLevel(level)
+
+
+
+nt = nested_taxonomies
+
+
+dets16_f = open('data_out/dets16_f.out','w')  
 #parent = nested_taxonomies[12][0]
 sm_f=nested_taxonomies.levels[14].taxonomies[0].forest
+diff_dets_16 = map(lambda tax : [str(tax.gid)] + map(lambda n : str(n),(tax.vectorIntrinsic - tax.vectorJacobi).tolist()),nt.levels[16].taxonomies)
+dets16_f.write('gid,species,genera,families,orders,classes,phyla,kingdoms\n')
 
-b = nested_taxonomies.parent
+from numpy import linalg as ln
+import numpy as np
+#first analysis was made with ...
+#svd_16 = map(lambda mat : (mat.gid,ln.svd(mat.JacobiM)),nt.levels[16].taxonomies)
+# for writing into a csv file
+#svd_16_st = map(lambda entry : reduce(lambda a,b : a+','+b, entry),map(lambda entry : [str(entry[0])]+map(lambda t : str(t),entry[1][1].tolist()),svd_16))
+
+p = nested_taxonomies.parent
+
+M = p.intrinsicM
+
+L,S,R = ln.svd(M)
+
+I = np.identity(7)
+
+Is = np.matrix(I*S)
+
+lower_level = nt.levels[16]
+
+richnesses = map(lambda t : (t.gid,t.richness.values()),lower_level.taxonomies)
+for r in richnesses:
+    r.sort(reverse=True)
+    
+# Take away occurrences
+
+map(lambda r : r.pop(0),richnesses)
+transformed_richnesses = map(lambda r : np.array(r)*L*Is,richnesses)
+
+tr_rih_str = map(lambda l: reduce(lambda a,b : str(a)+','+str(b),l),map(lambda m : m.tolist(),transformed_richnesses))
+    
+rich_string = map(lambda l : reduce(lambda a,b : str(a)+','+str(b),l),tr_rih_str)
+
+#svd_16_st = map(lambda entry : (str(entry[0]),entry[1][1].tolist()),svd_16)
+
+df2 = open('data_out/red_dim_svd.out','w')
+df2.write('gid,species,genera,families,orders,classes,phyla,kingdoms\n')
+for t in rich_string:
+    df2.write(t + '\n')
+df2.close()
+
+    
+
+
+#vectors  = map(lambda m : m.intrinsicM*L*Is,lower_level.taxonomies)
+
+
+
 big_tree=nested_taxonomies.parent.forest
 
-turu =NestedMesh(528,start_level=14,end_level=14)
+
+#for d in diff_dets_16:
+#    dets16_f.write(reduce(lambda a,b : a+','+b,d) + '\n')
+
+
+
+
+#svd_16_st = map(lambda entry : (str(entry[0]),entry[1][1].tolist()),svd_16)
+
+#df2 = open('data_out/dets_16_svd.out','w')
+#df2.write('gid,species,genera,families,orders,classes,phyla,kingdoms\n')
+#for t in svd_16_st:
+#    df2.write(t + '\n')
+
+
+#df2.close()
+
+
+
+
+#turu =NestedMesh(528,start_level=14,end_level=14)

@@ -1,5 +1,5 @@
 Bios`py`tial
-==
+=============
 
 *An interactive / command-line modeller's suite for analyzing biodiversity across scales and space.*
 
@@ -8,7 +8,8 @@ that allows the identification of biodiversity patterns in space.
 It uses the GBIF database, the biggest repository of species records in the world.
 
 Datasource
---
+----------
+
 As defined in http://gbif.org :
 
 *The Global Biodiversity Information Facility (GBIF) is an international open data infrastructure, funded by governments.

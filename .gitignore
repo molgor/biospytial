@@ -4,7 +4,9 @@
 #Log files
 logs/
 
-docs/
+*html
+*doctree
+
 
 
 *.shp

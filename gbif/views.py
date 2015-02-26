@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
-The general view interface.
-This file is intented to implent selected specific command-line tools for using it with QGIS.
-This will be an interfce between biospatial and QGIS
+
+Http interfaces using Views
+===========================
+..
+This module implements command-line tools for use in external applications through HTTP request/responses.
+For example: Using QGIS actions and the PyQT webkit it is possible to develop interactive analysis in the OpenSource
+Desktop GIS.
+
+.. note::
+    This is where all the interfaces between biospytial and QGIS or Browsers should be living.
 
 """
 
@@ -44,10 +51,25 @@ def HelloWorld(request):
 
 def showTreeInGrid(request):
     """
+    .. showTreeInGrid:
+    
     Performs a selection, spatial filter and returns an image.
-    grid_level is the grid layer.
-    taxonomic_level is the taxonomic level to be shown. Options are:
-    sp, gns, fam, ord, cls, phy, king
+    
+    Parameters in GET variable
+    ===========================
+    grid_level : int
+        The grid layer.
+    taxonomic_level : string
+        The taxonomic level to be shown. 
+        Options are: sp, gns, fam, ord, cls, phy, king
+        
+    Returns
+    =======
+    HTTP RESPONSE
+    with an image showing the tree.
+    
+    See figure: 
+    .. image:: 
     """
     from ete2.treeview import drawer
     from PyQt4 import QtCore
@@ -195,18 +217,18 @@ def showAllLevelsInTreeInGrid(request):
     submatrices = map(lambda i : mat_complex[0:i,0:i],range(1,len(mat_complex)))
     #ipdb.set_trace()
     import numpy as np
-    #tras = map(lambda mat : np.linalg.eigvals(mat),submatrices)
+    tras = map(lambda mat : np.linalg.eigvals(mat),submatrices)
     #ipdb.set_trace()
     try:
         eigenv = np.linalg.eigvals(mat_complex).tolist()
-        svd = np.linalg.svd(mat_complex).tolist()
+        svd = np.linalg.svd(mat_complex)
         
     except:
         eigenv =[]
         svd = [[],[],[]]
     
     #ipdb.set_trace()  
-    html = template.render(Context({'gid':gid,'taxonomic_level':taxonomic_level,'grid_level':grid_level,'image_path':sorted(img_paths.itervalues()),'complexity':mat_complex.tolist(),'vect_comp':det_complex,'eigenv':eigenv,'left_eig_vect':svd[0],'svd':svd[1],'right_eig_vect':svd[2]}))
+    html = template.render(Context({'gid':gid,'taxonomic_level':taxonomic_level,'grid_level':grid_level,'image_path':sorted(img_paths.itervalues()),'complexity':mat_complex.tolist(),'vect_comp':det_complex,'eigenv':eigenv,'left_eig_vect':svd[0].tolist(),'svd':svd[1].tolist(),'right_eig_vect':svd[2].tolist()}))
     response.content=(html)
     #response.content=str(forest[taxonomic_level])
     response.status_code = 200

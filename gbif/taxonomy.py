@@ -1,9 +1,16 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
-Module for the taxonomy operations.
-Implementation of class and other necessary functions. 
 
+Taxonomy module
+===============
+
+.. Taxonomy_module_intro:
+This is the core module of the Biospytial suite.
+
+In this module you will find the definition for classes, and nested taxonomies
+for data aggregation, hierarchication and processing.
+ 
 """
 
 __author__ = "Juan Escamilla Mólgora"
@@ -43,9 +50,25 @@ import numpy as np
 
 def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False):
     """
-    This function performs a spatial intersection and initialize Taxonomy objects with the geometry given by [mesh].
-    [biosphere] is a Geoqueryset of gbif occurrences. [mesh] is a mesh type.
-    Returns a Taxonomy list ready to use by createShapefile.
+    .. embedTaxonomyInGrid:
+    This function performs a spatial intersection and initializes Taxonomy objects with the geometry given by a mesh.
+    
+    
+    Parameters
+    ----------
+    biosphere : Geoqueryset
+        Is the Geoqueryset of gbif occurrences
+    mesh : mesh type
+        The mesh (grid) where the taxonomy is going to be defined
+    
+    Returns
+    -------    
+    taxs_list : list
+        A taxonomies list
+        
+    See also
+    --------
+    gbif.taxonomy.GriddedTaxonomy
     """
     taxs_list = []
     if isinstance(mesh,GeoQuerySet):
@@ -74,13 +97,35 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
 
 def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,generate_tree_now=False):
     """
-    This function returns a nested taxonomies dictionary with the distinct gbif objects in each Cell.
-    The id_in_grid is the index of the parent.
-    start_level is the parent level of the mesh (See implementation in the mesh model)
-    end_level is the last level in the nest. The bottom.
-    [biosphere] is a Geoqueryset of gbif occurrences. 
-    Returns a nested taxonomies dictionary 
-    NOTE: The id_in_grid should be a valid index number in the set of the parent mesh.
+    .. embedTaxonomyInNestedGrid:
+    
+    Summary
+    -------
+    This function returns a nested taxonomies dictionary with distinct gbif objects in each gridcell.
+    
+    Parameters
+    ----------
+    id_in_grid : int
+        This is the index of the cell corresponding to the top level grid (i.e. parent cell).
+    biosphere : Geoqueryset
+        This is the Geoqueryset of gbif occurrences
+    start_level : int
+        This is the scale level to start, the parent level of the mesh :ref: mesh.models    
+    end_level : int 
+        This is the last level in the nested grid stack, i.e. the bottom
+
+    Returns
+    -------
+    nested taxomies : dictionary
+    
+    Note
+    ----
+    The id_in_grid should be a valid index number in the set of the parent mesh.
+    
+    See also
+    --------
+    gbif.taxonomy.NestedGriddedTaxonomy
+
     """
     meshes = NestedMesh(id_in_grid,start_level=start_level,end_level=end_level)
     nested_taxonomies ={} 
@@ -95,13 +140,116 @@ def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,g
     return nested_taxonomies 
 
 
+"""
 
 
+
+"""
 
 class Taxonomy:
     """
-    Defines the taxonomic groups within one biome.
-    The objective here is to make it elegant enough so everything are aueries without execution.
+    .. Taxonomy:
+    
+    Class Taxonomy
+    ==============
+    ..
+    
+    Summary
+    -------
+    Defines the taxonomic groups within one biome. 
+    A biome is a Subset of GBIF data built as the interior of a simple closed curve contained in the surface of the Earth.
+    
+    Attributes
+    ----------
+    occurrences : Gbif.models.Occurence
+        All the occurrences within the geometry of the biome
+    species : Gbif.models.Occurence.aggregated(species)
+        All the occurrences aggregated by the relationship of being a member of the species S. 
+    genera  : Gbif.models.Occurence.aggregated(genera)
+        All the species aggregated by the relationship of being a member of the genus G.
+    families : Gbif.models.Occurence.aggregated(families)
+        All the genera aggregated by the relationship of being a member of the family F.
+    orders : Gbif.models.Occurence.aggregated(orders)
+        All the families aggregated by the relationship of being a member of the order O. 
+    classes  : Gbif.models.Occurence.aggregated(classes)
+        All the orders aggregated by the relationship of being a member of the class C.
+    phyla : Gbif.models.Occurence.aggregated(phyla)
+        All the classes aggregated by the relationship of being a member of the phylum P. 
+    kingdoms : Gbif.models.Occurence.aggregated(kingdoms)
+        All the phyla aggregated by the relationship of being a member of the kingdom K. 
+    
+    richness : dictionary
+        A dictionary containing the counts of all the aggregated objects at the different taxonomic scales.
+        
+        {'occurrences' : number of occurrences,
+        'species' : number of species,
+        'genera' : number of genera,
+        'families': number of families,
+        'classes' : number of classes,
+        'orders' : number of orders,
+        'phyla' : number of phyla,
+        'kingdoms' : number of kingdoms
+        }
+    biomeGeometry : geometry
+        The geometry inherited by the geometric attribute of the biome
+    gid : int
+        The identification value inherited by the cell in a mesh that defines the biome (if applicable)
+    forest : dictionary of trees 
+        A dictionary that has as keys:
+        {'sp' : Local taxonomic tree at specie level,
+        'gns' : Local taxonomic tree at genus level
+        'fam' : Local taxonomic tree at family level
+        'ord' : Local taxonomic tree at order level
+        'cls' : Local taxonomic tree at class level
+        'phy' : Local taxonomic tree at phylum level
+        'kng' : Local taxonomic tree at kingdom level
+        Each local taxonomic tree is an instance of the class ete2.TreeNode()
+        This is the *morphism* that changes the objects from the SQL-Table structure to the graph (Tree) structure.
+    JacobiM : numpy.Matrix
+        The *extrinsic* matrix derived from the change from level to level (distance) from another external taxonomic structure.
+        In most cases it could be the parent taxonomic tree at a bigger scale, i.e. The top grid in an NestedTaxonomyGrid instance.
+    vectorJacobi : numpy.array / list
+        An array derived from a projection into R of the JacobiM at different submatrices.
+        The common projection is the determinant in which the first element will be the determinant of the submatrix of JacobiM given by
+        i,j = {1,2} and the last one will be the complete submatrix = JacobiM
+    intrinsicM : numpy.Matrix
+        The *intrinsic* matrix is derived as the change in richness (or any other taxonomic measure) from one level to another givin a 7x7 matrix 
+        in which each row (column) represent a toxonomic level. This matrix is calculated only with the information given by the taxonomy itself,
+        therefore the name *intrinsic*
+    vectorIntrinsic : numpy.array / list
+        An array derived from a projection into R of the intrisicM at different submatrices.
+        The common projection is the determinant in which the first element will be the determinant of the submatrix of intrisicM given by
+        i,j = {1,2} and the last one will be the complete submatrix = intrisicM
+    
+  
+    Parameters
+    ----------
+    biome : gbif.models.GeoQuerySet
+        Biome is a query set of the gbif occurrence instance modulus a 2-d geometry in Earth.
+    geometry : geometry WKB
+        It is a geometric attribute that could be independent of biome.
+    id : int 
+        It is an attribute for indexing the object (generaly inherited by the gid of the grid cell).
+    
+
+    
+    
+    Notes
+    -----
+    The objective here is to make it elegant enough so everything are queries without execution (LazyQueries).
+    
+    The aggregations in occurrence, species, etc, has the form of a dictionary in which the following key:values are defined:
+    
+    Defined by
+    ----------
+    points : Collection of points
+    ab : abundance / richness
+    name : name of the aggregated class
+    parent_id : id of the aggregated parent
+
+  
+    
+    
     """
     def __init__(self,biome,geometry='',id=0):
         """
@@ -147,6 +295,11 @@ class Taxonomy:
     def calculateRichness(self):
         """
         Calculates richness at all levels
+        
+        Returns
+        -------
+        richness : dictionary
+            A dictionary containing the abundance or richness values at every taxonomic level.
         """
         inf = logger.info
         noc = self.occurrences.count()
@@ -180,9 +333,15 @@ class Taxonomy:
 
     def calculateIntrinsicComplexity(self):
         """
-        Intrinsic Complexity is a "measure (need to proof is a measure)" of variabibility from one toxonomic level to another.
-        It is makes reference only to the given (current) tree and not other external object (therefore intrinsic)
-        Returns Matrix
+        .. calculateIntrinsicComplexity:
+        Intrinsic Complexity is a "measure (still need to proof is a measure)" of variabibility from one taxonomic level to another.
+        It makes reference only to the current tree and not other external object (therefore intrinsic)
+        Also it sets the intrinsicM attribute.
+        
+        Returns
+        -------
+        intrinsicM : numpy.Matrix
+        
         """
         #dist = lambda i,j : (1 - (float(j - i) / (j + i)))
         dist = lambda i,j : (float(i) / j)
@@ -216,9 +375,24 @@ class Taxonomy:
 
     def distanceToTree_deprec(self,taxonomic_forest,update_inner_attributes=True):
         """
-        Deprecated: This method does the Robinson_foulds metric. It has been found to be not a good metric for the purposes of measuring diffrence accros scales.
         This function calculates the distance from this object to the taxonomic_forest given as input.
         The distance is based on an a given metric between all the partial trees.
+        
+        .. note:: Deprecated because it uses Robinson-Foulds distance.
+        This method does the Robinson_foulds metric. It has been found to be not a good metric for the purposes of measuring diffrence accros scales.
+        Not working for comparing between scales.
+
+        Parameters
+        ----------
+        taxonomic_forest : dictionary of trees
+            The dictionary obtained by the pruning of the taxonomic tree at species level to obtain the other levels.
+        update_inner_attributes : Boolean
+            When true it will set the attributes (like forest) to be this value.
+            
+        Returns
+        -------
+        Jacobian : numpy.matrix
+            The matrix obtained from the comparison (distance) between the two taxonomies
         """
         #Thankfully the distance is symmetric by definition so order doesn't matter.
         Jacobian = []
@@ -237,8 +411,24 @@ class Taxonomy:
 
     def distanceToTree(self,parent_taxonomic_forest,update_inner_attributes=True):
         """
-        This method implements the metric scale tree distance proposed by Escamilla-Mólgora (2015).
-        parent_taxonomic_forest is the forest that is going to be compared with. 
+        This method calculated the taxonomic distance between the current taxonomy and qn external taxonomy.
+        
+        .. note:: This method implements the metric scale tree distance proposed by Escamilla-Mólgora (2015)
+        This method does the Robinson_foulds metric. It has been found to be not a good metric for the purposes of measuring diffrence accros scales.
+        Not working for comparing between scales.
+
+        Parameters
+        ----------
+        parent_taxonomic_forest : It's the forest (in dictionary type) that is going to be compared with.
+            The dictionary obtained by the pruning of the taxonomic tree at species level to obtain the other levels.
+        update_inner_attributes : Boolean
+            When true it will set the attributes (like forest) to be this value.
+            
+        Returns
+        -------
+        Jacobian : numpy.matrix
+            The matrix obtained from the comparison (distance) between the two taxonomies
+         
         """ 
         Jacobian =[]
         for level_i in settings.TAXONOMIC_TREE_KEYS :
@@ -267,10 +457,23 @@ class Taxonomy:
     
     def generatePDI(self,level='species',type='richness'):
         """
-        This method calculates partial diversity index based on the index level and the type.
-        type =  richness :: richness index.
-                abundance :: 
-                relative_abundance
+        This method calculates partial diversity index (PDI) based on the taxonomic level and the diversity measure.
+        
+        .. note:: Not complete, need to refactor, if needed.
+        
+        Parameters
+        ----------
+        level : string
+            The taxonomic level
+        
+        type \in ['richness', 'abundance', 'relative_abundance']
+        
+        Returns
+        -------
+        PDI : float
+            The Partial diversity index
+        
+        
         """
         if type == 'richness':
             import biodiversity.richness as rich
@@ -282,9 +485,31 @@ class Taxonomy:
                
     def getFreqs(self,sel='richness'):
         """
+        .. getFreqs:
         This function returns a graph of richness, abundance or relative abundance.
-        The abundance function depends on the total number of occurrences within that polygon.
-        The relative abundance function depends on the number of the lower taxonomic level.
+        
+        .. note:: This method only works in interactive environments because makes use of the matplotlib.plot.show() function.
+        
+
+        * Example of usage 
+        .. sourcecode:: ipython
+        
+            In[69]: tx = Taxonomy(biome,cell.geom,cell.id)
+            In[70]: tx.getFreqs() #Default value sel = richness
+            
+        .. image:: ../../../../modules/_static/rel_freq.png  
+        
+        Parameters
+        ----------
+        Could be one of the following:
+        sel : 'richness'
+            The count data obtained from the richness attribute.
+        sel : 'abundance'
+            The abundance function depends on the total number of occurrences within that polygon.
+        sel : 'rel_abundance'
+            The relative abundance function depends on the number of the lower taxonomic level.
+      
+              
         """
         dic_tax = self.richness
         N = 7
@@ -306,10 +531,11 @@ class Taxonomy:
                 val2 = (val1[1:7] + [5])
                 values = map(lambda tup : tup[0] / float(tup[1]) , zip(val2,val1))
                 color = 'g'
+            else:
+                logger.error("[biospatial.gbif.taxonomy.getFreq] Selection not valid")
+                return False
         except:
             logger.error("[biospatial.gbif.taxonomy.getFreq] No data values for richness. \n Hint: Run Summary()")
-        else:
-            logger.error("[biospatial.gbif.taxonomy.getFreq] Selection not valid")
             return False
         fig, ax = plt.subplots()
         bar = ax.bar(ind, values, width, color=color)
@@ -325,10 +551,25 @@ class Taxonomy:
         
     def buildInnerTree(self,deep=False):
         """
-        Calculates the tree. Is a ETE2 data type
-        flag: deep=True means that is going to build all the partial trees as well.
-        Partial tree is the pruned version at phylum, class, order,...,or, species
-        See: taxonomy.tree attribute. 
+        .. buildInnerTree:
+        Calculates the tree generating a ETE2 data type.
+        
+        .. seealso:: 
+            
+            gbif.taxonomy.Taxonomy 
+        
+        Parameters
+        ----------
+            
+            deep : Boolean (flag) 
+                True means that is going to build all the partial trees as well.
+                Partial tree is the pruned version at phylum, class, order,...,or, species
+        
+        Returns
+        -------
+            Void
+
+        
         """
         if deep:
             self.obtainPartialTrees()
@@ -337,7 +578,10 @@ class Taxonomy:
 
     def obtainPartialTrees(self):
         """
+        .. obtainPartialTrees:
+    
         This method defines the partial trees for the selected taxonomic level.
+        It prunes the species tree to generate seven distinct trees at each taxonomic level.
         """
         
         def prune_level(tree):
@@ -367,7 +611,13 @@ class Taxonomy:
 
     def maximumDistance(self):
         """
-        This method calculates the maximum distance considering an empty tree.
+        This method calculates the maximum possible distance considering an empty tree as a reference.
+        
+        Returns
+        -------
+        Jacobian Matrix : numpy.Matrix
+        
+        
         """
         from ete2 import Tree
         t = Tree(name='LUCA_root')
@@ -377,8 +627,47 @@ class Taxonomy:
 
 class GriddedTaxonomy:
     """
-    This class instantiates a model based on a given grid and defines in each cell a Taxonomy object.
-    There are certain attributes that gives spatial information.
+    ..
+    GriddedTaxonomy
+    ===============
+    
+        This class instantiates a model based on a given grid and defines in each cell a Taxonomy object.
+        There are certain attributes that gives spatial information.
+
+    
+    Attributes
+    ==========
+    taxonomies : list Taxonomies
+        A list of taxonomies in defined under the action of the geometric constraints of each cell in the grid.
+    extent : numpy.array
+        The geographical extention of the Grid
+    area : Float
+        The geografical (degrees) area covered by the grid
+    geometry : geometry
+        The geometry of the grid
+    grid_name : string
+        The name of the corresponding table of this grid in the database
+    parent_id : int
+        An id value to define the Grid   
+    dArea : float
+        The unit area represented by a single cell
+
+  
+    Parameters
+    ==========    
+    biosphere : Geoqueryset (GBIF)
+        The GBIF Geoqueryset attribute from gbif.models.Occurrence
+    mesh : mesh.mesh
+        A mesh instance (grid layer). Alternatively called grid
+    upper_level_grid_id : int (default 0)
+        An id value to define the Grid
+    generate_tree_now : Boolean (default False)
+        Flag that when True calculates the taxonomy.forest attribute.
+        i.e. The taxonomic tree.
+    grid_name : string
+        The grid_name defined in the spatially enabled database.
+        
+    
     """
     def __init__(self,biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,grid_name='N.A.'):
         """
@@ -410,14 +699,31 @@ class GriddedTaxonomy:
    
     def createShapefile(self,option='richness',store='out_maps'):
         """
-        This function creates a shapefile using a selected attribute.
-        option is the attribute to export.
-        Currently implemented:
-            richness (default) gives the counts of occurrences at each taxonomic level.
-            jacobi: gives the determinant of the distance (Escamilla) matrix and sub-matrices from the 7x7 size to the 2x2.
-                    a layer for each determinant of each submatrix.
+        .. createShapefile:
+        
+        This function creates a shapefile using a selected attribute from the GriddedTaxonomy class.
+        
+        .. note::
+    
+            Currently implemented:
+        
+            * richness (default) : 
+            gives the counts of occurrences at each taxonomic level.
+            
+            * jacobi :
+            gives the determinant of the distance (Escamilla) matrix 
+            and sub-matrices from the 7x7 size to the 2x2.
+            A layer for each determinant of each submatrix.
+        
+        Parameters
+        ==========
+        option : string
+            'richness' (default), 'jacobi'
+        store : string
+            The path in which the shapefiles are going to be stored
+                    
         """
-        import ipdb
+        
         def selectRichness(layer):
             # This is for option richness
             for key in settings.TAXONOMIC_LEVELS:
@@ -429,7 +735,7 @@ class GriddedTaxonomy:
                 #logger.debug("there are %s taxonomies" %(len(self.taxonomies)))
                 tax.calculateRichness()
                 try:
-                    #ipdb.set_trace()
+                    #import ipdb;ipdb.set_trace()
                     d = tax.richness
                     feat = ogr.Feature(defn)
                     feat.SetField('gid', tax.gid)
@@ -552,7 +858,13 @@ class GriddedTaxonomy:
     
     def mergeGeometries(self):
         """
-        Return a polygon made by the union of all the cells in the gridded taxonomy.
+        .. mergeGeometries
+        Creates a polygon made by the union of all the cells in the gridded taxonomy.
+        
+        Returns
+        =======
+        Boundary : polygon
+            The polygon derived from the merging of all cells.
         """
         self.geometry = reduce(lambda p1,p2 : p1.union(p2) ,map(lambda tax : tax.biomeGeometry,self.taxonomies))
         return self.geometry
@@ -567,10 +879,21 @@ class GriddedTaxonomy:
         
     def distanceToTree(self,taxonomic_forest):
         """
+        .. distanceToTree:
+        
         Calculates the distance from each taxonomy in the grid compared with an arbitrary taxonomic tree.
-        See gbif.taxonomy.distanceToTree()
-        Note: taxonomic_forest is a dictionary which uses keys: ['sp','gns','fam','ord','cls','phy','kng']
-        This can be seen in the biospatial.settings file.
+        
+        .. seealso::
+            gbif.taxonomy.distanceToTree()
+        
+        .. note:: 
+            taxonomic_forest is a dictionary which uses keys: ['sp','gns','fam','ord','cls','phy','kng'] 
+            This can be seen in the biospatial.settings file.
+         
+        Parameters
+        ==========
+        taxonomic_forest : dictionary of taxonomic trees
+            With the same key value pairs as in :class: Taxonomy
         """
         
         matrices = map(lambda tax : tax.distanceToTree(taxonomic_forest),self.taxonomies)
@@ -580,13 +903,33 @@ class GriddedTaxonomy:
     
 class NestedTaxonomy:
     """
-    This class instantiates nested taxonomies.
-    Parameters:
-    id = Cell's id of the parent level (start_level).
-    gbif_queryset = an instance of the gbif database, could be a prefiltered one (e.g. a biome )
-    start_level = level id of the parent mesh level. See: gbif.mesh.NestedMesh and biospatial.settings
-    end_level = level id for the bottom of the stack.
-    generate_tree_now = [True,False] to generate the trees and subtrees of eac taxonomic level in each cell.
+    .. NestedTaxomy
+    
+    NestedTaxonomy
+    ==============
+    
+        This class instantiates nested taxonomies.
+    
+    Parameters
+    ==========
+    id : int
+        Cell's id of the parent level (start_level)
+    gbif_queryset : GeoquerySet
+        An instance of the gbif database, could be a prefiltered one (e.g. a biome )
+    start_level : int
+        Id of the parent mesh level.
+        See: gbif.mesh.NestedMesh and biospatial.settings
+    end_level : int
+        Id for the bottom of the stack
+    generate_tree_now : Boolean (flag default: True)
+        Generate the trees and subtrees of each taxonomic level in each cell.
+    
+    Attributes
+    ==========
+        levels : list of GriddedTaxonomy
+        parent : The GriddedTaxonomy with the highest scale 
+    
+    
     """  
     def __init__(self,id,gbif_geoqueryset,start_level=12,end_level=14,generate_tree_now=True):
         self.levels = embedTaxonomyInNestedGrid(id,gbif_geoqueryset,start_level=start_level,end_level=end_level,generate_tree_now=generate_tree_now) 
@@ -600,18 +943,42 @@ class NestedTaxonomy:
     def getLevels(self):
         """
         Gives the available zooming levels in the current Nested Taxonomy.
+        
+        Returns
+        =======
+        levels : list
+            The list of all levels
+            
         """
         a = str(self.levels.keys())
         logger.info('[biospatial.gbif.taxonomy.NestedTaxonomy]\n Available Levels %s' %a)
         return a
         
 
-    def getDistancesAtLevel(self,level,parent_forest='Top'):
+    def getDistancesAtLevel(self,level,foreign_forest='Top'):
         """
-        This method calculates all the Jacobian matrices comparing the parent tree woth the specfied level.
+        This method calculates all the Jacobian matrices comparing the parent tree with the specified level.
+        
+        .. note::
+            Used extensively for first order analysis and in the QGIS implementation
+        
+        Parameters
+        ==========
+        level : int
+            The key value (int) of some Gridd level nested in this object.
+        foreign_forest : dictionary taxonomies
+            The usual taxonomic forest
+            
+        Returns
+        =======
+        Jacobian (Distance) matrix : numpy.matrix
+            The 7x7 matrix obtain by comparing all taxonomic levels with themselves.
+            
         """
-        if parent_forest == 'Top':
+        if foreign_forest == 'Top':
             parent_forest = self.parent.forest
+        else:
+            parent_forest = foreign_forest
         try:
             mats = self.levels[level].distanceToTree(parent_forest)
             return mats

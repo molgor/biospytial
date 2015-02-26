@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
+
+Mesh / Grid module
+===========
+This module defines the classes and functions of mesh (grid) objects.
 Models for mesh objects. 
 
 """
@@ -8,7 +12,7 @@ Models for mesh objects.
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2015, JEM"
 __license__ = "GPL"
-__version__ = "2.2.1"
+__version__ = "0.0.8"
 __mantainer__ = "Juan"
 __email__ ="molgor@gmail.com"
 __status__ = "Prototype"
@@ -33,6 +37,36 @@ from django.forms import ModelForm
 
 
 def initMesh(Intlevel):
+    """
+    This function initializes a mesh based on the table definition (name) 
+    of a spatially enabled database.
+    
+    .. note::
+   
+       The current list for the working mesh names are:
+        
+        * 8 : 'mesh\".\"braz_grid8a',
+        * 9 : 'mesh\".\"braz_grid16a',
+        * 10 : 'mesh\".\"braz_grid32a',
+        * 11 : 'mesh\".\"braz_grid64a',
+        * 12 : 'mesh\".\"braz_grid128a',
+        * 13 : 'mesh\".\"braz_grid256a',
+        * 14 : 'mesh\".\"braz_grid512a',
+        * 15 : 'mesh\".\"braz_grid1024a',
+        * 16 : 'mesh\".\"braz_grid2048a',
+        * 17 : 'mesh\".\"braz_grid4096a'
+
+    Parameters
+    ==========
+        IntLevel : int
+            The id value of the gridded table to use
+    
+    
+    Returns
+    =======
+     m : mesh.Mesh
+        An instance of Mesh with the specified resolution (level)
+    """
     import copy
     scales = { 8 : 'mesh\".\"braz_grid8a',
               9 : 'mesh\".\"braz_grid16a',
@@ -55,6 +89,27 @@ def initMesh(Intlevel):
         return False
 
 class mesh(models.Model):
+    """
+    .. mesh:
+    A Mesh or Grid is a regular two dimensional geometric object
+    conformed by a regular tessellation of equal area square tiles.
+    
+    Let A be a connected and bounded set in a Surface E.
+    A tessellation T on A is a set of polygons Pi such that:
+    
+        * Pi is contained in A for all i
+        * Union(Pi) covers A
+        * Pi intersects Pj is empty for if i is not equal to j.
+    
+    This is the standard mesh model that defines a grid.
+    ..
+    
+    Attributes
+    ==========
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
     id = models.AutoField(primary_key=True, db_column="gid")
     cell = models.PolygonField()
     objects = models.GeoManager()
@@ -65,7 +120,16 @@ class mesh(models.Model):
 
     def getScaleLevel(self):
         """
-        Gives the current level 
+        ..
+        Gives the current level name
+        ..
+        
+        Returns
+        =======
+        
+        tablename : string
+            The table name of the current grid. As stored in the database.
+            
         """
         #inv_map = {v: k for k, v in self.scales.items()}
         sc = self._meta.db_table
@@ -82,13 +146,39 @@ class mesh(models.Model):
     
 class NestedMesh:
     """
-    Class that defines a geometrical datatype with nested grid cells. 
+    .. NestedMesh:
+    
+    A nested mesh is a hierarchical data structure composed of ordered levels.
+    Each level is an instance of a mesh such that for levels li, lj (i < j)
+    All levels are defined on the same geographical area.
+    The number of cells from level_j is 4**n times bigger than the number of cells in
+    level_i, (where n is j - i ).
+    
+    The resolution is inversely proportional to the size
+    
+    .. note:: 
+        For more information see the grid generation function under the SQL-functions
+    folder.
+    
+    This is the class that defines this geometric data type.
+    
+    Parameters
+    ==========
+    id : int
+        identification value for the nested grid object
+    start_level : int
+        The idkey of the parent mesh (top layer)
+        See: initMesh()
+    end_level : int
+        The idkey for the bottom mesh layer of the nested grid.
+    
+    
     """
     def __init__(self,id,start_level=10,end_level=11):
         """
         I'm the constructor: start_level = (Integer) level of aggregation.
         end_level :: bottom of the nesting grid.
-        id = id value of the cel in the starting grid.
+        id = id value of the cell in the starting grid.
         """
         self.levels = {}
         self.table_names = {}

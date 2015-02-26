@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
+GBIF Models
+===========
+.. _gbif_models_intro:
+Here it is defined the Object Relational Mapping between
+the Classes Gbif Occurrences, Gbif Species, ...  , Gbif Kingdoms
+that are defined in the external database.
 Models for GBIF objects. 
 
 """
@@ -207,6 +213,78 @@ class Occurrence_test(models.Model):
          
          
 class Occurrence(models.Model):
+    """
+    .. _gbif.models.occurrece:
+    This is the Base class that maps the Occurrence (and further taxonomic aggregates)
+    with the spatial enabled database. The current database is built on Postgis.
+    It includes the field string length definition for automatic populating the database using a standard CSV provided by GBIF.
+    
+    Attributes
+    ----------
+    id : int
+        Identification value of each occurrence. Unique to any element of the GBIF dataset.
+    dataset_id : int
+        Identification of the collection (Currently not used)
+    institution_code : int
+        Identification for the institution resposible for storing, capturing or recording the occurrence.
+    collection_code : int
+        Identification of the collection (Currently not used)
+    catalog_number : int 
+        Identification for catalog number
+    basis_of_record : int
+        Unknown value
+    scientific_name : String
+        Species name in the binomial nomenclature
+    kingdom : String
+        Name of the kingdom to whom these occurrence belongs
+    phylum : String
+        Name of the phylum to whom these occurrence belongs
+    _class : String
+        Name of the class to whom these occurrence belongs
+    _order : String
+        Name of the order to whom these occurrence belongs
+    family :String
+        Name of the family to whom these occurrence belongs
+    genus : String
+        Name of the genus to whom these occurrence belongs
+    specific_epithet : string
+        Name of the epithet to whom these occurrence belongs   
+    kingdom_id : int
+        Identification number for the belonging kingdom (indexed).
+    phylum_id : int
+        Identification number for the belonging phylum (indexed).    
+    class_id : int
+       Identification number for the belonging class (indexed).
+    order_id : int
+       Identification number for the belonging order (indexed).
+    family_id : int
+       Identification number for the belonging family (indexed).
+    genus_id : int
+       Identification number for the belonging genus (indexed).
+    species_id : int
+       Identification number for the belonging species (indexed).
+    country_code : string
+        String representing the country's code
+    latitude : Float
+        Latitude in WGS84 (degrees) 
+    longitude : Float
+        Longitud in WGS84 (degrees)
+    year : int
+        Year of record
+    month : int
+        Month of record
+    event_date : datetime
+        Timestamp of record
+    state_province : String
+        Name of state or province
+    county : String
+        Name of country
+    geom : Geometric Point
+        Geometric Value in WKB
+    objects : models.GeoManager()
+        Wrapper for GeoDjango
+    
+    """
     chars = {'l1':15,'l2':15,'l3':25,'l4':100,'l5':60,'l6':70,'l7':100}
     id = models.AutoField(primary_key=True, db_column="id_gbif")
 #     id_gbif = models.IntegerField()
@@ -281,12 +359,26 @@ class Occurrence(models.Model):
         db_table = "gbif_occurrence"
  
     def __unicode__(self):
+        """
+        ..
+        String representation of Occurrence
+        Returns
+        -------
+        info : string
+            Name
+        """
         return u'<GBIF Occurrence: %s  scientific_name: %s>\n Kingdom: %s \n,\t Phylum: %s \n,\t \t Order: %s,\n \t \t \t Class: %s, \n \t \t \t \t Family: %s, \n \t \t \t \t \t Location: s<\GBIF Occurrence>' %(self.id,self.scientific_name,self.kingdom,self.phylum,self._order,self._class,self.family) #,self.geom)
         
 
     def getfullDescription(self):
         """
-        Retrieves the total description of the fields for the this. registry.
+        ..
+        Retrieves the total description of the fields for the this registry.
+        
+        Returns
+        -------
+        info : string
+            The information of all fields. Good for exporting raw data to CSV.
         """
         fields =  self._meta.get_all_field_names()
         cadena = ["<GBIF/: Occurrence %s --%s />\n" %(self.id,self.scientific_name)]
@@ -301,7 +393,26 @@ class Occurrence(models.Model):
 
 class Level:
     """
+    ..
+    Class
+    -----
+    Auxiliary class for data aggregation.
+    
     Basic level class
+    
+    Attributes
+    ----------
+    abundance : int
+        The abundance (count) values
+    levelname : string
+        The aggregation of the taxonomic level name (e.g. species,genus,etc)
+    level : int
+        The id f the level
+    Queryset : django.contrib.gis.models.GeoQuerySet
+        The Geoqueryset of the mapped objects
+    name : string
+        Aggregation name at some taxonomic level (e.g. Solanacea).
+    
     """
     def __init__(self,LocalQuerySet,n=0,levelname='',level=0):
         self.abundance = 0
@@ -316,12 +427,33 @@ class Level:
 
 class Specie(Level):
     """
-    This is the Species class
+    ..
+    Class
+    =====
+    ..
+    This is the Species class definition
+    ..
+    Parameters
+    ----------
+    localQuerySet : gbif.models.Occurrence.Geoqueryset
+    species_metadata : dictionary
+        The dictionary obtained from the GeoquerySet annotation
+        See also
+        --------
+        
+    
+    Attributes
+    ----------
+    occurrences : gbif.models.Level.QuerySet
+        The QuerySet of the filtered at occurrence level
+    geometry : geometry
+        WKB representation
     """
     
     def __init__(self,localQuerySet,species_metadata):
         """
-        Basic constructor
+        ..
+        Basic constructor       
         """
         Level.__init__(self,localQuerySet,level=7,levelname='Specie')
         self.occurrences = 'N.A.'
@@ -331,7 +463,13 @@ class Specie(Level):
 
     def setInfo(self,dict_from_queryset_annotation):
         """
-        Given a QuerySet it fills all the occurrences
+        ..
+        Given a QuerySet it fills all the occurrences and performs the aggregation.
+        
+        Returns
+        -------
+        nothing :
+            It sets the class' attributes.
         """
         try:
             ok = dict_from_queryset_annotation
@@ -347,7 +485,7 @@ class Specie(Level):
     
     def setNeighbors(self,list_occurrences):
         """
-        A list of occurrences
+        A list of occurrences 
         """
         #self.occurrences = list_occurrences
         pass
@@ -365,7 +503,23 @@ class Specie(Level):
 
 class Genus(Level):
     """
-    Basic class for Genus Level
+    ..
+    Genus
+    =====
+    ..
+    This is the Genus class definition
+    ..
+    Parameters
+    ----------
+    Level : See also Level
+    
+    Attributes
+    ----------
+    species : gbif.models.Level.QuerySet
+        The QuerySet of the filtered at occurrence level
+    geometry : geometry
+        WKB representation    
+
     """
     def __init__(self,localQuerySet,genus_metadata):
         """

@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
-Function to build phylogenetic tree
+
+Buildtree
+=========
+..
+This module provides the functions necessary to build a hierarchical
+acyclic and connected graph (Tree) build upon the taxonomic relationships
+of the biological classification.
+
+This module makes use of the models define in gbif.models as well as the
+common geospatial operations like intersects.
+Based on the :ref:`gbif.models` and spatial operations.
 """
 
 __author__ = "Juan Escamilla Mólgora"
@@ -23,7 +33,17 @@ logger = logging.getLogger('biospatial.gbif.buildtree')
 
 def getGenera(taxonomy_queryset):
     """
-    This function returns a Tree object collapsing all the species.
+    .. 
+    This function generates a Tree object derived from the collapse 
+    of all *species* under the scope of a spatial queryset.
+    
+    Parameters
+    ----------
+    taxonomy_queryset gbif.models / GeoquerySet
+    
+    Returns
+    -------
+    :genera_tree: derived from ete2.TreeNode()
     """
     tax = taxonomy_queryset
     sps = tax.species
@@ -56,8 +76,18 @@ def getGenera(taxonomy_queryset):
           
 def getFamilies(taxonomic_queryset,genera_tree):
     """
-    Taxonomic queryset aggregated of class Taxonomy
-    genera_tree is the tree obtained from building of genera.
+    ..
+    This function generates a Tree object derived from the collapse 
+    of all *families* under the scope of a spatial queryset.
+
+    Parameters
+    ----------
+    taxonomy_queryset gbif.models / GeoquerySet
+    :genera_tree: Tree derived from getGenera
+    
+    Returns
+    -------
+    :families_tree: derived from ete2.TreeNode()
     """
     tax = taxonomic_queryset
     families = tax.families
@@ -87,8 +117,17 @@ def getFamilies(taxonomic_queryset,genera_tree):
 
 def getOrders(taxonomic_queryset,families_tree):
     """
-    Taxonomic queryset es un agregado. objeto de Taxonomy
-    families_tree is the tree obtained from building of families.
+    This function generates a Tree object derived from the collapse 
+    of all *orders* under the scope of a spatial queryset.
+
+    Parameters
+    ----------
+    taxonomy_queryset gbif.models / GeoquerySet
+    :families_tree: Tree derived from getFamilies
+    
+    Returns
+    -------
+    :orders_tree: derived from ete2.TreeNode()    
     """
     tax = taxonomic_queryset
     orders = tax.orders
@@ -122,8 +161,20 @@ def getOrders(taxonomic_queryset,families_tree):
 
 def getClasses(taxonomic_queryset,orders_tree):
     """
-    Taxonomic queryset es un agregado. objeto de Taxonomy
-    families_tree is the tree obtained from building of families.
+    ..
+    This function generates a Tree object derived from the collapse 
+    of all *classes* under the scope of a spatial queryset.
+
+    Parameters
+    ----------
+    taxonomy_queryset gbif.models / GeoquerySet
+    :orders_tree: Tree derived from getOrders
+    
+    Returns
+    -------
+    :classes_tree: derived from ete2.TreeNode() 
+
+
     """
     tax = taxonomic_queryset
     classes = tax.classes
@@ -155,8 +206,18 @@ def getClasses(taxonomic_queryset,orders_tree):
 
 def getPhyla(taxonomic_queryset,classes_tree):
     """
-    Taxonomic queryset es un agregado. objeto de Taxonomy
-    families_tree is the tree obtained from building of families.
+    ...
+    This function generates a Tree object derived from the collapse 
+    of all *phyla* under the scope of a spatial queryset.
+
+    Parameters
+    ----------
+    taxonomy_queryset gbif.models / GeoquerySet
+    :classes_tree: Tree derived from getclasses
+    
+    Returns
+    -------
+    :phyla_tree: derived from ete2.TreeNode()   
     """
     tax = taxonomic_queryset
     phyla = tax.phyla
@@ -188,8 +249,20 @@ def getPhyla(taxonomic_queryset,classes_tree):
 
 def getKingdoms(taxonomic_queryset,phyla_tree):
     """
-    Taxonomic queryset es un agregado. objeto de Taxonomy
-    families_tree is the tree obtained from building of families.
+    ...
+    This function generates a Tree object derived from the collapse 
+    of all *kingdoms* under the scope of a spatial queryset.
+
+    Parameters
+    ----------
+    taxonomy_queryset gbif.models / GeoquerySet
+    :phyla_tree: Tree derived from getKingdoms
+    
+    Returns
+    -------
+    :kingdoms_tree: derived from ete2.TreeNode()   
+    
+    
     """
     tax = taxonomic_queryset
     kingdoms = tax.kingdoms
@@ -222,14 +295,24 @@ def getKingdoms(taxonomic_queryset,phyla_tree):
 
 def getTOL(taxonomic_queryset):
     """
+    ...
+    Calculates the entire Local Tree of Life derived from the collapsing functions.
     Gives the complete tree of life
+    
+    Returns
+    -------
+    :local_tree_of_life: derived from ete2.TreeNode() 
+    
+    See also
+    --------
+    gbif.taxonomy : Where this module is highly used.
+ 
     """
     tax = taxonomic_queryset
     #tree_genera = getGenera(tax)
     TOL = getKingdoms(tax,getPhyla(tax,getClasses(tax,getOrders(tax,getFamilies(tax,getGenera(tax))))))
     
     return TOL
-
 
 
 

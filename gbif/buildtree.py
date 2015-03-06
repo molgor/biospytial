@@ -31,7 +31,7 @@ logger = logging.getLogger('biospatial.gbif.buildtree')
         
 
 
-def getGenera(taxonomy_queryset):
+def getGenera(taxonomy_queryset,only_id=False):
     """
     .. 
     This function generates a Tree object derived from the collapse 
@@ -40,6 +40,14 @@ def getGenera(taxonomy_queryset):
     Parameters
     ----------
     taxonomy_queryset gbif.models / GeoquerySet
+    
+    
+    only_id : Boolean (flag)
+        True (default False) means that is going to append the full name of the genera.
+        This is a string and can be vary in length. If it is used in big data sets it will 
+        impact the amount of memory used because of the heavy load of information.   
+     
+    
     
     Returns
     -------
@@ -52,7 +60,10 @@ def getGenera(taxonomy_queryset):
     for genus in genera:
         family_id = genus['parent_id']
         genus_id = genus['genus_id']
-        name = genus['name']
+        if not only_id:
+            name = genus['name']
+        else:
+            name = genus_id
         ab = genus['ab']
         points = genus['points']
         sp_by_gns = sps.filter(genus_id__exact=genus_id)
@@ -62,11 +73,16 @@ def getGenera(taxonomy_queryset):
         gn_t.add_feature('points',points)
         #logger.info('Building branch for genus %s' %name)
         for specie in sp_by_gns:
-            name = specie['name'].split(' ')
-            name = name[0]+' '+name[1]
+            if not only_id:
+                name = specie['name'].split(' ')
+                name = name[0]+' '+name[1]
+            else:
+                name = specie['species_id']
+#                 logger.info('The name assigned is %s' %name)
             points = specie['points']
             s = Tree(name = name,support=specie['ab'])
             s.add_feature('species_id', specie['species_id'])
+            
             s.add_feature('level','species')
             s.add_feature('points',points)
             gn_t.add_child(child=s)
@@ -74,7 +90,7 @@ def getGenera(taxonomy_queryset):
     return family_tree
             
           
-def getFamilies(taxonomic_queryset,genera_tree):
+def getFamilies(taxonomic_queryset,genera_tree,only_id=False):
     """
     ..
     This function generates a Tree object derived from the collapse 
@@ -83,7 +99,14 @@ def getFamilies(taxonomic_queryset,genera_tree):
     Parameters
     ----------
     taxonomy_queryset gbif.models / GeoquerySet
-    :genera_tree: Tree derived from getGenera
+        :genera_tree: Tree derived from getGenera
+    
+    only_id : Boolean (flag)
+        True (default False) means that is going to append the full name of the families.
+        This is a string and can be vary in length. If it is used in big data sets it will 
+        impact the amount of memory used because of the heavy load of information.   
+     
+    
     
     Returns
     -------
@@ -95,7 +118,10 @@ def getFamilies(taxonomic_queryset,genera_tree):
     orders_tree = Tree(name='order_root')
     for family in families:
         order_id = family['parent_id']
-        name = family['name']
+        if not only_id:
+            name = family['name']
+        else:
+            name = family['family_id']
         ab = family['ab']
         #Add here the geometric feature (if necessary)
         points = family['points']
@@ -115,7 +141,7 @@ def getFamilies(taxonomic_queryset,genera_tree):
     return orders_tree
  
 
-def getOrders(taxonomic_queryset,families_tree):
+def getOrders(taxonomic_queryset,families_tree,only_id=False):
     """
     This function generates a Tree object derived from the collapse 
     of all *orders* under the scope of a spatial queryset.
@@ -124,6 +150,13 @@ def getOrders(taxonomic_queryset,families_tree):
     ----------
     taxonomy_queryset gbif.models / GeoquerySet
     :families_tree: Tree derived from getFamilies
+
+    only_id : Boolean (flag)
+        True (default False) means that is going to append the full name of the orders.
+        This is a string and can be vary in length. If it is used in big data sets it will 
+        impact the amount of memory used because of the heavy load of information.   
+ 
+
     
     Returns
     -------
@@ -136,7 +169,10 @@ def getOrders(taxonomic_queryset,families_tree):
     logger.info("[gbif.buildtree] Collapsing Orders")
     for order in orders:
         class_id = order['parent_id']
-        name = order['name']
+        if not only_id:      
+            name = order['name']
+        else:
+            name = order['order_id']
         ab = order['ab']
         #Add here the geometric feature (if necessary)
         points = order['points']
@@ -159,7 +195,7 @@ def getOrders(taxonomic_queryset,families_tree):
     return classTree   
 
 
-def getClasses(taxonomic_queryset,orders_tree):
+def getClasses(taxonomic_queryset,orders_tree,only_id=False):
     """
     ..
     This function generates a Tree object derived from the collapse 
@@ -168,7 +204,13 @@ def getClasses(taxonomic_queryset,orders_tree):
     Parameters
     ----------
     taxonomy_queryset gbif.models / GeoquerySet
-    :orders_tree: Tree derived from getOrders
+        :orders_tree: Tree derived from getOrders
+    
+    only_id : Boolean (flag)
+        True (default False) means that is going to append the full name of the classes.
+        This is a string and can be vary in length. If it is used in big data sets it will 
+        impact the amount of memory used because of the heavy load of information.   
+ 
     
     Returns
     -------
@@ -183,7 +225,10 @@ def getClasses(taxonomic_queryset,orders_tree):
     logger.info("[gbif.buildtree] Collapsing Classes")
     for class_ in classes:
         phylum_id = class_['parent_id']
-        name = class_['name']
+        if not only_id: 
+            name = class_['name']
+        else:
+            name = class_['class_id']
         ab = class_['ab']
         #Add here the geometric feature (if necessary)
         points = class_['points']
@@ -204,7 +249,7 @@ def getClasses(taxonomic_queryset,orders_tree):
         phylumTree.add_child(child=classTree)
     return phylumTree  
 
-def getPhyla(taxonomic_queryset,classes_tree):
+def getPhyla(taxonomic_queryset,classes_tree,only_id=False):
     """
     ...
     This function generates a Tree object derived from the collapse 
@@ -213,7 +258,13 @@ def getPhyla(taxonomic_queryset,classes_tree):
     Parameters
     ----------
     taxonomy_queryset gbif.models / GeoquerySet
-    :classes_tree: Tree derived from getclasses
+        :classes_tree: Tree derived from getclasses
+
+        only_id : Boolean (flag)
+            True (default False) means that is going to append the full name of the Phyla.
+            This is a string and can be vary in length. If it is used in big data sets it will 
+            impact the amount of memory used because of the heavy load of information.   
+  
     
     Returns
     -------
@@ -226,7 +277,10 @@ def getPhyla(taxonomic_queryset,classes_tree):
     logger.info("[gbif.buildtree] Collapsing Phyla")
     for phylum in phyla:
         kingdom_id = phylum['parent_id']
-        name = phylum['name']
+        if not only_id:         
+            name = phylum['name']
+        else:
+            name = phylum['phylum_id']
         ab = phylum['ab']
         #Add here the geometric feature (if necessary)
         points = phylum['points']
@@ -247,7 +301,7 @@ def getPhyla(taxonomic_queryset,classes_tree):
         kingdomTree.add_child(child=phylumTree)
     return kingdomTree  
 
-def getKingdoms(taxonomic_queryset,phyla_tree):
+def getKingdoms(taxonomic_queryset,phyla_tree,only_id=False):
     """
     ...
     This function generates a Tree object derived from the collapse 
@@ -255,8 +309,14 @@ def getKingdoms(taxonomic_queryset,phyla_tree):
 
     Parameters
     ----------
-    taxonomy_queryset gbif.models / GeoquerySet
-    :phyla_tree: Tree derived from getKingdoms
+        taxonomy_queryset gbif.models / GeoquerySet
+            :phyla_tree: Tree derived from getKingdoms
+
+        only_id : Boolean (flag)
+            True (default False) means that is going to append the full name of the kingdoms.
+            This is a string and can be vary in length. If it is used in big data sets it will 
+            impact the amount of memory used because of the heavy load of information.   
+ 
     
     Returns
     -------
@@ -267,11 +327,14 @@ def getKingdoms(taxonomic_queryset,phyla_tree):
     tax = taxonomic_queryset
     kingdoms = tax.kingdoms
     phyla = tax.phyla
-    TreeOfLife = Tree(name='LUCA_root')
+    TreeOfLife = Tree(name='Life')
     logger.info("[gbif.buildtree] Collapsing Kingdoms")
     for kingdom in kingdoms:
         kingdom_id = 0
-        name = kingdom['name']
+        if not only_id:         
+            name = kingdom['name']
+        else:
+            name = kingdom['kingdom_id']    
         ab = kingdom['ab']
         #Add here the geometric feature (if necessary)
         points = kingdom['points']
@@ -293,11 +356,18 @@ def getKingdoms(taxonomic_queryset,phyla_tree):
     return TreeOfLife  
 
 
-def getTOL(taxonomic_queryset):
+def getTOL(taxonomic_queryset,only_id=False):
     """
     ...
     Calculates the entire Local Tree of Life derived from the collapsing functions.
     Gives the complete tree of life
+    
+    Parameters
+    ----------
+        only_id : Boolean (flag)
+            True (default False) means that is going to append the full name of the taxons.
+            This is a string and can be vary in length. If it is used in big data sets it will 
+            impact the amount of memory used because of the heavy load of information.   
     
     Returns
     -------
@@ -310,7 +380,8 @@ def getTOL(taxonomic_queryset):
     """
     tax = taxonomic_queryset
     #tree_genera = getGenera(tax)
-    TOL = getKingdoms(tax,getPhyla(tax,getClasses(tax,getOrders(tax,getFamilies(tax,getGenera(tax))))))
+    
+    TOL = getKingdoms(tax,getPhyla(tax,getClasses(tax,getOrders(tax,getFamilies(tax,getGenera(tax,only_id=only_id),only_id=only_id),only_id=only_id),only_id=only_id),only_id=only_id),only_id=only_id)
     
     return TOL
 

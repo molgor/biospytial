@@ -107,7 +107,6 @@ def createShapefile(taxonomy_list,name='default_name',store='out_maps'):
     logger.info('Shapefile Created in %s/%s' %(store,name))
     return True
 
-
 def analizeBiomeinMesh(biosphere,mesh):
     """
     This function analizes the occurrences of the gbif database with a mesh.
@@ -121,10 +120,6 @@ def analizeBiomeinMesh(biosphere,mesh):
     
     map(lambda tax: tax.summary(),taxs_list)
     return taxs_list    
-
-
-
-    
 
 def TaxonomyInGrid(biosphere,mesh):
     """
@@ -145,7 +140,6 @@ def TaxonomyInGrid(biosphere,mesh):
         #logger.info(type(taxs_list))
         return [taxs]
 
-
 def obtainAllPartialTreesInThe(nested_taxonomy):
     """
     Once a nested taxonomy has been generated. 
@@ -157,7 +151,6 @@ def obtainAllPartialTreesInThe(nested_taxonomy):
             each_taxonomy.obtainPartialTree()
     return True
 
-
 def calculateRelativeDistancesToParentIn(nested_taxonomy):
     """
     """
@@ -165,33 +158,11 @@ def calculateRelativeDistancesToParentIn(nested_taxonomy):
 
 
 from mesh.models import mesh,initMesh
-#mp = mesh.objects.filter(hemi__intersects=cell)
-#mesh._meta.db_table = 'mesh"."grid8a'
-#polygon=mesh.objects.filter(pk=44)[0].cell
 
-
-#sketches = Sketch.objects.all()
-#plgn = sketches[1].geom
 
 
 biosphere = Occurrence.objects.all()
 
-
-
-#biome1 = biosphere.filter(geom__intersects=polygon)
-# Initialize mesh
-#m64 = initMesh(11)
-#cells = m64.objects.values('id','cell').all()
-#cells = map(lambda m : m.cell , m64.objects.all())
-
-
-#meshes = NestedMesh(656,start_level=10,end_level=15)
-
-#for i in range(8,17):
-#nested_taxonomies ={} 
-#meshes = NestedMesh(10290,start_level=12,end_level=14)
-#nested_taxonomies = embedTaxonomyInNestedGrid(653,biosphere,start_level=10,end_level=14,generate_tree_now=True)
-#nested_taxonomies = embedTaxonomyInNestedGrid(10290,biosphere,start_level=12,end_level=14,generate_tree_now=True)
 import pickle 
 
 nested_taxonomies = NestedTaxonomy(10417,biosphere,start_level=12,end_level=16,generate_tree_now=True)

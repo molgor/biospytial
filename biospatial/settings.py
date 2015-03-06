@@ -132,12 +132,6 @@ LOGGING = {
     }
 }
 
-###### EXTENDED SETTINGS
-TAXONOMIC_LEVELS = ['gid','occurrence','species','families','genera','orders','classes','phyla','kingdoms']
-TAXONOMIC_TREE_KEYS = ['sp','gns','fam','ord','cls','phy','kng']
-TAXONOMIC_MAPPER_KEYS = {'gid' : 'gid','oc':'occurrence','sp':'species','gns':'genera','fam':'families','ord':'orders','cls':'classes','phy':'phyla','kng':'kingdoms'}
-
-PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
 
 #######################
 # Internationalization
@@ -175,4 +169,21 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder', 
     'django.contrib.staticfiles.finders.AppDirectoriesFinder', 
 
-) 
+)
+
+###### EXTENDED SETTINGS
+TAXONOMIC_LEVELS = ['gid','occurrence','species','families','genera','orders','classes','phyla','kingdoms']
+TAXONOMIC_TREE_KEYS = ['sp','gns','fam','ord','cls','phy','kng']
+TAXONOMIC_MAPPER_KEYS = {'gid' : 'gid','oc':'occurrence','sp':'species','gns':'genera','fam':'families','ord':'orders','cls':'classes','phy':'phyla','kng':'kingdoms'}
+
+PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
+
+# Prefix for caching
+NESTED_TAXONOMY_PREFIX = 'nstax'
+GRIDDED_TAXONOMY_PREFIX = 'gdtax'
+TAXONOMY_PREFIX = 'tax'
+
+
+
+
+ 

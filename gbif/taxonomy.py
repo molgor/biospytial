@@ -48,7 +48,7 @@ import matplotlib.pyplot as plt
 import numpy as np
   
 
-def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False):
+def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,use_id_as_name=True):
     """
     .. embedTaxonomyInGrid:
     This function performs a spatial intersection and initializes Taxonomy objects with the geometry given by a mesh.
@@ -60,6 +60,18 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         Is the Geoqueryset of gbif occurrences
     mesh : mesh type
         The mesh (grid) where the taxonomy is going to be defined
+
+    generate_tree_now : Boolean (default True)
+        This is a flag and when True means that it will create on the flag the Tree representation.
+        This is computationally intensive because, in order to do so, it will query all the objects 
+        in all the Cells in the Gridded Taxonomies in all the Gridded Levels in the Nested Grid.
+
+
+    use_id_as_name: boolean (default True)
+        This is a flag and when True means that the nodes in the trees are going to be named
+        according to the identifier (Integer) instead of the full string name.
+        Saves memory.
+
     
     Returns
     -------    
@@ -81,7 +93,7 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
-            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),taxs_list)
+            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True,only_id=use_id_as_name),taxs_list)
             map(lambda taxonomy: taxonomy.calculateIntrinsicComplexity(),taxs_list)        
         return taxs_list 
     else:
@@ -90,12 +102,12 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
-            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True),[taxs])
+            map(lambda taxonomy: taxonomy.buildInnerTree(deep=True,only_id=use_id_as_name),[taxs])
             map(lambda taxonomy: taxonomy.calculateIntrinsicComplexity(),taxs_list)                 
         return [taxs]   
 
 
-def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,generate_tree_now=False):
+def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,generate_tree_now=False,use_id_as_name=True):
     """
     .. embedTaxonomyInNestedGrid:
     
@@ -113,6 +125,16 @@ def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,g
         This is the scale level to start, the parent level of the mesh :ref: mesh.models    
     end_level : int 
         This is the last level in the nested grid stack, i.e. the bottom
+
+    generate_tree_now : Boolean (default True)
+        This is a flag and when True means that it will create on the flag the Tree representation.
+        This is computationally intensive because, in order to do so, it will query all the objects 
+        in all the Cells in the Gridded Taxonomies in all the Gridded Levels in the Nested Grid.
+    
+    use_id_as_name: boolean (default True)
+        This is a flag and when True means that the nodes in the trees are going to be named
+        according to the identifier (Integer) instead of the full string name.
+        Saves memory.
 
     Returns
     -------
@@ -134,7 +156,7 @@ def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,g
         m = meshes.levels[mesh]
         tablename = meshes.table_names[mesh]
         #taxs_list = embedTaxonomyInGrid(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now)
-        taxs = GriddedTaxonomy(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now,grid_name=tablename)
+        taxs = GriddedTaxonomy(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now,grid_name=tablename,use_id_as_name=use_id_as_name)
         #taxs_list = taxs.taxonomies
         nested_taxonomies[mesh] = taxs
     return nested_taxonomies 
@@ -290,8 +312,48 @@ class Taxonomy:
         self.vectorJacobi = [] # This is the vector form of the determinants at each submatrix.
         self.intrinsicM = []
         self.vectorIntrinsic = []
+
+    def removeQuerySets(self):
+        """
+        This method removes the GeoQueryValueSet specified in the attributes:
+        * occurrences,
+        * species,
+        * genera,
+        * families,
+        * classes,
+        * orders,
+        * phyla
+        * kingdoms
         
+        .. note:: Why ? Because it's necessary to pickle this and other derived 
+        classes and the use of LazyQueries doesn't allow pickling.
+        The pickling is used for creating the Cache via Redis.
         
+        """
+        self.occurrences = []
+        self.species =  []
+        self.genera  = []
+        self.families = []
+        self.orders = []
+        self.classes  = []
+        self.phyla = []
+        self.kingdoms = [] 
+
+    def restoreQuerySets(self,biome):
+        """
+        This method restores the GeoqueryValuesSet for the occurrences, species
+        genera, families, classes, orders, phyla and kingdoms which are aggregates of 
+        the Occurrence object.
+        """
+        self.occurrences = biome.all()
+        self.species =  biome.values('species_id').annotate(points=Collect('geom'),ab=Count('species_id'),name=Min('scientific_name'),parent_id=Min('genus_id'))
+        self.genera  = biome.values('genus_id').annotate(points=Collect('geom'),ab=Count('genus_id'),name=Min('genus'),parent_id=Min('family_id'))
+        self.families = biome.values('family_id').annotate(points=Collect('geom'),ab=Count('family_id'),name=Min('family'),parent_id=Min('order_id'))
+        self.orders = biome.values('order_id').annotate(points=Collect('geom'),ab=Count('order_id'),name=Min('_order'),parent_id=Min('class_id'))
+        self.classes  = biome.values('class_id').annotate(points=Collect('geom'),ab=Count('class_id'),name=Min('_class'),parent_id=Min('phylum_id'))
+        self.phyla = biome.values('phylum_id').annotate(points=Collect('geom'),ab=Count('phylum_id'),name=Min('phylum'),parent_id=Min('kingdom_id'))
+        self.kingdoms = biome.values('kingdom_id').annotate(points=Collect('geom'),ab=Count('kingdom_id'),name=Min('kingdom'))
+       
     def calculateRichness(self):
         """
         Calculates richness at all levels
@@ -329,7 +391,6 @@ class Taxonomy:
             }
         
         return self.richness
-
 
     def calculateIntrinsicComplexity(self):
         """
@@ -369,10 +430,6 @@ class Taxonomy:
         self.vectorIntrinsic = np.array(map(lambda M :np.linalg.det(M),submatrices))
         return mat
 
-
-
-
-
     def distanceToTree_deprec(self,taxonomic_forest,update_inner_attributes=True):
         """
         This function calculates the distance from this object to the taxonomic_forest given as input.
@@ -407,7 +464,6 @@ class Taxonomy:
             self.JacobiM = np.matrix(Jacobian)
             self.Jacobi = np.linalg.det(self.JacobiM)
         return np.matrix(Jacobian)  
-
 
     def distanceToTree(self,parent_taxonomic_forest,update_inner_attributes=True):
         """
@@ -452,9 +508,7 @@ class Taxonomy:
         return np.matrix(Jacobian) 
         
     #def distanceToTree
-
-
-    
+   
     def generatePDI(self,level='species',type='richness'):
         """
         This method calculates partial diversity index (PDI) based on the taxonomic level and the diversity measure.
@@ -549,7 +603,7 @@ class Taxonomy:
         plt.show()
         return ax
         
-    def buildInnerTree(self,deep=False):
+    def buildInnerTree(self,deep=False,only_id=True):
         """
         .. buildInnerTree:
         Calculates the tree generating a ETE2 data type.
@@ -564,6 +618,11 @@ class Taxonomy:
             deep : Boolean (flag) 
                 True means that is going to build all the partial trees as well.
                 Partial tree is the pruned version at phylum, class, order,...,or, species
+                
+            only_id : Boolean (flag)
+                True (default) means that is going to append the full name of the taxons.
+                This is a string and can be vary in length. If it is used in big data sets it will 
+                impact the amount of memory used because of the heavy load of information.
         
         Returns
         -------
@@ -572,16 +631,27 @@ class Taxonomy:
         
         """
         if deep:
-            self.obtainPartialTrees()
+            self.obtainPartialTrees(only_id=only_id)
         else:
-            self.forest['sp'] = getTOL(self)
+            self.forest['sp'] = getTOL(self,only_id=only_id)
 
-    def obtainPartialTrees(self):
+    def obtainPartialTrees(self,only_id=True):
         """
         .. obtainPartialTrees:
     
         This method defines the partial trees for the selected taxonomic level.
         It prunes the species tree to generate seven distinct trees at each taxonomic level.
+        
+        Parameters
+        ----------
+        
+            only_id : Boolean (flag)
+                True (default) means that is going to append the full name of the taxons.
+                This is a string and can be vary in length. If it is used in big data sets it will 
+                impact the amount of memory used because of the heavy load of information.
+
+        
+        
         """
         
         def prune_level(tree):
@@ -596,7 +666,7 @@ class Taxonomy:
             self.forest['gns']= prune_level(self.forest['sp'])
         except:
             logger.info('[gbif.taxonomy.obtainPartialTrees()] Species level does not exist for this taxonomy (grid cell). Calculating it now!')
-            self.forest['sp'] = getTOL(self)
+            self.forest['sp'] = getTOL(self,only_id=only_id)
             self.obtainPartialTrees()
         logger.info('[gbif.taxonomy.obtainPartialTrees()] Pruning trees')
         self.forest['fam']= prune_level(self.forest['gns'])
@@ -625,6 +695,59 @@ class Taxonomy:
         return self.distanceToTree(empty_forest,update_inner_attributes=False)
 
 
+    def loadFromCache(self,cached_taxonomy):
+        """
+        
+        This method restores the cached values stored in the Redis backend.
+        
+        Parameters
+        ----------
+            
+            cached_taxonomy : Taxonomy
+                The taxonomy obtained from the cache backend.
+                
+        .. note:: The cached object can be created using the create_tree_now set to False
+        Which is going to create the taxonomy with out making the calculations for obtaining the tree
+        giving an empty object with defined GeoQueryValuesSets.
+        
+        """
+        #First check if the geometry is the same:
+        cache = cached_taxonomy
+        try:
+            self.rich_occurrences =  cache.rich_occurrences
+            self.rich_species = cache.rich_species
+            self.rich_genera = cache.rich_genera
+            self.rich_families = cache.rich_families
+            self.rich_classes = cache.rich_classes
+            self.rich_orders = cache.rich_orders
+            self.rich_phyla = cache.rich_phyla
+            self.rich_kingdoms = cache.rich_kingdoms
+            self.richness ={ 'occurrences' : self.rich_occurrences,
+            'species' : self.rich_species,
+            'genera' : self.rich_genera,
+            'families': self.rich_families,
+            'classes' : self.rich_classes,
+            'orders' : self.rich_orders,
+            'phyla' : self.rich_phyla,
+            'kingdoms' : self.rich_kingdoms
+            }
+            self.biomeGeometry = cache.biomeGeometry
+            self.gid = cache.gid
+            self.forest = cache.forest
+            self.JacobiM = cache.JacobiM #This is the attribute of the Jacobian matrix calculated with respect to the distance of another taxonomy.
+            self.vectorJacobi = cache.vectorJacobi # This is the vector form of the determinants at each submatrix.
+            self.intrinsicM = cache.intrinsicM
+            self.vectorIntrinsic = cache.vectorIntrinsic
+            return True
+        except:
+            logger.error("cache_taxonomy is not a Taxonomy object")
+            return None
+
+    def __repr__(self):
+        geom = self.biomeGeometry.wkt
+        cad = "< Taxonomy in %s > %geom"
+        return cad
+
 class GriddedTaxonomy:
     """
     ..
@@ -651,6 +774,8 @@ class GriddedTaxonomy:
         An id value to define the Grid   
     dArea : float
         The unit area represented by a single cell
+    biosphere: GeoqueryValuesSet
+        The subset of the GBIF Occurrences that is defined globally in the entire grid.
 
   
     Parameters
@@ -666,28 +791,29 @@ class GriddedTaxonomy:
         i.e. The taxonomic tree.
     grid_name : string
         The grid_name defined in the spatially enabled database.
-        
+
+    use_id_as_name: boolean (default True)
+        This is a flag and when True means that the nodes in the trees are going to be named
+        according to the identifier (Integer) instead of the full string name.
+        Saves memory.        
     
     """
-    def __init__(self,biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,grid_name='N.A.'):
+    def __init__(self,biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,grid_name='N.A.',use_id_as_name=True):
         """
         Constructor.
         This function performs a spatial intersection and initialize Taxonomy objects with the geometry given by [mesh].
         [biosphere] is a Geoqueryset of gbif occurrences. [mesh] is a mesh type.
         Upper_level_grid is a parameter reserved for the id of the parent mesh cell.
         """
-        self.taxonomies = embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=upper_level_grid_id,generate_tree_now=generate_tree_now)
+        self.taxonomies = embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=upper_level_grid_id,generate_tree_now=generate_tree_now,use_id_as_name=use_id_as_name)
         self.extent = 'N.A.'
         self.area = 'N.A'
         self.geometry = 'N.A'
         self.grid_name = grid_name
         self.parent_id = upper_level_grid_id
         self.dArea = self.taxonomies[0].biomeGeometry.area
-        #self.mesh = ''
-        #FALTA ACABAR ESTO A CADA NIVEL DARLE ATRIBUTOS DE NOMBRE DEL MESH, DIFERENCIAL DE AREA , id del mesh tal vez.
-        # Distancia a la referencia ,etc. 
-        #Matriz jacobiana de distancias.
-        # aqui habra que meterle un constructor que regrese matrices o tensores.
+        self.biosphere = biosphere
+
 
     def __str__(self):
         return u"GriddedTaxonomy layer: \n Extent: %s" %self.geometry.extent     
@@ -695,6 +821,105 @@ class GriddedTaxonomy:
     def __repr__(self):
         cad = "<GriddedTaxonomy instance: %s@%s >" %(self.parent_id,self.grid_name)
         return cad
+    
+    def showId(self):
+        """
+        This method returns a unique Id string that is going to be used as unique identifier
+        use as a key in the implementation of a cache service.
+        
+        .. note:: Check this when global analyses are defined
+        
+        """
+        #Here I'm supposing that the name of the table, and the extent polygon gives a unique mapping.
+        try:
+            extent = self.geometry.extent
+            name = self.grid_name
+            res = self.dArea
+            string = "%s:%s:%s:%s" %(self.parent_id,name,extent,res)
+            return string
+        except:
+            logger.error("[biospatial.gbif.taxonomy.GriddedTaxonomy] \n The total geometry area has not been defined. Try running mergeGeometries first")
+            raise Exception("Geometry Extent has not been instantiated")
+            return None   
+
+    def restoreQuerySets(self,biosphere):
+        """
+        This method restores the GeoqueryValuesSet for each taxonomy in the grid: occurrences, species
+        genera, families, classes, orders, phyla and kingdoms which are aggregates of 
+        the Occurrence object.
+        
+        .. note:: This method is usefull when the Gridded Taxonomy comes from a Cache Backend
+        """
+        # Redefine the biosphere
+        self.biosphere = biosphere
+        # Extract geometries from taxonomies
+        geometries = map(lambda t : t.biomeGeometry, self.taxonomies)
+        # Build biomes based on the intersections between each geometry and the global biosphere
+        biomes = map(lambda polygon : self.biosphere.filter(geom__intersects=polygon),geometries)
+        # Now restore older querysets. Usefull if the Gridded Taxonomy comes from a Cache Backend
+        biom_tax = zip(biomes,self.taxonomies)
+        logger.info("Restoring the Queryset lost in the Caching process")
+        map(lambda duple : duple[1].restoreQuerySets(duple[0]), biom_tax )
+        
+        
+        
+    def removeQuerySets(self):        
+        """
+        
+        This method removes the GeoQueryValueSet specified in the attributes:
+        
+        * occurrences,
+        * species,
+        * genera,
+        * families,
+        * classes,
+        * orders,
+        * phyla
+        * kingdoms
+        
+        Inside each element (cell) of the Gridded Taxonomy
+        
+        .. note:: Why ? Because it's necessary to pickle this and other derived 
+        classes and the use of LazyQueries doesn't allow pickling.
+        The pickling is used for creating the Cache via Redis.
+        
+        """
+        logger.info("Disabling GeoQueryValuesSets for the taxonomic attributes")
+        self.biosphere = []
+        map(lambda tax : tax.removeQuerySets(), self.taxonomies)
+        
+
+    def refreshTaxonomiesGeoQuerySets(self,cached_gridded_taxonomy):
+        """
+        ..
+        This method refresh the GeoQuerySets in the taxonomy list that
+        cannot be cached because of the Lazy Queries implementation.
+        
+        Parameters
+        ----------
+            
+            new_gridded_taxonomy : GriddedTaxonomy
+                The grid obtained from a newly created Taxonomy object.
+                
+        .. note:: The new object can be created using the create_tree_now set to False
+        Which is going to create the taxonomy with out making the calculations for obtaining the tree
+        giving an empty object with defined GeoQueryValuesSets.
+        
+        """
+        cache = cached_gridded_taxonomy
+        self.mergeGeometries()
+        cache.mergeGeometries()
+        if (self.showId() == cache.showId()) and (len(self.taxonomies) == len(cache.taxonomies)):
+            # Group taxonomies from itself to cached
+            self_cache = zip(self.taxonomies,cache.taxonomies)
+            # Load the features from cache
+            map(lambda s_c: s_c[0].loadFromCache(s_c[1]),self_cache)
+            return True
+            
+            
+        else:
+            raise Exception("Error the cached_griddedTaxonomy is not the same")
+            return None
         
    
     def createShapefile(self,option='richness',store='out_maps'):
@@ -931,10 +1156,12 @@ class NestedTaxonomy:
     
     
     """  
-    def __init__(self,id,gbif_geoqueryset,start_level=12,end_level=14,generate_tree_now=True):
-        self.levels = embedTaxonomyInNestedGrid(id,gbif_geoqueryset,start_level=start_level,end_level=end_level,generate_tree_now=generate_tree_now) 
-        self.parent = self.levels[12].taxonomies[0]
+    def __init__(self,id,gbif_geoqueryset,start_level=12,end_level=14,generate_tree_now=True,use_id_as_name=True):
+
+        self.levels = embedTaxonomyInNestedGrid(id,gbif_geoqueryset,start_level=start_level,end_level=end_level,generate_tree_now=generate_tree_now,use_id_as_name=use_id_as_name) 
+        self.parent = self.levels[start_level].taxonomies[0]
         self.maxdistances = self.getMaximumDistances()
+        self.parent_id = id
         
     def __repr__(self):
         cad = '<gbif.taxonomy.NestedTaxonomy instance with levels: %s>' %str(self.levels)    
@@ -950,7 +1177,10 @@ class NestedTaxonomy:
             The list of all levels
             
         """
-        a = str(self.levels.keys())
+        levels = self.levels.keys()
+        levels.sort()
+        a = str(levels)
+        
         logger.info('[biospatial.gbif.taxonomy.NestedTaxonomy]\n Available Levels %s' %a)
         return a
         
@@ -989,6 +1219,121 @@ class NestedTaxonomy:
 
     def getMaximumDistances(self):
         """
+        .. GetMaximumDistances
         This method calculates the maximum distance that a tree has 
         """
         pass
+    
+    
+    def getExtent(self):
+        """
+        .. getExtent
+        
+        This methods gives the geometric extent of the nested taxonomy.
+        
+        .. note:: Makes use of the Geometry attribute of the parent level.
+        
+        """
+        extent = self.parent.biomeGeometry.extent
+        return extent
+    
+    def showId(self):
+        """
+        .. showId
+        
+        This method returns a unique Id string that is going to be used as unique identifier
+        use as a key in the implementation of a cache service.
+        
+        .. note:: Check this when global analyses are defined
+        
+        """
+        extent = self.getExtent()
+        id = self.parent_id
+        levels = self.getLevels()
+        prefix = settings.NESTED_TAXONOMY_PREFIX
+        
+        # name = prefix,id,levels,extent
+        
+        name = '%s:%s:%s:%s' %(prefix,id,levels,extent)
+        return name
+    
+    def cache(self,redis_wrapper,key='default'):
+        """
+        .. cache
+        
+        This method stores in cache the NestedGriddedTaxonomy
+        using the key parameter as Key.
+        
+        Parameters
+        ==========
+            redis_wrapper : StrictRedis object
+                This is the redis connection to be used.
+                Needs to have specified host, database and port
+            key : string
+                The key used for storing in the Redis backend.
+                If none then it will use the output of the ShowId method.
+        
+        """
+        
+        
+        if key == 'default':
+            key = self.showId()
+        
+        logger.info('Serializing NestedGriddedTaxonomy. \n Depending on the amount of data it can take some time')
+        
+        #Cleaning GeoQueryValuesSets fields
+        map(lambda grid : grid.removeQuerySets(),self.levels.values())
+        
+        import pickle
+        logger.info('Serializing with pickle')    
+        self_pickle = pickle.dumps(self)
+        logger.info("Storing in Cache")
+        try:
+            
+            redis_wrapper.set(key,self_pickle)
+            return True
+        except:
+            logger.error("Problem in serializing. Check redis_wrapper variable, perhaps is not correctly initialized.")
+            return False    
+    
+    def loadFromCache(self,redis_wrapper,key='default'):
+        """
+        .. loadFromCache
+        
+        This method loads the Nested Taxonomy object stored from the Redis
+        Cache Backend.
+        
+        Parameters
+        ==========
+            redis_wrapper : StrictRedis object
+                This is the redis connection to be used.
+                Needs to have specified host, database and port
+            key : string
+                The key used for retrieving the object
+                 in the Redis backend. The defailt value means that
+                 the object is going to be called using the standard tag
+                 used.
+        
+        """
+        
+        
+        if key == 'default':
+            key = self.showId()
+        
+        logger.info('Retrieving information from NestedGriddedTaxonomy. \n This can take some time')
+        r = redis_wrapper
+        
+        nt_dump = r.get(key)
+        if nt_dump:
+            import pickle
+            cached_nt = pickle.loads(nt_dump)
+            for level in self.levels.keys():
+                grid_tax = self.levels[level]
+                #import ipdb
+                #ipdb.set_trace()
+                grid_tax.refreshTaxonomiesGeoQuerySets(cached_nt.levels[level])            
+            return True
+        else:
+            logger.error("Object not found in the Cache database")
+            raise Exception('Object not found in the Cache database')
+    

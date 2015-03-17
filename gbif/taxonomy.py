@@ -168,6 +168,108 @@ def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,g
 
 """
 
+class Presence:
+    
+    
+    def __init__(self,presence_list):
+        self.map = presence_list
+        self.keys = map(lambda x : x[0] ,self.map)
+        self.list = map(lambda x : x[1] ,self.map)
+
+    
+    def __str__(self):
+        """
+        String representation (cast) of the Presence Class
+        """
+        
+        return reduce(lambda a,b : str(a)+str(b),self.list)
+        
+    def BitArray(self):
+        """
+        ..
+        
+        Returns a BitArray representation of the current Presence.
+        The maximum being the integer represented by all the entries = 1 in the 'list' attribute.
+        
+        .. note:: This method converts the presence/absence list to a BinaryString data.
+        """
+        from bitstring import BitArray,BitStream
+        b = BitArray(bin=str(self))
+        return b
+    
+    def __int__(self):
+        return self.BitArray().uint
+    
+    def __repr__(self):
+        head = '<gbif.taxonomy.Presence instance %s >' %str(self)
+        return head
+    
+    def __list__(self):
+        return self.list
+        
+
+class Presences:
+    """
+    ..
+    This class implements the features and operations needed to explore the integer representation
+    of the assemblage of taxons.
+    
+    """
+    def __init__(self,dictionary_of_presence_list):
+        """
+        ..
+        """
+        d = dictionary_of_presence_list
+        self.species = Presence(d['sp'])
+        self.genera = Presence(d['gns'])
+        self.families = Presence(d['fam'])
+        self.orders = Presence(d['ord'])
+        self.classes = Presence(d['cls'])
+        self.phyla = Presence(d['phy'])
+        self.kingdoms = Presence(d['kng'])
+        
+        
+    def toDict(self):
+        """
+        ..
+        
+        Convert Presences into a dictionary.
+        
+        Returns
+        -------
+            
+            dic : A dictionary 
+                that uses as key the settings.TAXONOMIC_TREE_KEYS and values the presence/absence list.
+                
+
+        """
+        
+        d = {}
+        d['sp'] = self.species
+        d['gns'] = self.genera
+        d['fam'] = self.families
+        d['ord'] = self.orders
+        d['cls'] = self.classes
+        d['phy'] = self.phyla
+        d['kng'] = self.kingdoms
+        
+        return d
+    
+
+    def __repr__(self):
+        """
+        The representation in console
+        
+        """
+        dic = self.toDict()
+        body = '<gbif.taxonomy.Presences instance: \n'
+        for key,value in dic.iteritems():
+            c = 'key %s : %i  \n' %(key,int(value))
+            body += c
+        body += '\>'
+        return body
+
+
 class Taxonomy:
     """
     .. Taxonomy:
@@ -242,7 +344,11 @@ class Taxonomy:
         An array derived from a projection into R of the intrisicM at different submatrices.
         The common projection is the determinant in which the first element will be the determinant of the submatrix of intrisicM given by
         i,j = {1,2} and the last one will be the complete submatrix = intrisicM
-    
+    presences : A presence type
+        An object that has attributes in the taxonomic level key word (as in forest)
+        As values has lists that defines the presence or absences of species based on other taxonomy.
+        
+        .. note:: if the lists are full of 1's it means that this is the maximum level of representativeness, possible is a parent taxonomy.
   
     Parameters
     ----------
@@ -312,6 +418,8 @@ class Taxonomy:
         self.vectorJacobi = [] # This is the vector form of the determinants at each submatrix.
         self.intrinsicM = []
         self.vectorIntrinsic = []
+        self.presences = {}
+        
 
     def removeQuerySets(self):
         """
@@ -694,7 +802,119 @@ class Taxonomy:
         empty_forest = {'sp':t,'gns':t,'fam':t,'ord':t,'cls':t,'phy':t,'kng':t}
         return self.distanceToTree(empty_forest,update_inner_attributes=False)
 
+    def singlePresenceAbsenceRepr(self,reference='parent',taxonkey='sp'):
+        """
+        .. presenceAbsenceRepr
+        
+        This method gives a (binary) lazylist (generator) of presence/absence of taxons based on a referenced list passed
+        as the parameter 'reference_list'.
 
+        This parameter should be an 'ordered' integer list of present taxons.
+        
+        Parameters
+        ----------
+            
+                reference : list of integers
+                    The list of taxon ids to compare.
+                    If refererence list is the default ('parent')
+                    this means that the reference_list is  itself. 
+                    Useful in a nested taxonomy when refered to a parent level.
+                    
+                    All the values in the list should be 1.
+                    
+                taxonkey : string
+                    The value used to specify which taxonomic level is refering to.
+                    Options are (sp,gns,fam,ord,cls,phy,kng). 
+                    The same as the attribute forest.
+
+                    
+        Returns
+        -------
+        
+            list generator : binary 
+                This object is a generator but can easily be traslated to list via a cast.
+                This is to avoid intensive load of data, if there is the case.
+        
+        .. note:: 
+            
+            In order for this method to work properly, it is important that the reference_list is in the same
+            referencing system as the target taxonomy. By this I mean that if the taxonkey is 'sp' (for instance) the reference_list 
+            should be composed of ids retrieved from the species_id feature.
+             
+        """
+        try:
+            leaf_ids = self.forest[taxonkey].get_leaf_names()
+        except:
+            logger.error('Requested taxonkey value %s doesn\'t exist. Hint: load from cache or check the taxonkey value')
+            raise Exception('Requested taxonkey value %s doesn\'t exist. Hint: load from cache or check the taxonkey value')
+
+        #Sort the values
+        leaf_ids.sort()
+        # Use list comprehension to generate the presence/absence list.
+        if reference == 'parent':
+            l = (1 for x in leaf_ids if x > 0)
+            l2 = zip(leaf_ids,l)
+        else:
+            l1 = (x if x in leaf_ids else 'x' for x in reference.keys)
+            l2 = (1 if x in leaf_ids else 0 for x in reference.keys)
+            #but this zip ruins the generator
+            l2 = zip(l1,l2)
+        return l2
+
+    def setPresenceAbsenceFeature(self,reference_dict='parent'):
+        """
+        .. setPresenceAbsenceFeature
+
+        This method sets the presences attribute. A dictionary of presence/absence taxons based on a referenced list passed
+        as the parameter 'reference_list'.
+
+        This parameter should be an 'ordered' integer list of present taxons.
+        
+        Parameters
+        ----------
+            
+                reference_dict : dictionary of presences
+                    Each value in the dictionary is a list of taxa ids to compare.
+                    If the refererence dict is the default value ('parent')
+                    this means that the reference_dict is itself. 
+                    Useful in a nested taxonomy when refered to a parent level.
+                    
+                    All the values in the list will be 1.
+                
+
+                    
+        Returns
+        -------
+        
+            Null : nothing 
+                This method sets the presences attribute.
+        
+        .. note:: 
+            
+            In order for this method to work properly, it is important that the reference_list is in the same
+            referencing system as the target taxonomy. This means that the reference_list 
+            should be composed of ids retrieved from the same taxonomic_id level feature.        
+        
+        """
+        
+        
+
+        presences_dic = {}
+        if isinstance(reference_dict,dict): 
+            for key,reference_list in reference_dict.iteritems():
+                presences_dic[key] = self.singlePresenceAbsenceRepr(reference=reference_list,taxonkey=key)            
+            self.presences = Presences(presences_dic)
+        else:
+            if reference_dict == 'parent':
+                keys = settings.TAXONOMIC_TREE_KEYS
+                for key in keys:
+
+                    presences_dic[key] = self.singlePresenceAbsenceRepr(taxonkey=key)            
+                self.presences = Presences(presences_dic)
+            else:
+                logger.error("reference_dict is invalid, check syntax and documentation")
+                raise Exception("reference_dict is invalid, check syntax and documentation")
+                
     def loadFromCache(self,cached_taxonomy):
         """
         
@@ -747,6 +967,9 @@ class Taxonomy:
         geom = self.biomeGeometry.wkt
         cad = "< Taxonomy in %s > %geom"
         return cad
+
+
+
 
 class GriddedTaxonomy:
     """
@@ -821,6 +1044,7 @@ class GriddedTaxonomy:
     def __repr__(self):
         cad = "<GriddedTaxonomy instance: %s@%s >" %(self.parent_id,self.grid_name)
         return cad
+
     
     def showId(self):
         """
@@ -860,9 +1084,7 @@ class GriddedTaxonomy:
         biom_tax = zip(biomes,self.taxonomies)
         logger.info("Restoring the Queryset lost in the Caching process")
         map(lambda duple : duple[1].restoreQuerySets(duple[0]), biom_tax )
-        
-        
-        
+               
     def removeQuerySets(self):        
         """
         
@@ -888,7 +1110,6 @@ class GriddedTaxonomy:
         self.biosphere = []
         map(lambda tax : tax.removeQuerySets(), self.taxonomies)
         
-
     def refreshTaxonomiesGeoQuerySets(self,cached_gridded_taxonomy):
         """
         ..
@@ -920,8 +1141,7 @@ class GriddedTaxonomy:
         else:
             raise Exception("Error the cached_griddedTaxonomy is not the same")
             return None
-        
-   
+          
     def createShapefile(self,option='richness',store='out_maps'):
         """
         .. createShapefile:
@@ -1124,6 +1344,88 @@ class GriddedTaxonomy:
         matrices = map(lambda tax : tax.distanceToTree(taxonomic_forest),self.taxonomies)
         return matrices
 
+    def setPresenceAbundanceData(self,reference_dict):
+        """
+        ..
+        This method sets the presence attributes in every taxonomy in the Grid.
+        It uses a dictionary passed as a parameter which has the reference presence/absence data.
+        
+        Parameters
+        ----------
+            
+            reference_dict :  dictionary of Presences 
+                The dictionary that has keys in {'sp','gns','fam','ord','cls','phy',kng'}
+                and the associated values are the Presence data type that has all the taxonomic levels and has extends attributes in BitArray.
+         
+        Returns
+        -------
+            None : Null
+                But set the attribute presences in each taxonomy.
+        """
+        
+        ref  = reference_dict
+        
+        for taxonomy in self.taxonomies:
+            taxonomy.setPresenceAbsenceFeature(reference_dict=ref)
+
+        return None
+            
+    def summary(self,attr='raw'):
+        """
+        ..
+        This method gives a dictionary of all the presence representation of each taxonomy in the grid.
+        Depending on th parameter attr. 
+        
+        Parameters
+        ----------
+            
+            attr : string
+                
+                The feature to extract. Options are:
+                    
+                    * int : the integer representation
+                    * str : the Bitstring (String)
+                    * list : The list of bits
+                    * mapping : the mappping that relates Id with presence or absence
+                
+        Returns
+        -------
+        
+            Depending on the selected paramter
+        
+        """
+        g = {}
+        g['gid'] = map(lambda x : x.gid, self.taxonomies)
+        g['sp'] = map(lambda x : x.presences.species , self.taxonomies)
+        
+        g['gns'] = map(lambda x : x.presences.genera , self.taxonomies)   
+        g['fam'] = map(lambda x : x.presences.families , self.taxonomies)
+        g['ord'] = map(lambda x : x.presences.orders , self.taxonomies)
+        g['cls'] = map(lambda x : x.presences.classes , self.taxonomies)
+        g['phy'] = map(lambda x : x.presences.phyla , self.taxonomies)
+        g['kng'] = map(lambda x : x.presences.kingdoms , self.taxonomies)
+        #g['all'] = map(lambda x : (x.gid,int(x.presences.species),int(x.genera),int(x.families),int(x.orders),int(x.classes),int(x.phyla),int(x.kingdoms)),self.taxonomies)
+        keys = settings.TAXONOMIC_TREE_KEYS
+        if attr == 'int':
+            for key in keys:
+                g[key] = map(lambda p : int(p) ,g[key])
+        elif attr == 'str':
+            for key in keys:
+                g[key] = map(lambda p : str(p) ,g[key]) 
+        elif attr == 'list':
+            for key in keys:
+                g[key] = map(lambda p : p.list ,g[key])  
+        elif attr == 'mapping':
+            for key in keys:
+                g[key] = map(lambda p : p.map ,g[key])       
+        elif attr == 'raw':
+            return g
+        else:
+            logger.error("Wrong attribute selection")
+            return None
+                              
+        return g
+        
         
     
 class NestedTaxonomy:
@@ -1153,6 +1455,12 @@ class NestedTaxonomy:
     ==========
         levels : list of GriddedTaxonomy
         parent : The GriddedTaxonomy with the highest scale 
+        parent_id : int
+            Integer (gid) of the parent cell id.
+        toplevel : Int
+            The id level of the toppest grid.
+        bottomlevel : Int
+            The id level of the grid with higher resolution (bottom).
     
     
     """  
@@ -1162,10 +1470,73 @@ class NestedTaxonomy:
         self.parent = self.levels[start_level].taxonomies[0]
         self.maxdistances = self.getMaximumDistances()
         self.parent_id = id
-        
+        self.toplevel = start_level
+        self.current_level = start_level
+        self.bottomlevel = end_level
+               
     def __repr__(self):
         cad = '<gbif.taxonomy.NestedTaxonomy instance with levels: %s>' %str(self.levels)    
         return cad
+
+    def next(self):
+        """
+        Next function for iterator
+        If changed to Python 3.x the name should change to __next__
+        """
+        if self.current_level > self.bottomlevel:
+            self.current_level = self.toplevel
+            raise StopIteration
+
+        else:
+            self.current_level += 1
+            return self.levels[self.current_level - 1]
+            
+    def __iter__(self):
+        """
+        .. iterator
+        
+        This method defines the iterator for the NestedTaxonomy. 
+        The items are the ordered (from top to bottom) levels.
+        Remmember that a level is a GriddedTaxonomy in the Stack.
+        
+        .. note:: My first iterator :')
+        """
+        return self
+    
+    def setPresenceInLevels(self,external_reference_dic='No'):
+        """
+        ..
+        This method sets the presence/absence lists on all the taxonomies on all the 
+        levels defined in the NestedTaxonomy.
+
+           
+        Parameters
+        ----------
+            
+                external_reference_dic :  dictionary of Presences 
+                The dictionary that has keys in {'sp','gns','fam','ord','cls','phy',kng'}
+                and the associated values are the Presence data type that has all the taxonomic levels and has extends attributes in BitArray.
+         
+        Returns
+        -------
+            None : Null
+                But set the attribute presences in each taxonomy.
+        """           
+           
+        
+        if external_reference_dic == 'No':
+            # this will initialize the directory using the parent as level as reference
+            logger.info('Using parent taxonomy as reference source for representing presences and absences in subsequent levels.')
+            self.parent.setPresenceAbsenceFeature()
+            dic = self.parent.presences.toDict()
+        else:
+            dic = external_reference_dic
+        try:    
+            for level in self:
+                level.setPresenceAbundanceData(dic)
+        except:
+            logger.error("The reference dictionary is not compatible.")
+            raise Exception("The reference dictionary is not compatible.")
     
     def getLevels(self):
         """
@@ -1184,7 +1555,6 @@ class NestedTaxonomy:
         logger.info('[biospatial.gbif.taxonomy.NestedTaxonomy]\n Available Levels %s' %a)
         return a
         
-
     def getDistancesAtLevel(self,level,foreign_forest='Top'):
         """
         This method calculates all the Jacobian matrices comparing the parent tree with the specified level.
@@ -1216,15 +1586,13 @@ class NestedTaxonomy:
             logger.error('[biospatial.gbif.taxonomy.NestedTaxonomy] \nSomethng went wrong. Perhaps the selected level doesn\'t exist for this NestedTaxonomy')
             return None
         
-
     def getMaximumDistances(self):
         """
         .. GetMaximumDistances
         This method calculates the maximum distance that a tree has 
         """
         pass
-    
-    
+       
     def getExtent(self):
         """
         .. getExtent
@@ -1256,7 +1624,7 @@ class NestedTaxonomy:
         
         name = '%s:%s:%s:%s' %(prefix,id,levels,extent)
         return name
-    
+        
     def cache(self,redis_wrapper,key='default'):
         """
         .. cache
@@ -1336,4 +1704,70 @@ class NestedTaxonomy:
         else:
             logger.error("Object not found in the Cache database")
             raise Exception('Object not found in the Cache database')
+    
+    
+def remap(sorted_list_duple):
+    previous_value = sorted_list_duple[0][1]
+    j = 0
+    new = []
+    for indx,current_value in sorted_list_duple:
+        if current_value != previous_value:
+            new.append((indx,j))
+            j += 1
+            previous_value = current_value
+        else:
+            new.append((indx,j))
+    return new 
+    
+
+def summaryDataFrame(summary):
+    
+    fam = map(lambda id,fam : (id,fam) , summary['gid'],summary['fam'])
+    sp = map(lambda id,fam : (id,fam) , summary['gid'],summary['sp'])
+    cls =map(lambda id,fam : (id,fam) , summary['gid'],summary['cls'])
+    ord = map(lambda id,fam : (id,fam) , summary['gid'],summary['ord'])
+    kng = map(lambda id,fam : (id,fam) , summary['gid'],summary['kng'])
+    gns = map(lambda id,fam : (id,fam) , summary['gid'],summary['gns'])
+    phy = map(lambda id,fam : (id,fam) , summary['gid'],summary['phy'])
+
+    #Sort by integer representation
+    j= map(lambda x : x.sort(key=lambda y : y[1]),[fam,sp,cls,ord,kng,gns,phy])
+    
+    # Apply re-classification
+    sp = remap(sp)
+    gns = remap(gns)
+    fam = remap(fam)
+    ord = remap(ord)
+    cls = remap(cls)
+    phy = remap(phy)
+    kng = remap(kng)
+    
+    #Sort by GID
+    j= map(lambda x : x.sort(key=lambda y : y[0]),[fam,sp,cls,ord,kng,gns,phy])
+    
+    # Retrieve the gid.
+    #Need to check if it's the same value for each.
+    gid = map(lambda x : x[0] , fam)
+    #Take away first component
+    d = {'gid':gid, 'sp' : sp, 'gns' : gns, 'fam' : fam, 'ord' : ord,'cls': cls, 'phy' : phy , 'kng' : kng }    
+    for key in ['fam','sp','cls','ord','kng','gns','phy']:
+        tax = d[key]
+        l = []
+        for i,value in enumerate(tax):
+            if gid[i] == value[0]:
+               
+                t = value[1]
+
+                l.append(t)
+            else:
+                raise Exception('Error in the summary data. GID not the same for rows')
+        d[key] = l
+    return d     
+
+
+
+
+    
+    
+    
     

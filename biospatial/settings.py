@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'django.contrib.gis',
     'gbif',
     'django_pdb',
+    'django_extensions',
 )
 
 MIDDLEWARE_CLASSES = (

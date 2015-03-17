@@ -17,7 +17,7 @@ BiosPytial Documentation and tutorial
   modules/mesh_modules.rst
   modules/gbif_taxonomy.rst
   modules/gbif_griddedtaxonomy_class.rst
-  modules/gbif_nestedgriddedtaxonomy_class.rst
+  modules/gbif_nestedtaxonomy_class.rst
   modules/gbif_buildtree.rst
   modules/gbif_views.rst
 

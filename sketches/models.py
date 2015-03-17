@@ -44,5 +44,30 @@ class Sketch(models.Model):
     def __unicode__(self):
         return u'<Sketch: %s >' %(self.id)
 
+class Country(models.Model):
+    """
+    This is the model for making objects based on the polugons defined by the table world boarders
+    """
+    id =  models.AutoField(primary_key=True, db_column="gid")
+    fips = models.CharField(max_length=2)
+    iso2 = models.CharField(max_length=2) 
+    iso3 = models.CharField(max_length=3)
+    un = models.IntegerField()
+    name = models.CharField(max_length=50)
+    area = models.IntegerField()
+    pop2005 = models.IntegerField()
+    region = models.IntegerField()
+    subregion = models.IntegerField()
+    lon = models.FloatField()
+    lat = models.FloatField()
+    geom =  models.MultiPolygonField()
+    objects = models.GeoManager()
+    class Meta:
+        managed = False
+        db_table = 'public\".\"world_borders'
+        
+    def __unicode__(self):
+        return u'<Country instance: %s >'%(self.name)
+
 
 # Create your models here.

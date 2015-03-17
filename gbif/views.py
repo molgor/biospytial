@@ -148,6 +148,11 @@ def showAllLevelsInTreeInGrid(request):
         
         gid = int(get['gid'])
         grid_level = int(get['g_l'])
+        names = int(get['names'])
+        if names > 0:
+            only_id = False
+        else:
+            only_id = True
         #taxonomic_level = get['tax_lvl']
     except:
         response.content='Bad request. Check GET variable definitions'
@@ -168,7 +173,7 @@ def showAllLevelsInTreeInGrid(request):
     rich_keys = { 'oc':'occurrences','sp' :'species','gns':'genera','fam':'families','cls':'classes','ord':'orders','phy':'phyla','kng':'kingdoms'}
     img_paths = {}
     #THIS IS VERY VERY WRONG AND I WOULD SUGGEST A REFACTORING like the use of a binary written copy in disk about the object in question (cached)
-    gb=GriddedTaxonomy(biome,cell,generate_tree_now=True)
+    gb=GriddedTaxonomy(biome,cell,generate_tree_now=True,use_id_as_name=only_id)
     taxonomy = gb.taxonomies[0]
     mat_complex = taxonomy.calculateIntrinsicComplexity()
     for taxonomic_level in tax_levels:
@@ -183,7 +188,7 @@ def showAllLevelsInTreeInGrid(request):
                     #gb=GriddedTaxonomy(biome,cell,generate_tree_now=True)
                     logger.info("Gridded taxonomy doesn't found")
             except:
-                gb=GriddedTaxonomy(biome,cell,generate_tree_now=True)
+                gb=GriddedTaxonomy(biome,cell,generate_tree_now=True,use_id_as_name=only_id)
             forest = taxonomy.forest
 
             ts = TreeStyle()

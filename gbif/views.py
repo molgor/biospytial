@@ -175,6 +175,7 @@ def showAllLevelsInTreeInGrid(request):
     #THIS IS VERY VERY WRONG AND I WOULD SUGGEST A REFACTORING like the use of a binary written copy in disk about the object in question (cached)
     gb=GriddedTaxonomy(biome,cell,generate_tree_now=True,use_id_as_name=only_id)
     taxonomy = gb.taxonomies[0]
+    #ipdb.set_trace()
     mat_complex = taxonomy.calculateIntrinsicComplexity()
     for taxonomic_level in tax_levels:
         head_path = settings.PATH_IMAGES

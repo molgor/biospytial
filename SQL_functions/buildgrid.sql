@@ -7,7 +7,7 @@ CREATE OR REPLACE FUNCTION mesh.buildmesh(polygon geometry, grid_divisions integ
 	-- Derived from the makegrid function. 
 	-- Author: Juan Escamilla M. 
 	-- Nov. 17 2014
-	RETURNS SETOF tests.grid AS
+	RETURNS SETOF mesh.grid AS
 $BODY$
 DECLARE
 r record;

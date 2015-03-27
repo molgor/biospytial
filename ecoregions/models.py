@@ -1,10 +1,11 @@
 # This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
 
-class ecoregions(models.Model):
+class Ecoregion(models.Model):
+    id = models.AutoField(primary_key=True, db_column="gid")
     area = models.FloatField()
     perimeter = models.FloatField()
-    cov_field = models.FloatField()
+    cov_ = models.FloatField()
     cov_id = models.FloatField()
     tipo_zona = models.CharField(max_length=20)
     num_zona = models.CharField(max_length=10)
@@ -28,4 +29,14 @@ class ecoregions(models.Model):
 
     class Meta:
         managed = False
-        db_table = "ecoregions"
+        db_table = "mex_ecoregions"
+        
+        
+    def __repr__(self):
+        c = '<Ecoregion: instance %s :: %s >' %(self.id,self.nomzonecol.encode('latin-1'))
+        return c
+    
+    
+    def __str__(self):
+        c = '<Ecoregion: instance %s :: %s >' %(self.id,self.nomzonecol.encode('latin-1'))
+        return c

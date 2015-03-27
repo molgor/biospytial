@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'numpydoc',
+    'matplotlib.sphinxext.ipython_directive',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

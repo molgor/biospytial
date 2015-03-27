@@ -64,10 +64,14 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         #'django.db.backends.postgresql_psycopg2',
-        'NAME': 'gbif',                      
+        'NAME': 'gbif',
+        #local
+        #'NAME' : 'masterthesis',                      
         'USER': 'gbif',
+        #'USER' : 'juan',
         'PASSWORD': 'biology',
         'HOST': 'geodata'
+        #'HOST' : 'localhost'
     },            
              
     #===========================================================================

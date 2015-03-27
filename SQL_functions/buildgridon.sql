@@ -67,8 +67,8 @@ END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION mesh.makegrid(geometry, integer)
-  OWNER TO gbif;
+--ALTER FUNCTION mesh.makegrid(geometry, integer)
+ -- OWNER TO gbif;
 
   
  -- Function: mesh.buildmesh(geometry, integer)
@@ -76,7 +76,7 @@ ALTER FUNCTION mesh.makegrid(geometry, integer)
 -- DROP FUNCTION mesh.buildmesh(geometry, integer);
 
 CREATE OR REPLACE FUNCTION mesh.buildmesh(polygon geometry, grid_divisions integer)
-  RETURNS SETOF tests.grid AS
+  RETURNS SETOF mesh.grid AS
 $BODY$
 DECLARE
 r record;
@@ -95,8 +95,8 @@ $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100
   ROWS 1000;
-ALTER FUNCTION mesh.buildmesh(geometry, integer)
-  OWNER TO gbif;
+--ALTER FUNCTION mesh.buildmesh(geometry, integer)
+ -- OWNER TO gbif;
   
   
   
@@ -132,5 +132,5 @@ RETURN 'Table created';
 $BODY$
   LANGUAGE plpgsql VOLATILE
   COST 100;
-ALTER FUNCTION mesh.generategridon(geometry, character varying, integer)
-  OWNER TO gbif; 
+--ALTER FUNCTION mesh.generategridon(geometry, character varying, integer)
+  --OWNER TO gbif; 

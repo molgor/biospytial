@@ -42,7 +42,7 @@ logger = logging.getLogger('biospatial.gbif.taxonomy')
 from gbif.buildtree import getTOL
 import biospatial.settings as settings 
 
-
+import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -212,7 +212,7 @@ class Presences:
     """
     ..
     This class implements the features and operations needed to explore the integer representation
-    of the assemblage of taxons.
+    of the assemblage of taxa.
     
     """
     def __init__(self,dictionary_of_presence_list):
@@ -967,9 +967,75 @@ class Taxonomy:
         geom = self.biomeGeometry.wkt
         cad = "< Taxonomy in %s > %geom"
         return cad
-
-
-
+    
+    
+    def showId(self):
+        """
+        This method returns a unique Id string that is going to be used as unique identifier
+        use as a key in the implementation of a cache service.
+        
+        .. note:: Check this when global analyses are defined
+        
+        """
+        #Here I'm supposing that the name of the table, and the extent polygon gives a unique mapping.
+        try:
+            extent = self.biomeGeometry.extent
+            name = "tax"
+            res = self.biomeGeometry.area
+            string = "%s-%s:%s:%s" %(name,self.gid,extent,res)
+            return string
+        except:
+            logger.error("[biospatial.gbif.taxonomy.GriddedTaxonomy] \n The total geometry area has not been defined. Try running mergeGeometries first")
+            raise Exception("Geometry Extent has not been instantiated")
+            return None 
+        
+    def cache(self,redis_wrapper,key='default',refresh=False):
+        """
+        .. cache
+        
+        This method stores in cache the Taxonomy
+        using the key parameter as Key.
+        
+        Parameters
+        ==========
+            redis_wrapper : StrictRedis object
+                This is the redis connection to be used.
+                Needs to have specified host, database and port
+            key : string
+                The key used for storing in the Redis backend.
+                If none then it will use the output of the ShowId method.
+            refresh : Boolean
+                If true it will update the value.
+                If false and if the key / object exists then it will not store in cache.
+                
+        
+        """
+        
+        
+        if key == 'default':
+            key = self.showId()
+        
+        if not redis_wrapper.exists(key) or refresh:             
+            logger.info('Serializing Object. \n Depending on the amount of data it can take some time')
+        
+            #Cleaning GeoQueryValuesSets fields
+            #map(lambda grid : grid.removeQuerySets(),self)
+            logger.info('Removing GeoQueryValuesSets')
+            self.removeQuerySets()
+            import pickle
+            logger.info('Serializing with pickle')    
+            self_pickle = pickle.dumps(self)
+            logger.info("Storing in Taxonomy in Cache")
+            try:
+            
+                redis_wrapper.set(key,self_pickle)
+                return True
+            except:
+                logger.error("Problem in serializing. The intented caching object could be very big!")
+                return self_pickle    
+        else:
+            logger.info('Object exists on Cache System. For update activate flag: refresh to True')
+            return True
 
 class GriddedTaxonomy:
     """
@@ -1039,12 +1105,38 @@ class GriddedTaxonomy:
 
 
     def __str__(self):
-        return u"GriddedTaxonomy layer: \n Extent: %s" %self.geometry.extent     
+        return u"GriddedTaxonomy layer: \n Extent: %s" %str(self.geometry.extent)     
         
     def __repr__(self):
         cad = "<GriddedTaxonomy instance: %s@%s >" %(self.parent_id,self.grid_name)
         return cad
 
+#===============================================================================
+#     def next(self):
+#         """
+#         Next function for iterator
+#         If changed to Python 3.x the name should change to __next__
+#         """
+#         if self.current_level > self.bottomlevel:
+#             self.current_level = self.toplevel
+#             raise StopIteration
+# 
+#         else:
+#             self.current_level += 1
+#             return self.levels[self.current_level - 1]
+#===============================================================================
+            
+    def __iter__(self):
+        """
+        .. iterator
+        
+        This method defines the iterator for the GriddedTaxonomy.
+        It is a shortcut for using taxonomies.  
+        The items are the taxonomy objects in the taxonomies list.
+        
+        .. note:: My second iterator :')
+        """
+        return iter(self.taxonomies)
     
     def showId(self):
         """
@@ -1141,7 +1233,32 @@ class GriddedTaxonomy:
         else:
             raise Exception("Error the cached_griddedTaxonomy is not the same")
             return None
-          
+
+    def restoreTaxonomiesFromCache(self,redis_wrapper):
+        """
+        ..
+        This method restores the taxonomies from cache.
+        
+        """
+        #=======================================================================
+        # if path_to_file:
+        #     f = open(path_to_file)
+        #     tax = pickle.load(f)
+        #     #hacer para cuando hay file
+        #=======================================================================
+            
+        keys = map(lambda t : t.showId(), self.taxonomies)
+        if len(keys) == len(self.taxonomies):
+            for i,key in enumerate(keys):
+                logger.info('Restored %i/%i Taxonomy'%(i,len(keys)))
+                taxo_raw = redis_wrapper.get(key)
+                tax = pickle.loads(taxo_raw)
+                
+                self.taxonomies[i].loadFromCache(tax)
+                logger.info('Restored %i/%i Taxonomy'%(i,len(keys)))
+            logger.info('Taxonomy restored')
+        return None
+            
     def createShapefile(self,option='richness',store='out_maps'):
         """
         .. createShapefile:
@@ -1425,7 +1542,45 @@ class GriddedTaxonomy:
             return None
                               
         return g
+
+    def cache(self,redis_wrapper,key='default'):
+        """
+        .. cache
         
+        This method stores in cache the NestedGriddedTaxonomy
+        using the key parameter as Key.
+        
+        Parameters
+        ==========
+            redis_wrapper : StrictRedis object
+                This is the redis connection to be used.
+                Needs to have specified host, database and port
+            key : string
+                The key used for storing in the Redis backend.
+                If none then it will use the output of the ShowId method.
+        
+        """
+        
+        
+        if key == 'default':
+            key = self.showId()
+        
+        logger.info('Serializing GriddedTaxonomy. \n Depending on the amount of data it can take some time')
+        
+        #Cleaning GeoQueryValuesSets fields
+        map(lambda grid : grid.removeQuerySets(),self)
+        
+        import pickle
+        logger.info('Serializing with pickle')    
+        self_pickle = pickle.dumps(self)
+        logger.info("Storing in Cache")
+        try:
+            
+            redis_wrapper.set(key,self_pickle)
+            return True
+        except:
+            logger.error("Problem in serializing. The intented caching object could be very big!")
+            return self_pickle    
         
     
 class NestedTaxonomy:
@@ -1661,8 +1816,8 @@ class NestedTaxonomy:
             redis_wrapper.set(key,self_pickle)
             return True
         except:
-            logger.error("Problem in serializing. Check redis_wrapper variable, perhaps is not correctly initialized.")
-            return False    
+            logger.error("Problem in serializing. The intented caching object could be very big!")
+            return self_pickle    
     
     def loadFromCache(self,redis_wrapper,key='default'):
         """

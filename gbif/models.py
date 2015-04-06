@@ -356,8 +356,10 @@ class Occurrence(models.Model):
     
     class Meta:
         managed = False
+        
         # remote server table name
-        db_table = "gbif_occurrence"
+        db_table = settings.GBIF_DATATABLE
+        #db_table = "gbif_occurrence"
         # Local table name
         #db_table = "mexico_gbif_subset"
  

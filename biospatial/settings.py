@@ -65,13 +65,16 @@ DATABASES = {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         #'django.db.backends.postgresql_psycopg2',
         'NAME': 'gbif',
-        #local
-        #'NAME' : 'masterthesis',                      
         'USER': 'gbif',
-        #'USER' : 'juan',
         'PASSWORD': 'biology',
         'HOST': 'geodata'
+        
+    #local
+        #'NAME' : 'masterthesis',                      
+        #'USER' : 'juan',
         #'HOST' : 'localhost'
+
+    
     },            
              
     #===========================================================================
@@ -188,7 +191,42 @@ NESTED_TAXONOMY_PREFIX = 'nstax'
 GRIDDED_TAXONOMY_PREFIX = 'gdtax'
 TAXONOMY_PREFIX = 'tax'
 
+# Uncomment if it's local
+#GBIF_DATATABLE = "mexico_gbif_subset"
 
-
-
+#Uncomment for remote host
+GBIF_DATATABLE = "gbif_occurrence"
+        # Local table name
+        #db_table = "mexico_gbif_subset"
  
+# Mesh table settings. provisional. expected to have it's on config file
+BRAZ_SCALES = { 8 : 'mesh\".\"braz_grid8a',
+          9 : 'mesh\".\"braz_grid16a',
+          10 : 'mesh\".\"braz_grid32a',
+          11 : 'mesh\".\"braz_grid64a',
+          12 : 'mesh\".\"braz_grid128a',
+          13 : 'mesh\".\"braz_grid256a',
+          14 : 'mesh\".\"braz_grid512a',
+          15 : 'mesh\".\"braz_grid1024a',
+          16 : 'mesh\".\"braz_grid2048a',
+          17 : 'mesh\".\"braz_grid4096a'
+          }
+
+
+
+MEX_SCALES = { 0 : 'mesh"."mexico_grid1',
+        1: 'mesh"."mexico_grid2',
+        2: 'mesh"."mexico_grid4',
+        3: 'mesh"."mexico_grid8',
+        4: 'mesh"."mexico_grid16',
+        5: 'mesh"."mexico_grid32',
+        6: 'mesh"."mexico_grid64',
+        7: 'mesh"."mexico_grid128',
+        8: 'mesh"."mexico_grid256',
+        9: 'mesh"."mexico_grid512',
+        10: 'mesh"."mexico_grid1024'
+        }
+
+
+#ANALYSIS ON GRID SET: 
+MESH_TABLENAMESPACE = MEX_SCALES

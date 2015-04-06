@@ -34,34 +34,9 @@ logger = logging.getLogger('biospatial.mesh')
 
 from django.forms import ModelForm
 
-braz_scales = { 8 : 'mesh\".\"braz_grid8a',
-          9 : 'mesh\".\"braz_grid16a',
-          10 : 'mesh\".\"braz_grid32a',
-          11 : 'mesh\".\"braz_grid64a',
-          12 : 'mesh\".\"braz_grid128a',
-          13 : 'mesh\".\"braz_grid256a',
-          14 : 'mesh\".\"braz_grid512a',
-          15 : 'mesh\".\"braz_grid1024a',
-          16 : 'mesh\".\"braz_grid2048a',
-          17 : 'mesh\".\"braz_grid4096a'
-          }
+scales = settings.MESH_TABLENAMESPACE
 
-
-
-mex_scales = { 0 : 'mesh"."mexico_grid1',
-        1: 'mesh"."mexico_grid2',
-        2: 'mesh"."mexico_grid4',
-        3: 'mesh"."mexico_grid8',
-        4: 'mesh"."mexico_grid16',
-        5: 'mesh"."mexico_grid32',
-        6: 'mesh"."mexico_grid64',
-        7: 'mesh"."mexico_grid128',
-        8: 'mesh"."mexico_grid256',
-        9: 'mesh"."mexico_grid512'
-        }
-
-
-def initMesh(Intlevel,scales=mex_scales):
+def initMesh(Intlevel,scales=scales):
     """
     This function initializes a mesh based on the table definition (name) 
     of a spatially enabled database.

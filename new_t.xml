@@ -1,9 +1,0 @@
-<phyloxml xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance xmlns=http://www.phyloxml.org xsi:schemaLocation=http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd>
-<gbif:genus> 
- <gbif:genus_id> 2362864 </gbif:genus_id>
- 	 <gbif:name> Pseudorasbora </gbif:name>
-<gbif:Specie> Id = 2362868 </gbif:Specie>
- 	 <gbif:Name> Pseudorasbora parva (Temminck & Schlegel, 1846) </gbif:Name>
- 	 	 <gbif:n_occurrences> 3 </gbif:n_occurrences>
-	 <gbif:n_especies> 1 </gbif:n_especies> 
- </gbif.genus></phyloxml>

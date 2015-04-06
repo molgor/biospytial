@@ -1248,15 +1248,16 @@ class GriddedTaxonomy:
         #=======================================================================
             
         keys = map(lambda t : t.showId(), self.taxonomies)
+        
         if len(keys) == len(self.taxonomies):
             for i,key in enumerate(keys):
-                logger.info('Restored %i/%i Taxonomy'%(i,len(keys)))
+                logger.info('Restored Taxonomy: %i/%i '%(i+1,len(keys)))
                 taxo_raw = redis_wrapper.get(key)
                 tax = pickle.loads(taxo_raw)
                 
                 self.taxonomies[i].loadFromCache(tax)
-                logger.info('Restored %i/%i Taxonomy'%(i,len(keys)))
-            logger.info('Taxonomy restored')
+                #logger.info('Restored Taxonomy: %i/%i '%(i+1,len(keys)))
+            logger.info('All taxonomies restored')
         return None
             
     def createShapefile(self,option='richness',store='out_maps'):
@@ -1581,7 +1582,44 @@ class GriddedTaxonomy:
         except:
             logger.error("Problem in serializing. The intented caching object could be very big!")
             return self_pickle    
+
+
+    def intrinsicPanel(self,with_this_list=''):
+        """
+        .. intrinsicPanel
+        This method extracts the intrinsicM attribute of all taxonomies with the Grid
+        and returns a pandas Panel in which each entry in the matrix is a Serie composed all
+        the values for a (taxonomic_level,taxonomic_level) duple.
         
+        Parameters
+        ==========
+            
+            with_this_list : list of taxonomies
+                The taxonomies list from which the Panel is going to be build.
+                For doing with all the taxonomies in the grid use: '' (default)
+                
+        
+        
+        Returns
+        =======
+            a Panel
+                Similar to a matrix with the difference that each entry is a list Serie.
+                Each element of this list correspond to the entry of the intrinsic matrix 
+            
+        """
+        if with_this_list == '':
+            taxonomic_list = self.taxonomies
+        else:
+            taxonomic_list = with_this_list
+        import pandas as pn
+        all_entries = {}
+        for i,tax_name_i in enumerate(settings.TAXONOMIC_TREE_KEYS):
+            li = {}
+            for j,tax_name_j in enumerate(settings.TAXONOMIC_TREE_KEYS):   
+                i_j = map(lambda t : t.intrinsicM[i,j],taxonomic_list)
+                li[tax_name_j] = pn.Series(i_j)
+            all_entries[tax_name_i] = li
+        return pn.Panel(all_entries)          
     
 class NestedTaxonomy:
     """

@@ -25,4 +25,34 @@ for i in z_numbers:
     #.aggregate(polygon=Union('geom'),name=Min('nomzonecol'.encode('latin-1')),zone_id=Min('num_zona'))
     
     
+regions_polys = {}
+for i in z_numbers:
+    #regions_dic[int(i)]=ecoregions_in_area.filter(num_zona=int(i)).aggregate(polygon=Union('geom'),name=Min('nomzonecol'.encode('latin-1')),zone_id=Min('num_zona'))
+    regions_polys[int(i)]=map(lambda p : p.geom , ecoregions_in_area.filter(num_zona=int(i)))
+    #.aggregate(polygon=Union('geom'),name=Min('nomzonecol'.encode('latin-1')),zone_id=Min('num_zona'))
+   
+    
 #map(lambda l_t : map(lambda t : t.calculateIntrinsicComplexity(),l_t),tropic_tax)
+
+taxonomies_per_ecoregion = {}
+for i in z_numbers:
+    tax_list = []
+    for poly in regions_polys[int(i)]:
+        tax_list.append(map(lambda t : t.biomeGeometry.intersects(poly),l9.taxonomies))
+    taxonomies_per_ecoregion[i] = tax_list
+    
+
+l9 = nt.levels[9]
+l9.restoreTaxonomiesFromCache(r)
+
+#SELECT ONE ECOREGION CLASS JUT POLYGONS
+#trop_pol  = map(lambda r : r.geom , regions_dic[1])
+
+#LET POLY BE A POLYGON OF IT TROP_POL
+#poly = trop_pol[0]
+#Filter taxonomies living here
+#taxonomies_within_tropic = map(lambda t : t.biomeGeometry.intersects(poly),l9.taxonomies)
+
+
+
+

@@ -7,6 +7,9 @@ logs/
 *html
 *doctree
 
+mex_taxonomies/
+
+.DS*
 
 
 *.shp

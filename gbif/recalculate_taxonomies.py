@@ -74,8 +74,8 @@ for i,tax in enumerate(l4):
     tax.buildInnerTree(deep=True)
     tax.calculateIntrinsicComplexity()
     print('Calculating and caching taxonomy %s/%s'%(str(i),str(max_i)))
-#del(l4)
-#del(nt.levels[4]) 
+del(l4)
+del(nt.levels[4]) 
 
 l3 = nt.levels[3]
 max_i = len(l3.taxonomies)    

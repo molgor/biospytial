@@ -62,7 +62,7 @@
 \def\cleardoublepage{\clearpage\if@twoside \ifodd\c@page\else
 \hbox{}
 \thispagestyle{empty}
-%\newpage
+\newpage
 \if@twocolumn\hbox{}\newpage\fi\fi\fi}
 \usepackage{amsmath,amsfonts,amssymb,amscd,amsthm,xspace}
 \theoremstyle{plain}
@@ -137,9 +137,9 @@
 \degree      {}
 \authors     {}
 \university  {University of Southampton}
-\department  {Geography and Environment}
-\group       {}
-\faculty     {Faculty of Social and Human Sciences}
+\department  {Electronics and Computer Science}
+\group       {Electronic and Software Systems}
+\faculty     {Faculty of Physical and Applied Sciences}
 \addresses   {}
 \subject     {}
 \keywords    {}
@@ -176,7 +176,7 @@
       \bigskip
       {\large \textbf{\authornames} \par}
       \vfill
-      {\large Preliminary results and logs  \par}
+      {\large Technical Report \par}
       \bigskip
       \bigskip
       \bigskip

@@ -4,29 +4,29 @@
 \documentclass{ecsreport}      % Use the Report Style
 \graphicspath{{../Figures/}}   % Location of your graphics files
 \usepackage{natbib}            % Use Natbib style for the refs.
-\usepackage{soul}
-
 %% \removecolourlinks    % Uncomment this command to remove colour from any links
-%\input{Definitions}            % Include your abbreviations
+\input{Definitions}            % Include your abbreviations
 %% ----------------------------------------------------------------
 \begin{document}
-%\frontmatter
-\title      {Taxonomic structures for measuring biodiversity in similar biomes across spatial resolutions}
-\authors  
-             {\href{mailto:jmem1a@soton.ac.uk}{Juan M. Escamilla Molgora}}
-\department  {Geography and the Environment}
-\group       {GEM Masters program}
+\frontmatter
+\title      {An Investigation into \dots}
+\authors    {\texorpdfstring
+             {\href{mailto:S.R.Gunn@ecs.soton.ac.uk}{Steve R. Gunn}}
+             {Steve R. Gunn}
+            }
+\department  {Electronics and Computer Science}
+\group       {Electronic and Software Systems}
 \addresses  {\groupname\\\deptname\\\univname}
 \date       {\today}
-\subject    {Ecosystem Science, Ecology, Evolutionary Biology, Geostatistics}
+\subject    {}
 \keywords   {}
-%\maketitle
-%\begin{abstract}
-%
-%\end{abstract}
-%\tableofcontents
-%\listoffigures
-%\listoftables
+\maketitle
+\begin{abstract}
+This work is all about \dots
+\end{abstract}
+\tableofcontents
+\listoffigures
+\listoftables
 
 %% -----------------------
 %% lstpatch.sty
@@ -41,17 +41,16 @@
 
 
 
-%\acknowledgements{Thanks to no one.}
-%\listofsymbols{ll}{$w$ & The weight vector}
-%\mainmatter
+\acknowledgements{Thanks to no one.}
+\listofsymbols{ll}{$w$ & The weight vector}
+\mainmatter
 %% ----------------------------------------------------------------
-%\include{reports/report2}
-\include{reports/methodology}
-%\include{Conclusions}
-%\appendix
-%\include{AppendixA}
-%\backmatter
+\include{Introduction}
+\include{Conclusions}
+\appendix
+\include{AppendixA}
+\backmatter
 \bibliographystyle{apalike}
-\bibliography{reports/gem_masters}
+\bibliography{ECS}
 \end{document}
 %% ----------------------------------------------------------------

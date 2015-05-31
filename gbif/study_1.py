@@ -34,7 +34,7 @@ from ecoregions.models import Ecoregion
 from django.contrib.gis.db.models import Union, Min
 import biospatial.settings as settings
 import pandas as pn
-
+from sketches.models import Country
 
 def PanelizeMatrices(list_of_taxonomies):
     """
@@ -142,12 +142,51 @@ def getTaxonomiesPerEcoregion_dic(z_numbers,regions_polys_dic,list_taxonomies):
         taxonomies_per_ecoregion_mergpol[int(i)] = monoid
     return taxonomies_per_ecoregion_mergpol
 
+def getRichnessFromTaxonomies(tax_list):
+    dunno = {'id': [] ,'occurrences': [] ,'species' : [] ,'genera' : [] ,'families' : [], 'orders' : [],'classes': [], 'phyla' :[], 'kingdoms':[],'r_sp_gn':[],'r_gn_fam':[],'r_fam_ord':[],'r_ord_cls':[], 'r_cls_phy':[],'r_phy_kng':[]}
+    def puke_data(taxonomy):
+        M = taxonomy.intrinsicM
+        chain_change = []
+        for i in range(1,7):
+            chain_change.append(M[i-1,i])
+        return chain_change
+        #return taxonomy.gid, t['species'],t['genera'],t['families'],t['orders'],t['classes'],t['phyla'],t['kingdoms']  
+    #Get by tax level
+    dunno['id'] = map(lambda t : t.gid , tax_list)
+    dunno['occurrences'] = map(lambda t : t.richness['occurrences'] , tax_list)
+    dunno['species'] = map(lambda t : t.richness['species'] , tax_list)
+    dunno['genera'] = map(lambda t : t.richness['genera'] , tax_list)
+    dunno['families'] = map(lambda t : t.richness['families'] , tax_list)
+    dunno['orders'] = map(lambda t : t.richness['orders'] , tax_list)
+    dunno['classes'] = map(lambda t : t.richness['classes'] , tax_list)
+    dunno['phyla'] = map(lambda t : t.richness['phyla'] , tax_list)
+    dunno['kingdoms'] = map(lambda t : t.richness['kingdoms'] , tax_list)
+    competition = map(lambda t: puke_data(t),tax_list)
+    dunno['r_sp_gn'] = map(lambda c : c[0],competition)
+    dunno['r_gn_fam'] = map(lambda c : c[1],competition)
+    dunno['r_fam_ord'] = map(lambda c : c[2],competition)
+    dunno['r_ord_cls'] = map(lambda c : c[3],competition)
+    dunno['r_cls_phy'] = map(lambda c : c[4],competition)
+    dunno['r_phy_kng'] = map(lambda c : c[5],competition)                    
+        
+    import pandas as pn
+    all_tax=pn.DataFrame(dunno, index=dunno['id'],columns=['occurrences','species','genera','families','orders','classes','phyla','kingdoms','r_sp_gn','r_gn_fam','r_fam_ord','r_ord_cls', 'r_cls_phy','r_phy_kng'])    
+    return all_tax
+
+
+#def initializeGrid(tax_list,):
+
 
 
 biosphere = Occurrence.objects.all()
 #Would be good to put some temporal filtering here
 #DOne
-biosphere = biosphere.filter(year__gt=1970)
+biosphere = biosphere.filter(year__gt=2000)
+
+#Filter terrestrial taxonomies
+mex = Country.objects.filter(name__contains='exico').get()
+
+biosphere = biosphere.filter(geom__intersects=mex.geom)
 
 nt = NestedTaxonomy(36,biosphere,start_level=3,end_level=10,generate_tree_now=False)
 
@@ -187,11 +226,23 @@ for i in z_numbers:
 #===============================================================================
 import redis
 r = redis.StrictRedis()
-l9 = nt.levels[9]
+l7 = nt.levels[7]
+
 #l9.restoreTaxonomiesFromCache(r)
-l10  = nt.levels[10]
+l9  = nt.levels[9]
+l10 = nt.levels[10]
 l10.restoreTaxonomiesFromCache(r)
-
-filtered_taxs = getTaxonomiesPerEcoregion_dic(z_numbers,regions_polys,l10.taxonomies)
-
-   
+max = len(l7.taxonomies)
+#filtered_taxs = getTaxonomiesPerEcoregion_dic(z_numbers,regions_polys,l10.taxonomies)
+"""
+for i,t in enumerate(l7):
+    if not r.exists(t.showId()):
+        t.calculateIntrinsicComplexity()
+        t.buildInnerTree(deep=True)
+        t.cache(r)
+        c="Cached %s percent" %(str((float(i)/max)*100))
+        print c
+    else:
+        c="Stored already  %s " %(str((float(i)/max)*100))
+        print c
+"""

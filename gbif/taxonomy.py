@@ -934,14 +934,14 @@ class Taxonomy:
         #First check if the geometry is the same:
         cache = cached_taxonomy
         try:
-            self.rich_occurrences =  cache.rich_occurrences
-            self.rich_species = cache.rich_species
-            self.rich_genera = cache.rich_genera
-            self.rich_families = cache.rich_families
-            self.rich_classes = cache.rich_classes
-            self.rich_orders = cache.rich_orders
-            self.rich_phyla = cache.rich_phyla
-            self.rich_kingdoms = cache.rich_kingdoms
+            self.rich_occurrences =  cache.richness['occurrences']
+            self.rich_species = cache.richness['species']
+            self.rich_genera = cache.richness['genera']
+            self.rich_families = cache.richness['families']
+            self.rich_classes = cache.richness['classes']
+            self.rich_orders = cache.richness['orders'] 
+            self.rich_phyla = cache.richness['phyla']
+            self.rich_kingdoms = cache.richness['kingdoms']
             self.richness ={ 'occurrences' : self.rich_occurrences,
             'species' : self.rich_species,
             'genera' : self.rich_genera,
@@ -1037,6 +1037,9 @@ class Taxonomy:
             logger.info('Object exists on Cache System. For update activate flag: refresh to True')
             return True
 
+
+
+
 class GriddedTaxonomy:
     """
     ..
@@ -1054,7 +1057,7 @@ class GriddedTaxonomy:
     extent : numpy.array
         The geographical extention of the Grid
     area : Float
-        The geografical (degrees) area covered by the grid
+        The geographical (degrees) area covered by the grid
     geometry : geometry
         The geometry of the grid
     grid_name : string
@@ -1111,20 +1114,6 @@ class GriddedTaxonomy:
         cad = "<GriddedTaxonomy instance: %s@%s >" %(self.parent_id,self.grid_name)
         return cad
 
-#===============================================================================
-#     def next(self):
-#         """
-#         Next function for iterator
-#         If changed to Python 3.x the name should change to __next__
-#         """
-#         if self.current_level > self.bottomlevel:
-#             self.current_level = self.toplevel
-#             raise StopIteration
-# 
-#         else:
-#             self.current_level += 1
-#             return self.levels[self.current_level - 1]
-#===============================================================================
             
     def __iter__(self):
         """
@@ -1582,7 +1571,6 @@ class GriddedTaxonomy:
         except:
             logger.error("Problem in serializing. The intented caching object could be very big!")
             return self_pickle    
-
 
     def intrinsicPanel(self,with_this_list=''):
         """

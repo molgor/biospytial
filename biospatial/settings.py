@@ -64,9 +64,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         #'django.db.backends.postgresql_psycopg2',
-        'NAME': 'gbif',
-        'USER': 'gbif',
-        'PASSWORD': 'biology',
+        'NAME': '',
+        'USER': '',
+        'PASSWORD': '',
         'HOST': 'geodata'
         
     #local
@@ -229,4 +229,5 @@ MEX_SCALES = { 0 : 'mesh"."mexico_grid1',
 
 
 #ANALYSIS ON GRID SET: 
-MESH_TABLENAMESPACE = MEX_SCALES
+#MESH_TABLENAMESPACE = MEX_SCALES
+MESH_TABLENAMESPACE = BRAZ_SCALES

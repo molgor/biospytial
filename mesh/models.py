@@ -56,6 +56,22 @@ def initMesh(Intlevel,scales=scales):
         * 16 : 'mesh\".\"braz_grid2048a',
         * 17 : 'mesh\".\"braz_grid4096a'
 
+    MEX_SCALES = { 
+        * 0 : 'mesh"."mexico_grid1',
+        * 1: 'mesh"."mexico_grid2',
+        * 2: 'mesh"."mexico_grid4',
+        * 3: 'mesh"."mexico_grid8',
+        * 4: 'mesh"."mexico_grid16',
+        * 5: 'mesh"."mexico_grid32',
+        * 6: 'mesh"."mexico_grid64',
+        * 7: 'mesh"."mexico_grid128',
+        * 8: 'mesh"."mexico_grid256',
+        * 9: 'mesh"."mexico_grid512',
+        * 10: 'mesh"."mexico_grid1024'
+         }
+
+
+
     Parameters
     ==========
         IntLevel : int

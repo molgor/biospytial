@@ -1,6 +1,6 @@
 eclipse.preferences.version=1
-encoding//biodiversity/__init__.py=utf-8
 encoding//docs/conf.py=utf-8
+encoding//ecoregions/migrations/biodiversity/__init__.py=utf-8
 encoding//gbif/buildtree.py=utf-8
 encoding//gbif/difference_operation.py=utf-8
 encoding//gbif/migratedata_beta4django.py=utf-8

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 import os,sys
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
+CONDA_PREFIX = '/home/juan/miniconda2/envs/biospytial'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
@@ -38,6 +39,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.gis',
     'gbif',
+    'mesh',
+    'sketches',
     'django_pdb',
     'django_extensions',
 )
@@ -114,7 +117,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'logs/biospatial.log',
+            'filename': BASE_DIR+'/logs/biospatial.log',
             'formatter': 'verbose'
         },
         'console':{
@@ -231,3 +234,7 @@ MEX_SCALES = { 0 : 'mesh"."mexico_grid1',
 #ANALYSIS ON GRID SET: 
 #MESH_TABLENAMESPACE = MEX_SCALES
 MESH_TABLENAMESPACE = BRAZ_SCALES
+
+
+GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'
+

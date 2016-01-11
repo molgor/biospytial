@@ -67,10 +67,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         #'django.db.backends.postgresql_psycopg2',
-        'NAME': '',
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': 'geodata'
+        'NAME': 'gbif',
+        'USER': 'juan',
+        'PASSWORD': 'y0sh1t0',
+        'HOST': 'localhost'
         
     #local
         #'NAME' : 'masterthesis',                      

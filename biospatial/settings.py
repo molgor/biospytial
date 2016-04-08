@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
 """
 Django settings for biospatial project.
 
@@ -121,7 +123,7 @@ LOGGING = {
             'formatter': 'verbose'
         },
         'console':{
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
@@ -130,16 +132,20 @@ LOGGING = {
         'django': {
             'handlers':['console'],
             'propagate': True,
-            'level':'ERROR',
+            'level':'INFO',
         },
         'biospatial.gbif.insertion': {
             'handlers': ['file'],
-            'level': 'ERROR',
+            'level': 'DEBUG',
         },
         'biospatial.gbif': {
             'handlers': ['console'],
             'level': 'DEBUG',
         },
+        'biospatial.driver.csv_raw_loader' : {
+            'handlers': ['console'],
+            'level': 'INFO',                                    
+                                              }
     }
 }
 
@@ -237,4 +243,10 @@ MESH_TABLENAMESPACE = BRAZ_SCALES
 
 
 GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'
+
+CSVABSOLUTEPATH = "/home/juan/gbif/all_gbif/splitted_gbif/header"
+
+
+
+
 

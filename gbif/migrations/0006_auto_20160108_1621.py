@@ -7,17 +7,13 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gbif', '0002_auto_20141003_1240'),
+        ('gbif', '0005_occurrence_collection_code'),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='occurrence',
-            name='id_gbif',
-        ),
         migrations.AlterField(
             model_name='occurrence',
-            name='id',
-            field=models.AutoField(serialize=False, primary_key=True, db_column=b'id_gbif'),
+            name='id_gf',
+            field=models.IntegerField(null=True, blank=True),
         ),
     ]

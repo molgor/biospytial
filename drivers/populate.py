@@ -41,6 +41,7 @@ import logging
 import json
 import requests
 import csv
+import io
 
 URLBASE = "http://api.gbif.org/v1/"
 URLOCCURRENCE = URLBASE+"occurrence/search"
@@ -200,7 +201,7 @@ def getAllOccurrences(WKT,url=URLOCCURRENCE,offset=0,safeinDB=False):
         offset += 1
         r = getOccurrenceN(WKT, url=url, offset=offset)
         j = r.json()
-        logger.debug("Retrieving information to the server. Offset:%s", offset)
+        logger.debug("Retrieving information from the server. Offset:%s", offset)
     return list_occurrences
 # Create your tests here.
 
@@ -254,25 +255,63 @@ def CSVReadfrom(FILE,with_delimiter='\t'):
     f = open(FILE,'r')
     csvDictReader = csv.DictReader(f,delimiter=with_delimiter)
     
-    lista = CSVLoad(csvDictReader)
-    fieldnames = csvDictReader.fieldnames
+    #lista = CSVLoad(csvDictReader)
+    #fieldnames = csvDictReader.fieldnames
+    #f.close()
+    return (csvDictReader,f)
+
+
+def CSVLoadfrom(FILE,with_delimiter='\t'):
+    f = open(FILE,'r')
+    csvDictReader = csv.DictReader(f,delimiter=with_delimiter)
+    csvout = list(csvDictReader)
     f.close()
-    return lista
+    #lista = CSVLoad(csvDictReader)
+    #fieldnames = csvDictReader.fieldnames
+    #f.close()
+    return (csvout)
 
 WKT_big = "POLYGON((-100.94609147800035487 19.36818845857660065,-99.37564350134034896 19.35208362503138346,-99.3158981978804718 18.2857029670664275,-100.87781113118906262 18.22896530284194938,-100.94609147800035487 19.36818845857660065))"
 
 WKT_small = "POLYGON((-101.47099664411226172 19.11838542365211779,-101.30456329875971733 19.11435323280499432,-101.32163338546253328 18.94491262920351105,-101.47526416578797637 18.9328031251580029,-101.47099664411226172 19.11838542365211779))"
 
-r=getOccurrenceN(WKT_big)
-t=curateOccurrences(r)
-a=t[0]
-x=webGBIFtoOccurence(a)
-
-occurrences = map(lambda j : webGBIFtoOccurence(j),t)
+WKT_lancanshire = "POLYGON((-2.80557791795337286 54.06638106541203825,-2.65342150624366369 54.06698849374796367,-2.64979873453629011 53.98642680841847863,-2.80557791795337286 53.98642680841847863,-2.80557791795337286 54.06638106541203825))"
 
 
-CSVPATH = "/home/juan/gbif/0024366-151016162008034.csv"
+#r=getOccurrenceN(WKT_big)
+#t=curateOccurrences(r)
+#a=t[0]
+#x=webGBIFtoOccurence(a)
 
+#occurrences = map(lambda j : webGBIFtoOccurence(j),t)
+
+
+#CSVPATH = "/home/juan/gbif/0024366-151016162008034.csv"
+
+from gbif.models import Occurrence_CSV
+from multiprocessing import Pool
+
+
+def instantiateOccurrence(keyvalues):
+    duples = keyvalues.viewitems()
+    occ = Occurrence_CSV()
+    map(lambda (key,val) : setattr(occ,key,val.decode('UTF-8','replace')),duples)
+    occ.insertOccurrence()
+    return occ
+
+def createOccurrenceFromCSVFile(list_csv_dic):
+    #listoccs = []
+    
+
+    p = Pool(4)
+    listoccs = p.map( instantiateOccurrence,list_csv_dic)
+    p.close()
+    #for row in list_csv_dic:
+
+        #listoccs.append(occ)
+        #f.close()   
+    #f.close()
+    return listoccs
 
 
 

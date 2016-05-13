@@ -18,8 +18,11 @@ __status__ = "Unstable"
 
 from django.db import connection
 import logging
+from shapely.geometry import Point,Polygon
+from numpy.linalg.linalg import norm
+from numpy import asarray
 
-logger = logging.getLogger('biospatial.mesh.tools')
+logger = logging.getLogger('biospytial.mesh.tools')
 
 
 def createGridOnThisSquare(square,tablename,n_partitions_in_x):
@@ -30,6 +33,7 @@ def createGridOnThisSquare(square,tablename,n_partitions_in_x):
     It makes use of the function: generategridon(polygon,t_name_grid_division)
     defined in the database. 
     It you need to install this functions the scripts are in biospatial/SQL_functions
+    .. update:: The functions and schema can be installed using the script: install_mesh_functions.sql
     
     .. note:: This function needs a SQUARE polygon given as parameter if this requirement is not
     satisfied the grid will not be regular or may have problems to be defined.
@@ -91,9 +95,6 @@ def createRegionalNestedGrid(parent_square,store_prefix,n_levels):
     high performance process that could crash the server or the postgres instance.
     Be careful with the number of levels to generate.
     
-    Parameters
-    ----------
-    
     Returns
     -------
     
@@ -124,3 +125,98 @@ def createRegionalNestedGrid(parent_square,store_prefix,n_levels):
         scales[id] = tablename
         messages.append(t)
     return scales
+
+
+
+def create_rectangle_from_two_points(a_point,b_point):
+    """
+    Let a and b two points, this function will return a rectangle (polygon)
+    in which these points are the corners.
+    
+    Parameters
+    ----------
+        
+        a_point : geometry (shapely Point)
+            
+        b_point : geometry (shapely Point)
+    
+    """
+    try:
+        xa = a_point.x
+        ya = a_point.y
+        xb = b_point.x
+        yb = b_point.y 
+    except:
+        try:
+            xa = a_point[0]
+            ya = a_point[1]
+            xb = b_point[0]
+            yb = b_point[1]
+            a_point = Point(xa,ya)
+            b_point = Point(xb,yb)
+        except:
+            logger.error("The points given as arguments are not shapely.geometry.Point type")
+            return False
+    
+    b_prime = Point(xa,yb)
+    a_prime = Point(xb,ya)
+    rectangle = Polygon(((a_point.x,a_point.y),(b_prime.x,b_prime.y),(b_point.x,b_point.y),(a_prime.x,a_prime.y)))
+    return {'polygon':rectangle,'a' : a_point, 'b_p' : b_prime,'b' : b_point,'a_p':a_prime}
+
+
+def create_square_from_two_points(a_point,b_point):
+    """   
+    Let a and b two points, this function will return a square (polygon)
+    in which the a_point is at one corner and in the other extreme corner a point in the direction of b.
+    
+    Parameters
+    ----------
+        
+        a_point : geometry (shapely Point)
+        b_point : geometry (shapely Point) the direction is what matters
+    
+    """
+
+        
+    d = create_rectangle_from_two_points(a_point, b_point)
+    
+    apt = d['a']
+    bpt = d['b']
+    appt = d['a_p']
+    bppt = d['b_p']
+
+    a = asarray(apt)
+    b = asarray(bpt)
+    bp = asarray(bppt)
+    ap = asarray(appt)
+    
+    a_m_bp = a - bp
+    a_m_b = a - b
+    a_m_ap = a - ap
+    
+    n_a_m_b = norm(a_m_b)
+    n_a_m_ap = norm(a_m_ap)
+    n_a_m_bp = norm(a_m_bp)
+    
+    if n_a_m_b < 0 :
+        sig = -1.0
+    elif n_a_m_b > 0 :
+        sig = 1.0
+    else:
+        logger.error("The points are equal. It's not possible to generate an area with only one point.")
+    
+    
+    p = (sig * ( n_a_m_ap / n_a_m_bp ) ) * a_m_bp
+
+    pp = p + (a_m_ap) + a
+    
+    #n_chiqui = min((n_a_m_bp,n_a_m_ap))
+    
+    pp_pt = Point(pp)
+    a_point = Point(a_point)
+    new_dic = create_rectangle_from_two_points(a_point, pp_pt)
+    return new_dic
+    
+    
+    
+        

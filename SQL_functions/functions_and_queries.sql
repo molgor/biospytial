@@ -11,7 +11,7 @@
 --UPDATE tests.sketches SET geom = (ST_Buffer(ST_GeomFromText('POINT(-1.38456 50.93490)', 4326),0.3)) WHERE id = 1;
 
 
-ÑÑÑÑÑÑÑÑÑÑÑ
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 --CREATE A FUNCTION THAT RETURNS A TABLE / PARTITION OF THE TABLE.
 
@@ -25,7 +25,7 @@
 
 --SELECT * from tests.withinpoligon( (SELECT p.geom FROM (SELECT * from tests.sketches WHERE id =2) as p) );
 
-ÑÑ
+ï¿½ï¿½
 --El bueno,
 
 --CREATE OR REPLACE FUNCTION getOccurrencesInPoligon(polygon geometry)
@@ -75,5 +75,22 @@
 --SELECT * from "gbif_LB/Esp"( (SELECT p.geom FROM (SELECT * from tests.sketches WHERE id =2) as p) );
 
 
+-- THis function extracts the info on lat lon columns to insert it into geom
 
+INSERT INTO test_occurrence(geom)
+SELECT ST_GeomFromText(S.C,4326)
+FROM
+(SELECT 'POINT('|| longitude::text || ' ' || latitude::text || ')' as C from test_occurrence) AS S
+
+
+
+
+
+UPDATE gbif_occurrence_csv SET geom = ST_GeomFromText(S.C,4326)
+FROM
+(SELECT 'POINT('|| longitude::text || ' ' || latitude::text || ')' as C from gbif_occurrence_csv) AS S
+
+UPDATE gbif_occurrence_csv SET geom = ST_GeomFromText(S.C,4326)
+FROM
+(SELECT 'POINT('|| longitude::text || ' ' || latitude::text || ')' as C from gbif_occurrence_csv) AS S
 

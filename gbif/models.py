@@ -186,7 +186,7 @@ class Occurrence(models.Model):
     """
     chars = {'l1':55,'l2':55,'l3':55,'l4':100,'l5':60,'l6':70,'l7':100}
     id = models.AutoField(primary_key=True, db_column="id_gbif")
-    id_gf = models.IntegerField(blank=True,null=True)
+    #id_gf = models.IntegerField(blank=True,null=True)
     dataset_id = models.TextField(db_index=True,blank=True, null=True)
     institution_code = models.TextField(db_index=True, blank=True, null=True)
     collection_code = models.TextField(db_index=True, blank=True, null=True)
@@ -495,6 +495,8 @@ class Occurrence_CSV(models.Model):
          
          
          
+
+
 
 
 

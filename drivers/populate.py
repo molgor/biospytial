@@ -140,45 +140,6 @@ def webGBIFtoOccurence(json_gbif):
     except KeyError as e:
         logger.warn("Missing data in field %s:"%e)
 
-"""
-    geom = 
-    scientific_name_author = 
-    elevation_in_meters = 
-    depth_in_meters = 
-    verbatim_scientific_name = 
-    verbatim_kingdom =
-    verbatim_phylum =
-    verbatim_class = 
-    verbatim_order =
-    verbatim_family = 
-    verbatim_genus =
-    verbatim_specific_epithet
-    verbatim_infraspecific_epithet 
-    verbatim_latitude = 
-    verbatim_longitude =
-    coordinate_precision =
-    maximum_elevation_in_meters =
-    minimum_elevation_in_meters = 
-    elevation_precision =
-    minimum_depth_in_meters =
-    maximum_depth_in_meters =
-    depth_precision =
-    continent_ocean = 
-    state_province =
-    county =
-    
-   
-    
-    verbatim_year =
-    verbatim_month =
-    
-    verbatim_basis_of_record  =
-    identified_by  = 
-    
-    created = 
-    'geodeticDatum',
-    species = 'species'
-"""
 
 def getAllOccurrences(WKT,url=URLOCCURRENCE,offset=0,safeinDB=False):
     """

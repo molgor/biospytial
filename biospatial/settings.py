@@ -123,16 +123,22 @@ LOGGING = {
             'formatter': 'verbose'
         },
         'console':{
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
+        'biospytial.mesh.tools':{
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        
     },
     'loggers': {
         'django': {
             'handlers':['console'],
             'propagate': True,
-            'level':'INFO',
+            'level':'DEBUG',
         },
         'biospatial.gbif.insertion': {
             'handlers': ['file'],
@@ -144,7 +150,7 @@ LOGGING = {
         },
         'biospatial.driver.csv_raw_loader' : {
             'handlers': ['console'],
-            'level': 'INFO',                                    
+            'level': 'DEBUG',                                    
                                               }
     }
 }
@@ -204,7 +210,7 @@ TAXONOMY_PREFIX = 'tax'
 #GBIF_DATATABLE = "mexico_gbif_subset"
 
 #Uncomment for remote host
-GBIF_DATATABLE = "gbif_occurrence"
+GBIF_DATATABLE = "gbif_occurrence_spatial"
         # Local table name
         #db_table = "mexico_gbif_subset"
  
@@ -237,9 +243,18 @@ MEX_SCALES = { 0 : 'mesh"."mexico_grid1',
         }
 
 
+MEX_SCALES = {0: 'mesh"."testmesh1',
+ 1: 'mesh"."testmesh2',
+ 2: 'mesh"."testmesh4',
+ 3: 'mesh"."testmesh8',
+ 4: 'mesh"."testmesh16',
+ 5: 'mesh"."testmesh32',
+ 6: 'mesh"."testmesh64'}
+
+
 #ANALYSIS ON GRID SET: 
-#MESH_TABLENAMESPACE = MEX_SCALES
-MESH_TABLENAMESPACE = BRAZ_SCALES
+MESH_TABLENAMESPACE = MEX_SCALES
+#MESH_TABLENAMESPACE = BRAZ_SCALES
 
 
 GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'

@@ -152,6 +152,66 @@ class mesh(models.Model):
         """
         a = "<Cell id: %s --%s />" %(self.id,self.cell)
         return a
+
+
+class grid(models.Model):
+    """
+    .. mesh:
+    A Mesh or Grid is a regular two dimensional geometric object
+    conformed by a regular tessellation of equal area square tiles.
+    
+    Let A be a connected and bounded set in a Surface E.
+    A tessellation T on A is a set of polygons Pi such that:
+    
+        * Pi is contained in A for all i
+        * Union(Pi) covers A
+        * Pi intersects Pj is empty for if i is not equal to j.
+    
+    This is the standard mesh model that defines a grid.
+    ..
+    
+    Attributes
+    ==========
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    id = models.AutoField(primary_key=True, db_column="gid")
+    row = models.IntegerField()
+    col = models.IntegerField()
+    cell = models.PolygonField()
+    objects = models.GeoManager()
+    
+    class Meta:
+        managed = False
+        db_table = 'grid025mex'
+
+    def getScaleLevel(self):
+        """
+        ..
+        Gives the current level name
+        ..
+        
+        Returns
+        =======
+        
+        tablename : string
+            The table name of the current grid. As stored in the database.
+            
+        """
+        #inv_map = {v: k for k, v in self.scales.items()}
+        sc = self._meta.db_table
+        self.tablename = sc
+        return sc
+      
+    def __repr__(self):
+        """
+        String representation of the object 
+        """
+        a = "<Cell id: %s --%s />" %(self.id,self.cell)
+        return a
+    
+
     
     
 class NestedMesh:

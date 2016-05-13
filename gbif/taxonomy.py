@@ -44,7 +44,7 @@ import biospatial.settings as settings
 
 import pickle
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
   
 

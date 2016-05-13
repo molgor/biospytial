@@ -68,6 +68,9 @@ def getGenera(taxonomy_queryset,only_id=False):
         points = genus['points']
         sp_by_gns = sps.filter(genus_id__exact=genus_id)
         gn_t = Tree(name=name,support=ab)
+        gn_t.add_feature('abundance',ab)
+        gn_t.add_feature('id',genus_id)
+        gn_t.add_feature('parent_id',family_id)
         gn_t.add_feature('genus_id', genus_id)
         gn_t.add_feature('level','genus')
         gn_t.add_feature('points',points)
@@ -81,8 +84,9 @@ def getGenera(taxonomy_queryset,only_id=False):
 #                 logger.info('The name assigned is %s' %name)
             points = specie['points']
             s = Tree(name = name,support=specie['ab'])
+            s.add_feature('abundance',ab)
+            s.add_feature('id',specie['species_id'])
             s.add_feature('species_id', specie['species_id'])
-            
             s.add_feature('level','species')
             s.add_feature('points',points)
             gn_t.add_child(child=s)
@@ -127,6 +131,9 @@ def getFamilies(taxonomic_queryset,genera_tree,only_id=False):
         points = family['points']
         family_id = family['family_id']
         famTree = Tree(name=name,support=ab)
+        famTree.add_feature('abundance',ab)
+        famTree.add_feature('id',family_id) 
+        famTree.add_feature('parent_id',order_id)       
         famTree.add_feature('family_id',family_id)
         famTree.add_feature('level','family')
         famTree.add_feature('points',points)
@@ -179,6 +186,9 @@ def getOrders(taxonomic_queryset,families_tree,only_id=False):
         order_id = order['order_id']
         #logger.info("Colapsing Order id: %s" %order_id)
         orderTree = Tree(name=name,support=ab)
+        orderTree.add_feature('abundance',ab)
+        orderTree.add_feature('id',order_id)
+        orderTree.add_feature('parent_id',class_id)        
         orderTree.add_feature('order_id',order_id)
         orderTree.add_feature('level','order')
         orderTree.add_feature('points',points)
@@ -235,6 +245,9 @@ def getClasses(taxonomic_queryset,orders_tree,only_id=False):
         class_id = class_['class_id']
         #logger.info("Colapsing Class id: %s" %class_id)
         classTree = Tree(name=name,support=ab)
+        classTree.add_feature('id',class_id)
+        classTree.add_feature('abundance',ab)
+        classTree.add_feature('parent_id',phylum_id)
         classTree.add_feature('class_id',class_id)
         classTree.add_feature('level','class')
         classTree.add_feature('points',points)
@@ -287,6 +300,9 @@ def getPhyla(taxonomic_queryset,classes_tree,only_id=False):
         phylum_id = phylum['phylum_id']
         #logger.info("Colapsing Phylum: %s" %name)
         phylumTree = Tree(name=name,support=ab)
+        phylumTree.add_feature('id',phylum_id)
+        phylumTree.add_feature('abundance',ab)
+        phylumTree.add_feature('parent_id',kingdom_id)        
         phylumTree.add_feature('phylum_id',phylum_id)
         phylumTree.add_feature('level','phylum')
         phylumTree.add_feature('points',points)
@@ -326,8 +342,13 @@ def getKingdoms(taxonomic_queryset,phyla_tree,only_id=False):
     """
     tax = taxonomic_queryset
     kingdoms = tax.kingdoms
+    total_abundance = sum(map(lambda a : a['ab'],kingdoms))
     phyla = tax.phyla
     TreeOfLife = Tree(name='Life')
+    TreeOfLife.add_feature("abundance", total_abundance)
+    TreeOfLife.add_feature("id", 'LOCAL_LUCA')
+    TreeOfLife.add_feature("parent_id", False)
+    TreeOfLife.add_feature("level", "root")
     logger.info("[gbif.buildtree] Collapsing Kingdoms")
     for kingdom in kingdoms:
         kingdom_id = 0
@@ -341,6 +362,9 @@ def getKingdoms(taxonomic_queryset,phyla_tree,only_id=False):
         kingdom_id = kingdom['kingdom_id']
         #logger.info("Colapsing kingdom: %s" %name)
         kingdomTree = Tree(name=name,support=ab)
+        kingdomTree.add_feature('id',kingdom_id)
+        kingdomTree.add_feature('abundance',ab)
+        kingdomTree.add_feature('parent_id','LOCAL_LUCA')
         kingdomTree.add_feature('kingdom_id',kingdom_id)
         kingdomTree.add_feature('level','kingdom')
         kingdomTree.add_feature('points',points)

@@ -922,4 +922,52 @@ class Kingdom(Level):
         feet = u'\t <N.Phyla> %s </> \n </gbif.Kingdom>' %self.abundance
         return head.encode('utf-8') + body + feet.encode('utf-8')     
  
+
+class Root(Level):
+    """
+    Basic class for Kingdom Level
+    """
+    
+    def __init__(self,localQuerySet,root_metadata):
+        """
+        Basic constructor
+        """
+        Level.__init__(self,localQuerySet,level=1,levelname='Root')
+        self.kingdoms = []
+        self.geometry = 'N.A.'
+        self.setInfo(root_metadata)  
+        
+    def getKingdomMetadata(self):
+        """
+        Returns metadata for all phyla of a specific kingdom
+        """
+        kingdoms = self.QuerySet.filter().values('kingdom_id').annotate(points=Collect('geom'),ab=Count('kingdom_id'),name=Min('kingdom'))
+
+        return kingdoms    
+
+    def setInfo(self,root_metadata):
+        """
+        Set kingdom features as a list of features.
+        """
+        try:
+            logger.debug(root_metadata)
+            self.id = kingdom_metadata['kingdom_id']
+            self.name = kingdom_metadata['name']
+            self.geometry = kingdom_metadata['points']
+            self.abundance = kingdom_metadata['ab']
+        except:
+            logger.error('This is not a metadata object for Kingdom')
+            return False
+        phyla = self.getPhylaMetadata()
+        for phylum_metadata in phyla:
+            self.phyla.append(Phylum(self.QuerySet,phylum_metadata))
+        self.abundance = self.QuerySet.filter(kingdom_id=self.id).distinct('phylum_id').count()
+        return True
+    
+    def __repr__(self):
+        head = u'<gbif.Kingdom: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.phyla))
+        feet = u'\t <N.Phyla> %s </> \n </gbif.Kingdom>' %self.abundance
+        return head.encode('utf-8') + body + feet.encode('utf-8')    
+
     

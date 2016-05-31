@@ -1,5 +1,5 @@
-Bios*Py*tial
-============
+﻿BiosPytial
+==========
 *An interactive / command-line modeller's suite for analyzing biodiversity across scales and space.*
 Biospytial is a set of tools written in the Python programming language
 that allows the identification of biodiversity patterns in space.
@@ -15,9 +15,10 @@ It allows anyone, anywhere to access data about all types of life on Earth, shar
 `GBIF <http://gbif.org>``
 
 Biospytial uses the GBIF dataset as principal input provider.
-The database is mirrored in the `GeoData Institute <http://www.geodata.soton.ac.uk>``
-at Southampton University.
-The information, analysis and processes are done independently from the GBIF consortium.
+The data is then imported into a Postgis instance and managed by Django using REST and ORM interface.
+
+There is a network representation that will work with Neo4j instead of the pickle-Redis implementation.
+
 
 
  Each occurrence has information about:

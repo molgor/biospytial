@@ -26,7 +26,7 @@ __status__ = "Prototype"
 from django.test import TestCase
 from django.conf import settings
 import logging
-from gbif.models import Occurrence, Specie
+from gbif.models import Occurrence, Specie, Genus, Family, Order, Class, Phylum, Kingdom
 from django.db import models
 from sketches.models import Sketch
 import dateutil.parser
@@ -394,6 +394,16 @@ class Taxonomy:
         self.classes  = biome.values('class_id').annotate(points=Collect('geom'),ab=Count('class_id'),name=Min('_class'),parent_id=Min('phylum_id'))
         self.phyla = biome.values('phylum_id').annotate(points=Collect('geom'),ab=Count('phylum_id'),name=Min('phylum'),parent_id=Min('kingdom_id'))
         self.kingdoms = biome.values('kingdom_id').annotate(points=Collect('geom'),ab=Count('kingdom_id'),name=Min('kingdom'))
+        
+        #self.Species = [ Specie(biome,aggregated_dictionary) for aggregated_dictionary in self.species ]
+        #self.Genera = [ Genus(biome,aggregated_dictionary)for aggregated_dictionary in self.genera ]
+        #self.Families = [ Family(biome,aggregated_dictionary) for aggregated_dictionary in self.families ]
+        #self.Orders = [ Order(biome,aggregated_dictionary) for aggregated_dictionary in self.orders ]
+        #self.Classes = [ Class(biome,aggregated_dictionary) for aggregated_dictionary in self.classes ]
+        #self.Phyla = [ Phylum(biome,aggregated_dictionary) for aggregated_dictionary in self.phyla]
+        self.TREE = [Kingdom(biome,aggregated_dictionary) for aggregated_dictionary in self.kingdoms]
+        
+        
         self.rich_occurrences = 0
         self.rich_species = 0
         self.rich_genera = 0

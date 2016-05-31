@@ -419,6 +419,15 @@ class Taxonomy:
         self.intrinsicM = []
         self.vectorIntrinsic = []
         self.presences = {}
+        self.shannon_entropy ={ 'occurrences' : 0,
+            'species' : 0,
+            'genera' : 0,
+            'families': 0,
+            'classes' : 0,
+            'orders' : 0,
+            'phyla' : 0,
+            'kingdoms' : 0
+            }        
         
 
     def removeQuerySets(self):
@@ -499,6 +508,78 @@ class Taxonomy:
             }
         
         return self.richness
+
+
+    def calculateShannonEntropy(self):
+      
+        
+        if not self.richness:
+            richness = calculateRichness()
+        
+        
+        entropies = {}
+        # For species
+        Noc =  len(self.occurrences)     
+        probs = map(lambda species : species['ab'] / float(Noc), self.species)
+        probs = filter(lambda s : s != 0,probs)
+        ents = map(lambda px : px *((-1)* np.log(px)),probs)
+        spent = sum(ents)
+        entropies['species'] = spent
+        # For genus
+        Nsp = len(self.occurrences)
+        probs = map(lambda gns : gns['ab'] / float(Nsp), self.genera)
+        probs = filter(lambda s : s != 0,probs)
+        ents = map(lambda px : px *((-1)* np.log(px)),probs)
+        gnent = sum(ents)
+        entropies['genera'] =  gnent
+        
+        
+        # For families
+        Ngn = len(self.occurrences)
+        probs = map(lambda fm : fm['ab'] / float(Ngn), self.families)
+        probs = filter(lambda s : s != 0,probs)
+        ents = map(lambda px : px *((-1)* np.log(px)),probs)
+        fment = sum(ents)
+        entropies['families'] =  fment 
+        # For order
+        Nfm = len(self.occurrences)
+        probs = map(lambda ords : ords['ab'] / float(Nfm), self.orders)
+        probs = filter(lambda s : s != 0,probs)        
+        ents = map(lambda px : px *((-1)* np.log(px)),probs)
+        ordent = sum(ents)                        
+        entropies['orders'] =  ordent
+        
+        # For class
+        Nord = len(self.occurrences)
+        probs = map(lambda cls : cls['ab'] / float(Nord), self.classes)
+        probs = filter(lambda s : s != 0,probs)        
+        ents = map(lambda px : px *((-1)* np.log(px)),probs)
+        clsent = sum(ents)
+        entropies['classes'] =  clsent
+
+
+        # For phyla
+        Ncls = len(self.occurrences)
+        probs = map(lambda phy : phy['ab'] / float(Ncls), self.phyla)
+        probs = filter(lambda s : s != 0,probs)        
+        ents = map(lambda px : px *((-1)* np.log(px)),probs)
+        phyent = sum(ents)
+        entropies['phyla'] =  phyent
+
+        
+        # For kingdoms
+        Nphys =len(self.occurrences)
+        probs = map(lambda kng : kng['ab'] / float(Nphys), self.kingdoms)
+        probs = filter(lambda s : s != 0,probs)        
+        ents = map(lambda px : px *((-1)* np.log(px)),probs)
+        kngment = sum(ents)
+        entropies['kingdoms'] =  kngment
+        
+        self.shannon_entropy = entropies
+
+        return entropies
+
+
 
     def calculateIntrinsicComplexity(self):
         """
@@ -1266,6 +1347,10 @@ class GriddedTaxonomy:
             gives the determinant of the distance (Escamilla) matrix 
             and sub-matrices from the 7x7 size to the 2x2.
             A layer for each determinant of each submatrix.
+            
+            * shannon :
+                gives the shanon diversity index (entropy with natural logarithm)
+                returns a dictionary with the values for each taxonomic level.
         
         Parameters
         ==========
@@ -1318,6 +1403,51 @@ class GriddedTaxonomy:
                     logger.error('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n\n Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
                     return False
             return True
+        
+        def selectShannon(layer):
+            # This is for option richness
+            for key in settings.TAXONOMIC_LEVELS:
+                layer.CreateField(ogr.FieldDefn(key,ogr.OFTInteger))        
+            defn = layer.GetLayerDefn()
+                   
+            ## If there are multiple geometries, put the "for" loop here
+            for tax in self.taxonomies:
+                #logger.debug("there are %s taxonomies" %(len(self.taxonomies)))
+                tax.calculateShannonEntropy()
+                try:
+                    #import ipdb;ipdb.set_trace()
+                    d = tax.shannon_entropy
+                    feat = ogr.Feature(defn)
+                    feat.SetField('gid', tax.gid)
+                    
+                    #logger.debug('gid')
+                    feat.SetField('species', d['species'])
+                    #logger.info('occ')
+                    #logger.info('sp')
+                    feat.SetField('genera', d['genera'])
+                    #logger.info('gn')
+                    feat.SetField('families', d['families'])
+                    #logger.info('fam')
+                    feat.SetField('orders', d['orders'])
+                    #logger.info('ord')
+                    feat.SetField('classes', d['classes'])
+                    #logger.info('cls')
+                    feat.SetField('phyla', d['phyla'])
+                    #logger.info('phy')
+                    feat.SetField('kingdoms', d['kingdoms'])
+                    #logger.info('king')
+                    geom = ogr.CreateGeometryFromWkt(tax.biomeGeometry.wkt)
+                    feat.SetGeometry(geom)
+                    #logger.info('geom')
+                    layer.CreateFeature(feat)
+                    feat = geom = None
+                except:
+                    logger.error('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n\n Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                    return False
+            return True        
+        
+
+
             
                     
         #Method for generating the shapefile object
@@ -1403,6 +1533,9 @@ class GriddedTaxonomy:
             selectRichness(layer)  
         elif option == 'jacobi':
             selectJacobi(layer)
+            
+        elif option == 'shannon':
+            selectShannon(layer)
         # Save and close everything
         ds = layer = feat = geom = None
         logger.info('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n Shapefile Created in %s/%s' %(store,option))

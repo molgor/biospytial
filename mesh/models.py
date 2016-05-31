@@ -121,6 +121,8 @@ class mesh(models.Model):
     
     """
     id = models.AutoField(primary_key=True, db_column="gid")
+    #row = models.IntegerField()
+    #col = models.IntegerField()
     cell = models.PolygonField()
     objects = models.GeoManager()
     
@@ -152,6 +154,31 @@ class mesh(models.Model):
         """
         a = "<Cell id: %s --%s />" %(self.id,self.cell)
         return a
+    
+    
+    def describeWithDict(self):
+        """
+        Returns a dictionary with the properties
+        """
+        latitude = self.cell.centroid.y
+        longitude = self.cell.centroid.x
+        id = int(self.id)
+        indexillo = "%s-%s:%s" %(str(id),str(longitude),str(latitude))
+        
+        d = {"id":id , "cell":self.cell.wkt, "latitude":latitude, "longitude":longitude ,"uniqueid":indexillo}
+        return d
+    
+    
+    def getNode(self):
+        """
+        Returns a Node data structure that can be put into Neo4j
+        """
+        
+    def getNearestNeighbours(self):
+        neighbours = super(self.objects.filter(cell__touches=self.cell))
+        return neighbours
+    
+
 
 
 class grid(models.Model):

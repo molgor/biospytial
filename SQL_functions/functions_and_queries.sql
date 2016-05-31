@@ -94,3 +94,17 @@ UPDATE gbif_occurrence_csv SET geom = ST_GeomFromText(S.C,4326)
 FROM
 (SELECT 'POINT('|| longitude::text || ' ' || latitude::text || ')' as C from gbif_occurrence_csv) AS S
 
+
+-- CREATE TABLE and mesh
+
+--DROP TABLE mesh.nuevoborrame2;
+
+SELECT mesh.generategridon((SELECT ST_GeomFromText('POLYGON ((-106 30, -106 27, -109 27, -109 30, -106 30))') as cuadro ),'testgrid50',50)
+
+--SELECT mesh.generategridon((SELECT ST_GeomFromText('POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))') as cuadro ),'nuevoborrame2',20)
+
+
+
+
+
+

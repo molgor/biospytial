@@ -103,6 +103,16 @@ DATABASES = {
     
 }
 
+NEO4J_DATABASES = {
+    'default' : {
+        'HOST':'localhost',
+        'PORT':7474,
+        'ENDPOINT':'/db/data'
+    }
+}
+
+
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -243,13 +253,13 @@ MEX_SCALES = { 0 : 'mesh"."mexico_grid1',
         }
 
 
-MEX_SCALES = {0: 'mesh"."testmesh1',
- 1: 'mesh"."testmesh2',
- 2: 'mesh"."testmesh4',
- 3: 'mesh"."testmesh8',
- 4: 'mesh"."testmesh16',
- 5: 'mesh"."testmesh32',
- 6: 'mesh"."testmesh64'}
+MEX_SCALES = {0: 'mesh"."testnested1',
+ 1: 'mesh"."testnested2',
+ 2: 'mesh"."testnested4',
+ 3: 'mesh"."testnested8',
+ 4: 'mesh"."testnested16',
+ 5: 'mesh"."testnested32',
+ 6: 'mesh"."testnested64'}
 
 
 #ANALYSIS ON GRID SET: 

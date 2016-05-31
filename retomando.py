@@ -1,8 +1,13 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
 import gbif.taxonomy as tax
 import mesh.tools as mt
 from gbif.taxonomy import Occurrence, Taxonomy
-from py2neo import Node, Relationship
+from py2neo import Node, Relationship, Graph
 
+g = Graph("http://localhost:7474/db/data/")
+tx = g.begin()
 
 
 
@@ -15,6 +20,23 @@ def bindNode(Tree,node=False):
         return child
 
 
+
+def getNeighbours(cell_center,mesh):
+    neighbours = mesh.objects.filter(cell__touches=cell_center.cell)
+    
+    return (cell_center,neighbours)
+
+
+
+def createNetworkOnNode(duple_center_neighbour,writeInDB=False):
+    center = duple_center_neighbour[0]
+    neighbours = duple_center_neighbour[1]
+    n0 = Node("Cell",**center.describeWithDict())
+    nn = [ Relationship(n0,"IS_NEIGHBOUR_OF",Node("Cell", **n.describeWithDict())) for n in neighbours]
+    if writeInDB:
+        for relationship in nn:
+            g.merge(relationship)
+    return nn
 
 
 a_p = (-106,30)
@@ -49,3 +71,32 @@ mextax.buildInnerTree(deep=True,only_id=False)
 
     
 ttt = mextax.forest['sp']    
+
+
+#Problems found!
+#First bring mesh 
+from mesh.models import initMesh
+from gbif.taxonomy import GriddedTaxonomy
+mmm = initMesh(4)
+ggg = GriddedTaxonomy(biosphere,mmm.objects.all(),generate_tree_now=True,use_id_as_name=False)
+
+import sys
+sys.path
+sys.path.append("/home/juan/miniconda2/pkgs/gdal-2.0.0-py27_1/lib/python2.7/site-packages/osgeo")
+
+
+
+#vecinos = [getNeighbours(c,mmm) for c in mmm.objects.all()]
+
+#nodos = [Node("Cell",**n.describeWithDict()) for n in mmm.objects.all()]
+
+#If an attempt is made to create two nodes with similar unique property values, an exception will be raised and no new node will be created. To ‘get or create’ a node with a particular label and property, the merge_one method can be used instead:
+
+#m = map(createNetworkOnNode,vecinos)
+
+## Create unique constraint with concatenated labels
+#g.schema.create_uniqueness_constraint("Cell","uniqueid")
+#t=[[g.merge(i) for i in n] for n in m]
+#
+#m = map(lambda rel : createNetworkOnNode(rel,writeInDB=True),vecinos)
+

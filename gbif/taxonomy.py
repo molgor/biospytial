@@ -13,6 +13,7 @@ for data aggregation, hierarchication and processing.
  
 """
 
+
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2015, JEM"
 __license__ = "GPL"
@@ -32,7 +33,7 @@ from sketches.models import Sketch
 import dateutil.parser
 #from models import Count,Sum,Avg
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
-from gbif.models import Specie,Genus,Family,Order,Class,Phylum,Kingdom
+from gbif.models import Specie,Genus,Family,Order,Class,Phylum,Kingdom,Root
 from mesh.models import NestedMesh
 from django.contrib.gis.db.models.query import GeoQuerySet
 logger = logging.getLogger('biospatial.gbif.taxonomy')
@@ -379,7 +380,7 @@ class Taxonomy:
     
     
     """
-    def __init__(self,biome,geometry='',id=0):
+    def __init__(self,biome,geometry='',id=-999,build_tree_now=True):
         """
         Biome is a query set of the gbif occurrence instance modulus a geometry in Earth.
         Geometry is a geometric attribute that could be independent of biome.
@@ -401,8 +402,10 @@ class Taxonomy:
         #self.Orders = [ Order(biome,aggregated_dictionary) for aggregated_dictionary in self.orders ]
         #self.Classes = [ Class(biome,aggregated_dictionary) for aggregated_dictionary in self.classes ]
         #self.Phyla = [ Phylum(biome,aggregated_dictionary) for aggregated_dictionary in self.phyla]
-        self.TREE = [Kingdom(biome,aggregated_dictionary) for aggregated_dictionary in self.kingdoms]
-        
+        if build_tree_now:
+            self.TREE = Root(biome,idif='-9999')
+        else:
+            self.TREE = None
         
         self.rich_occurrences = 0
         self.rich_species = 0

@@ -5,9 +5,11 @@ import gbif.taxonomy as tax
 import mesh.tools as mt
 from gbif.taxonomy import Occurrence, Taxonomy
 from py2neo import Node, Relationship, Graph
-
-g = Graph("http://localhost:7474/db/data/")
-tx = g.begin()
+from mesh.models import initMesh
+from gbif.taxonomy import GriddedTaxonomy
+from gbif.models import Specie
+#g = Graph("http://localhost:7474/db/data/")
+#tx = g.begin()
 
 
 
@@ -51,10 +53,9 @@ biosphere = Occurrence.objects.all()
 
 mex = biosphere.filter(geom__intersects=d['polygon'].wkt)
 
-mextax = Taxonomy(mex,geometry=d['polygon'])
 
 
-mextax.buildInnerTree(deep=True,only_id=False)
+#mextax.buildInnerTree(deep=True,only_id=False)
 
 
 #dics = mt.createRegionalNestedGrid(d['polygon'].wkt,'testmesh',7)
@@ -70,21 +71,21 @@ mextax.buildInnerTree(deep=True,only_id=False)
 
 
     
-ttt = mextax.forest['sp']    
+#ttt = mextax.forest['sp']    
 
 
 #Problems found!
 #First bring mesh 
-from mesh.models import initMesh
-from gbif.taxonomy import GriddedTaxonomy
+
 mmm = initMesh(4)
-ggg = GriddedTaxonomy(biosphere,mmm.objects.all(),generate_tree_now=True,use_id_as_name=False)
+ggg = GriddedTaxonomy(mex,mmm.objects.all(),generate_tree_now=True,use_id_as_name=False)
 
-import sys
-sys.path
-sys.path.append("/home/juan/miniconda2/pkgs/gdal-2.0.0-py27_1/lib/python2.7/site-packages/osgeo")
+#mextax = Taxonomy(mex,geometry=d['polygon'],build_tree_now=True)
 
 
+#sys.path.append("/home/juan/miniconda2/pkgs/gdal-2.0.0-py27_1/lib/python2.7/site-packages/osgeo")
+
+#t =  ggg.taxonomies[0]
 
 #vecinos = [getNeighbours(c,mmm) for c in mmm.objects.all()]
 
@@ -95,6 +96,21 @@ sys.path.append("/home/juan/miniconda2/pkgs/gdal-2.0.0-py27_1/lib/python2.7/site
 #m = map(createNetworkOnNode,vecinos)
 
 ## Create unique constraint with concatenated labels
+g = Graph()
+
+g.schema.create_uniqueness_constraint("Root","id")
+g.schema.create_uniqueness_constraint("Kingdom","keyword")
+g.schema.create_uniqueness_constraint("Phylum","keyword")
+g.schema.create_uniqueness_constraint("Class","keyword")
+g.schema.create_uniqueness_constraint("Order","keyword")
+g.schema.create_uniqueness_constraint("Family","keyword")
+g.schema.create_uniqueness_constraint("Genus","keyword")
+g.schema.create_uniqueness_constraint("Specie","keyword")
+g.schema.create_uniqueness_constraint("Occurrence","pk")
+
+t =  ggg.taxonomies[0]
+t.TREE.setParent()
+t.TREE.bindParent()
 #g.schema.create_uniqueness_constraint("Cell","uniqueid")
 #t=[[g.merge(i) for i in n] for n in m]
 #

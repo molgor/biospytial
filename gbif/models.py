@@ -10,6 +10,7 @@ that are defined in the external database.
 Models for GBIF objects. 
 
 """
+from ete2.nexml._nexml_tree import Children
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2014, JEM"
@@ -28,12 +29,14 @@ import logging
 from django.test import TestCase
 from django.conf import settings
 import dateutil.parser
+from py2neo import Node, Relationship, Graph
+from django.conf import settings
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 
 
 logger = logging.getLogger('biospatial.gbif')
 
-
+graph = Graph()
 from django.forms import ModelForm
 # Model for GBIF as given by Raúl Jimenez
 
@@ -294,7 +297,37 @@ class Occurrence(models.Model):
         return reduce(lambda x,y : x+y,cadena)    
  
 
+    def createNode(self):
+        """
+        This method returns a Node Object based on all the attributes of the Class Level
+        """
+        
+        #Node(Tree.level,name=Tree.name,id=Tree.id,parent_id=Tree.parent_id,abundance=Tree.abundance)    
+        keys = settings.OCCURRENCE_KEYS_4NEO
+        #keys = ['species_id','scientific_name','year','month','day','latitude','longitude','geom','event_date','basis_of_record']
 
+        cd = self.__dict__
+        dictio = dict([(k,cd[k]) for k in keys])
+        dictio['pk'] = self.pk
+
+        dictio['name'] = reduce(lambda a,b : a + ' ' +b ,self.scientific_name.split(" ")[0:2])
+        #labels = [str(type(self))]
+        labels = ["Occurrence"]
+        
+        #dictio['keyword':keyword]
+        
+        node = Node(*labels,**dictio)
+        
+        node2 = graph.find_one("Occurrence",property_key='pk',property_value=self.pk)
+        if node2:
+            logger.debug("node existss")
+            return node2
+        else:
+            return node
+            
+        
+
+    
 
 #No se, hara algo el puto migartions
 
@@ -500,7 +533,7 @@ class Occurrence_CSV(models.Model):
 
 
 
-class Level:
+class Level(object):
     """
     ..
     Class
@@ -523,13 +556,259 @@ class Level:
         Aggregation name at some taxonomic level (e.g. Solanacea).
     
     """
-    def __init__(self,LocalQuerySet,n=0,levelname='',level=0):
+    def __init__(self,LocalQuerySet,n=0,levelname='',level=0,idif=0):
         self.abundance = 0
         self.levelname = levelname
         self.level = level
         self.QuerySet = LocalQuerySet
         self.name = 'N.A'
-        self.id = 'N.A'
+        self.id = idif
+        self.children = []
+        self.parent = self
+        self.visited = False
+
+
+    ## This is an experiment for making iterable
+    def __iter__(self):
+        return iter(self.children)
+
+
+
+    def traverse(self,parent):
+        while not isinstance(self,Occurrence):
+            # Because Occurrence has no children
+            nodos = map(lambda c : c.createNode(),self.children)
+            
+
+                
+
+    def setParent(self):
+        for c in self.children:
+            c.parent = self
+            try:
+                c.setParent()
+            except:
+                return None
+            
+            
+            
+    def bindParent(self,writeDB=True):
+        parent = self.parent.createNode()
+        this = self.createNode()
+        parent_props = {'ab' : self.parent.abundance}
+        rel = Relationship(parent,"IS_PARENT_OF",this,**parent_props)
+        relations = graph.match(parent,"IS_PARENT_OF",this)
+        if writeDB:
+            graph.create(rel)
+                    
+                #if not relations
+                #for i in relations:
+                #    if i:
+                #        continue
+                 #   else:
+                 #       graph.create(rel)
+        for c in self.children:
+            try:
+                c.bindParent()
+            except:
+                return None
+
+#     def bindParent(self,writeDB=True):
+#         for c in self.children:
+#             parent = self.parent.createNode()
+#             this = self.createNode()
+#             parent_props = {'ab' : self.parent.abundance}
+#             rel = Relationship(parent,"IS_PARENT_OF",this,**parent_props)
+#             relations = graph.match(parent,"IS_PARENT_OF",this)
+#             if writeDB:
+#                 #relations = False
+#                 if relations:
+#                     for rel in relations:
+#                         graph.create(rel)
+#                         continue
+#                         
+#                 else:
+#                     graph.create(rel)
+#                     
+#                 #if not relations
+#                 #for i in relations:
+#                 #    if i:
+#                 #        continue
+#                  #   else:
+#                  #       graph.create(rel)
+#             try:
+#                 c.bindParent()
+#             except:
+#                 return None
+
+
+
+
+    def migrateTreeToNeo4J(self):
+        if not self.visited:
+            rels = self.bindChildren()
+            for r in rels:
+                try:
+                    graph.create_unique(r)
+                except:
+                    continue
+            self.visited = True
+            
+        return rels
+        
+        
+    
+    def preorder(self):
+        ## DEEP FIRST TRAVERSAL
+        c = self.getChild().next()
+        return c
+
+    def getChild(self):
+        # Get the children
+        for i in range(len(self.children)+1):
+            i += 1
+            yield self.children[i-1].next()
+
+
+    def bindChildren(self):
+        """
+        Create neighbours nodes and relationships
+        """
+        parent = self.parent.createNode()
+        root = self.createNode()
+        parent_relationship = Relationship(parent,"IS_PARENT_OF",root)
+        children_nodes = [n.createNode() for n in self.children]
+        relationships = map(lambda child: Relationship(root,"IS_PARENT_OF",child), children_nodes)
+        relationships.append(parent_relationship)
+        
+        
+        
+        return relationships        
+
+        
+    def createNode(self):
+        """
+        This method returns a Node Object based on all the attributes of the Class Level
+        """
+        
+        #Node(Tree.level,name=Tree.name,id=Tree.id,parent_id=Tree.parent_id,abundance=Tree.abundance)    
+        ordered_diction = [self.id,self.level,self.levelname,self.name]
+        keyword = reduce(lambda a,b : str(a)+'--'+str(b),ordered_diction)
+        dictio = {'abundance':self.abundance,'levelname':self.levelname,'name':self.name,'id':self.id,'level':self.level,'keyword':keyword}
+        labels = [self.levelname]
+        #dictio['keyword':keyword]
+        
+        node = Node(*labels,**dictio)
+        
+        node2 = graph.find_one(self.levelname,property_key='keyword',property_value=keyword)
+        if node2:
+            logger.debug("node existss")
+            return node2
+        else:
+            return node
+    
+    
+    def getChildrenNodes(self):
+        """
+        Get the nodes of the children (Children in NEo4J form)
+        """
+        nodos = map(lambda c : c.createNode(),self.children)
+        return nodos
+    
+    
+    
+    
+    
+# def bindNode(Tree,node=False):
+#     child = Node(Tree.level,name=Tree.name,id=Tree.id,parent_id=Tree.parent_id,abundance=Tree.abundance)    
+#     if node:
+#         relation = Relationship(child, "IS_MEMBER_OF", node)  
+#         return relation  
+#     else:
+#         return child
+
+class Individual(Level):
+    """
+    ..
+    Individual
+    ==========
+    ..
+    This is the individual (occurrence) class definition
+    ..
+    Parameters
+    ----------
+    localQuerySet : gbif.models.Occurrence.Geoqueryset
+    species_metadata : dictionary
+        The dictionary obtained from the GeoquerySet annotation
+        See also
+        --------
+        
+    
+    Attributes
+    ----------
+    occurrences : gbif.models.Level.QuerySet
+        The QuerySet of the filtered at occurrence level
+    geometry : geometry
+        WKB representation
+    """
+    
+    def __init__(self,localQuerySet,occurrence_metadata):
+        """
+        ..
+        Basic constructor       
+        """
+        Level.__init__(self,localQuerySet,level=8,levelname='Occurrence')
+        self.occurrences = 'N.A.'
+        self.geometry = 'N.A.'
+        self.setInfo(occurrence_metadata)
+
+
+    def setInfo(self,dict_from_queryset_annotation):
+        """
+        ..
+        Given a QuerySet it fills all the occurrences and performs the aggregation.
+        
+        Returns
+        -------
+        nothing :
+            It sets the class' attributes.
+        """
+        try:
+            ok = dict_from_queryset_annotation
+            self.abundance = ok['ab']
+            self.name = ok['name']
+            self.id = ok['pk']
+            self.geometry = ok['points']
+            self.occurrences = self.QuerySet.filter(pk=self.id)
+            self.children = self.occurrences
+        except:
+            logger.error("This is not a GBIF Query Set")
+            return False
+
+    
+    def setNeighbors(self,list_occurrences):
+        """
+        A list of occurrences 
+        """
+        #self.occurrences = list_occurrences
+        pass
+    
+
+    def createNode(self):
+        yo = self.children.get()
+        nodoyo = yo.createNode()
+        return nodoyo
+
+    
+    def __repr__(self):
+        
+        cad =  u'<gbif:Occurrence> Id = %s \n \t <gbif:Name> %s </gbif:Name>\n \t \t <gbif:n_occurrences> %s </gbif:n_occurrences>\n  </gbif:Occurrence>\n' %(self.id,self.name,self.abundance)
+        return cad.encode('utf-8')
+    
+    
+    def __str__(self):
+        return self.__repr__()
+
 
 
 class Specie(Level):
@@ -563,7 +842,7 @@ class Specie(Level):
         Basic constructor       
         """
         Level.__init__(self,localQuerySet,level=7,levelname='Specie')
-        self.occurrences = 'N.A.'
+        self.occurrences = []
         self.geometry = 'N.A.'
         self.setInfo(species_metadata)
 
@@ -584,11 +863,25 @@ class Specie(Level):
             self.name = ok['name']
             self.id = ok['species_id']
             self.geometry = ok['points']
-            self.occurrences = self.QuerySet.filter(species_id=self.id)
         except:
-            logger.error("This is not a GBIF Query Set")
-            return False
+            logger.error('This is not a metadata object for species')
+            return False            
+            
+        occurrences = self.getOccurrenceMetadata()
+        for occurrence_metadata in occurrences:
+            self.occurrences.append(Individual(self.QuerySet,occurrence_metadata))
+        self.abundance = self.QuerySet.filter(species_id=self.id).distinct('pk').count()
+        self.children = self.occurrences
+        return True
 
+
+    
+    def getOccurrenceMetadata(self):
+        """
+        Returns metadata for all species at a specific genus
+        """
+        occurrence = self.QuerySet.filter(species_id=self.id).values('pk').annotate(points=Collect('geom'),ab=Count('pk'),name=Min('scientific_name'))
+        return occurrence
     
     def setNeighbors(self,list_occurrences):
         """
@@ -600,7 +893,7 @@ class Specie(Level):
     
     def __repr__(self):
         
-        cad =  u'<gbif:Specie> Id = %s </gbif:Specie>\n \t <gbif:Name> %s </gbif:Name>\n \t \t <gbif:n_occurrences> %s </gbif:n_occurrences>\n' %(self.id,self.name,self.abundance)
+        cad =  u'<gbif:Specie> Id = %s \n \t <gbif:Name> %s </gbif:Name>\n \t \t <gbif:n_occurrences> %s </gbif:n_occurrences>\n  </gbif:Specie>\n' %(self.id,self.name,self.abundance)
         return cad.encode('utf-8')
     
     
@@ -662,6 +955,7 @@ class Genus(Level):
         for specie_metadata in species:
             self.species.append(Specie(self.QuerySet,specie_metadata))
         self.abundance = self.QuerySet.filter(genus_id=self.id).distinct('species_id').count()
+        self.children = self.species
         return True
     
     def getChildrenNames(self):
@@ -728,6 +1022,7 @@ class Family(Level):
         for genus_metadata in genera:
             self.genera.append(Genus(self.QuerySet,genus_metadata))
         self.abundance = self.QuerySet.filter(family_id=self.id).distinct('genus_id').count()
+        self.children = self.genera
         return True
     
     def __repr__(self):
@@ -774,6 +1069,7 @@ class Order(Level):
         for family_metadata in families:
             self.families.append(Family(self.QuerySet,family_metadata))
         self.abundance = self.QuerySet.filter(order_id=self.id).distinct('family_id').count()
+        self.children = self.families
         return True
     
     def __repr__(self):
@@ -820,6 +1116,7 @@ class Class(Level):
         for order_metadata in orders:
             self.orders.append(Order(self.QuerySet,order_metadata))
         self.abundance = self.QuerySet.filter(class_id=self.id).distinct('order_id').count()
+        self.children = self.orders
         return True
     
     def __repr__(self):
@@ -866,6 +1163,7 @@ class Phylum(Level):
         for class_metadata in classes:
             self.classes.append(Class(self.QuerySet,class_metadata))
         self.abundance = self.QuerySet.filter(phylum_id=self.id).distinct('class_id').count()
+        self.children = self.classes
         return True
     
     def __repr__(self):
@@ -914,6 +1212,7 @@ class Kingdom(Level):
         for phylum_metadata in phyla:
             self.phyla.append(Phylum(self.QuerySet,phylum_metadata))
         self.abundance = self.QuerySet.filter(kingdom_id=self.id).distinct('phylum_id').count()
+        self.children = self.phyla
         return True
     
     def __repr__(self):
@@ -928,46 +1227,83 @@ class Root(Level):
     Basic class for Kingdom Level
     """
     
-    def __init__(self,localQuerySet,root_metadata):
+    def __init__(self,localQuerySet,idif=-999):
         """
         Basic constructor
         """
-        Level.__init__(self,localQuerySet,level=1,levelname='Root')
+        Level.__init__(self,localQuerySet,level=0,levelname='Root',idif=idif)
         self.kingdoms = []
         self.geometry = 'N.A.'
-        self.setInfo(root_metadata)  
+        self.setInfo()
+
         
     def getKingdomMetadata(self):
         """
         Returns metadata for all phyla of a specific kingdom
         """
         kingdoms = self.QuerySet.filter().values('kingdom_id').annotate(points=Collect('geom'),ab=Count('kingdom_id'),name=Min('kingdom'))
-
         return kingdoms    
 
-    def setInfo(self,root_metadata):
+    def setInfo(self):
         """
         Set kingdom features as a list of features.
         """
         try:
-            logger.debug(root_metadata)
-            self.id = kingdom_metadata['kingdom_id']
-            self.name = kingdom_metadata['name']
-            self.geometry = kingdom_metadata['points']
-            self.abundance = kingdom_metadata['ab']
+            logger.debug("Reconstructing Tree")
+            self.id = 0
+            self.name = 'LUCA'
+            self.geometry = 'all_points'
+            self.abundance = 'NA'
         except:
             logger.error('This is not a metadata object for Kingdom')
             return False
-        phyla = self.getPhylaMetadata()
-        for phylum_metadata in phyla:
-            self.phyla.append(Phylum(self.QuerySet,phylum_metadata))
-        self.abundance = self.QuerySet.filter(kingdom_id=self.id).distinct('phylum_id').count()
+        kingdoms = self.getKingdomMetadata()
+        for kingdom_metadata in kingdoms:
+            self.kingdoms.append(Kingdom(self.QuerySet,kingdom_metadata))
+        metadata = self.QuerySet.aggregate(points=Collect('geom'),ab=Count('kingdom_id'))
+        self.children = self.kingdoms
+   
+        self.abundance = metadata['ab']
+        self.geometry = metadata['points']
+                
         return True
+
+
+    def bindParent(self,writeDB=True):
+        for c in self.children:
+            this = self.createNode()
+            graph.create(this)
+            this = self.createNode()
+            parent_props = {'ab' : 1}
+            rel = Relationship(this,"IS_PARENT_OF",this,**parent_props)
+            relations = graph.find(rel)
+            
+            if writeDB:
+                relations = False
+                if relations:
+                    for rel in relations:
+                        graph.create(rel)
+                        #continue
+                else:
+                    graph.create(rel)
+                    
+                #if not relations
+                #for i in relations:
+                #    if i:
+                #        continue
+                 #   else:
+                 #       graph.create(rel)
+            try:
+                c.bindParent()
+            except:
+                return None
+
+
     
     def __repr__(self):
-        head = u'<gbif.Kingdom: Id = %s > %s \n' %(self.id,self.name)
-        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.phyla))
-        feet = u'\t <N.Phyla> %s </> \n </gbif.Kingdom>' %self.abundance
+        head = u'<gbif.Root: Id = %s > %s \n' %(self.id,self.name)
+        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.kingdoms))
+        feet = u'\t <N.Kingdom> %s </> \n </gbif.Root>' %self.abundance
         return head.encode('utf-8') + body + feet.encode('utf-8')    
 
     

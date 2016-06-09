@@ -1,0 +1,17 @@
+
+#Get all the ocurrences for a given specie
+
+Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence)  RETURN c,o
+
+# Get, filter by date
+Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence) WHERE o.year = 1939 RETURN c,o
+
+# GEt a table type
+Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence)  RETURN c.name,o.name
+
+#Get counts as a group by
+Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence)  RETURN c.name,count(o)
+
+#SOrt by degree
+Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence)  RETURN c.name,count(o) as chocho ORDER BY chocho DESC
+

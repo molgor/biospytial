@@ -271,7 +271,9 @@ GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'
 
 CSVABSOLUTEPATH = "/home/juan/gbif/all_gbif/splitted_gbif/header"
 
+## KEYS FOR WRITING AS PROPERTIES IN THE NEo4j NODE OCCURRENCE
 
+OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','latitude','longitude','geom','event_date','basis_of_record']
 
 
 

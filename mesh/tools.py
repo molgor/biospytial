@@ -21,6 +21,9 @@ import logging
 from shapely.geometry import Point,Polygon
 from numpy.linalg.linalg import norm
 from numpy import asarray
+from  mesh.models import bindNeighboursOf, graph
+
+
 
 logger = logging.getLogger('biospytial.mesh.tools')
 
@@ -217,6 +220,21 @@ def create_square_from_two_points(a_point,b_point):
     new_dic = create_rectangle_from_two_points(a_point, pp_pt)
     return new_dic
     
+
+def migrateGridToNeo(mesh):
+    """
+    Stores the mesh in the Neo4j database
+    """
+    cells = mesh.objects.all()
+    neighbours = [bindNeighboursOf(c,mesh) for c in cells ]
+    # This is a list of list, we need the union
+    U_neighbours = reduce(lambda a,b : a+b ,neighbours )
+    
+    map(lambda n : graph.create(n), U_neighbours)
+    return None
+    # Now, write in the database.
+    
+
     
     
         

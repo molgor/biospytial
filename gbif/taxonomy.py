@@ -402,10 +402,7 @@ class Taxonomy:
         #self.Orders = [ Order(biome,aggregated_dictionary) for aggregated_dictionary in self.orders ]
         #self.Classes = [ Class(biome,aggregated_dictionary) for aggregated_dictionary in self.classes ]
         #self.Phyla = [ Phylum(biome,aggregated_dictionary) for aggregated_dictionary in self.phyla]
-        if build_tree_now:
-            self.TREE = Root(biome,idif='-9999')
-        else:
-            self.TREE = None
+
         
         self.rich_occurrences = 0
         self.rich_species = 0
@@ -442,6 +439,17 @@ class Taxonomy:
             'kingdoms' : 0
             }        
         
+        self.TREE = None
+        
+        
+        if build_tree_now:
+            self.generateTREE()
+            
+
+
+    def generateTREE(self):
+        self.TREE = Root(self.occurrences,idnum=int(self.gid))
+        return self.TREE
 
     def removeQuerySets(self):
         """
@@ -1061,8 +1069,7 @@ class Taxonomy:
         geom = self.biomeGeometry.wkt
         cad = "< Taxonomy in %s > %geom"
         return cad
-    
-    
+       
     def showId(self):
         """
         This method returns a unique Id string that is going to be used as unique identifier
@@ -1220,6 +1227,10 @@ class GriddedTaxonomy:
         .. note:: My second iterator :')
         """
         return iter(self.taxonomies)
+
+
+
+
     
     def showId(self):
         """

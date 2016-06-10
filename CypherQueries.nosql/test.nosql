@@ -15,3 +15,7 @@ Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence)  RETURN c.name,count(o)
 #SOrt by degree
 Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence)  RETURN c.name,count(o) as chocho ORDER BY chocho DESC
 
+
+# Show all the tree
+MATCH (r:Root)-[:IS_PARENT_OF*..7]->(s) return s
+

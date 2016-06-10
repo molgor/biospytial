@@ -27,9 +27,13 @@ from django.test import TestCase
 from django.conf import settings
 import dateutil.parser
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
+from py2neo import Node, Relationship, Graph
 
 
 logger = logging.getLogger('biospatial.mesh')
+
+graph = Graph()
+
 
 
 from django.forms import ModelForm
@@ -169,16 +173,51 @@ class mesh(models.Model):
         return d
     
     
-    def getNode(self):
+    def getNode(self,writeDB=False):
         """
         Returns a Node data structure that can be put into Neo4j
         """
         
-    def getNearestNeighbours(self):
-        neighbours = super(self.objects.filter(cell__touches=self.cell))
-        return neighbours
-    
+        properties = self.describeWithDict()
+        n0 = Node("Cell",**properties)
+        old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
+        if old_node:
+            return old_node
+        else:
+            if writeDB:
+                graph.create(n0)
+            return n0
+        
+        
+def getNeighboursOf(cell,mesh):
+    ns = mesh.objects.filter(cell__touches=cell.cell)
+    return ns
 
+
+def bindNeighboursOf(cell,mesh):
+    node_c = cell.getNode()
+    ns = getNeighboursOf(cell, mesh)
+    nodes = map(lambda n: n.getNode(),ns)
+    rels = [Relationship(node_c,"IS_NEIGHBOUR_OF",n) for n in nodes]
+    return rels
+
+
+# def getNeighbours(cell_center,mesh):
+#     neighbours = mesh.objects.filter(cell__touches=cell_center.cell)
+#     
+#     return (cell_center,neighbours)
+# 
+# 
+# 
+# def createNetworkOnNode(duple_center_neighbour,writeInDB=False):
+#     center = duple_center_neighbour[0]
+#     neighbours = duple_center_neighbour[1]
+#     n0 = Node("Cell",**center.describeWithDict())
+#     nn = [ Relationship(n0,"IS_NEIGHBOUR_OF",Node("Cell", **n.describeWithDict())) for n in neighbours]
+#     if writeInDB:
+#         for relationship in nn:
+#             g.create(relationship)
+#     return nn
 
 
 class grid(models.Model):

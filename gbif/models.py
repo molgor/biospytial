@@ -556,13 +556,13 @@ class Level(object):
         Aggregation name at some taxonomic level (e.g. Solanacea).
     
     """
-    def __init__(self,LocalQuerySet,n=0,levelname='',level=0,idif=0):
+    def __init__(self,LocalQuerySet,n=0, levelname='',level=0, idnum=0):
         self.abundance = 0
         self.levelname = levelname
         self.level = level
         self.QuerySet = LocalQuerySet
         self.name = 'N.A'
-        self.id = idif
+        self.id = idnum
         self.children = []
         self.parent = self
         self.visited = False
@@ -592,70 +592,76 @@ class Level(object):
             
             
             
-    def bindParent(self,writeDB=True):
+    def bindParent(self,writeDB=True,parent_child_name="IS_PARENT_OF"):
         parent = self.parent.createNode()
         this = self.createNode()
         parent_props = {'ab' : self.parent.abundance}
-        rel = Relationship(parent,"IS_PARENT_OF",this,**parent_props)
-        relations = graph.match(parent,"IS_PARENT_OF",this)
+        
+        PAR_REL = parent_child_name
+
+        rel = Relationship(parent,PAR_REL,this,**parent_props)
+        relations = graph.match(parent,PAR_REL,this)
+  
+        
         if writeDB:
-            graph.create(rel)
+            #graph.create(rel)
+            #graph.create(relinv)
                     
-                #if not relations
-                #for i in relations:
-                #    if i:
-                #        continue
-                 #   else:
-                 #       graph.create(rel)
+                if not relations:
+                    for i in relations:
+                        continue
+                else:
+                    graph.create(rel)
+                        
+        
+        
         for c in self.children:
             try:
                 c.bindParent()
             except:
                 return None
 
-#     def bindParent(self,writeDB=True):
-#         for c in self.children:
-#             parent = self.parent.createNode()
-#             this = self.createNode()
-#             parent_props = {'ab' : self.parent.abundance}
-#             rel = Relationship(parent,"IS_PARENT_OF",this,**parent_props)
-#             relations = graph.match(parent,"IS_PARENT_OF",this)
-#             if writeDB:
-#                 #relations = False
-#                 if relations:
-#                     for rel in relations:
-#                         graph.create(rel)
-#                         continue
-#                         
-#                 else:
-#                     graph.create(rel)
-#                     
-#                 #if not relations
-#                 #for i in relations:
-#                 #    if i:
-#                 #        continue
-#                  #   else:
-#                  #       graph.create(rel)
-#             try:
-#                 c.bindParent()
-#             except:
-#                 return None
 
 
-
-
-    def migrateTreeToNeo4J(self):
-        if not self.visited:
-            rels = self.bindChildren()
-            for r in rels:
-                try:
-                    graph.create_unique(r)
-                except:
-                    continue
-            self.visited = True
-            
-        return rels
+    def bindChildren(self,writeDB=True,child_parent_name="IS_A_MEMBER_OF",deepth_limit=8):
+        parent = self.parent.createNode()
+        this = self.createNode()
+        parent_props = {'ab' : self.parent.abundance}
         
+        
+        PAR_REL_INV = child_parent_name
+        parent_props = {'nose':'aaaa'}
+        relinv = Relationship(this,PAR_REL_INV,parent,**parent_props)
+        relationsinv = graph.match(this,PAR_REL_INV,parent)       
+        
+        if writeDB:
+            #graph.create(rel)
+            graph.create(relinv)
+                    
+                #if not relations:
+                #    for i in relations:
+                #        continue
+                #else:
+                #    graph.create(rel)
+                        
+        
+        
+        for c in self.children:
+            try:
+                c.bindChildren()
+            except:
+                return None
+
+    def migrateToNeo4J(self):
+        
+        
+        self.setParent()
+
+        self.bindParent()
+        
+        #self.bindChildren()
+        
+        return True 
         
     
     def preorder(self):
@@ -669,24 +675,16 @@ class Level(object):
             i += 1
             yield self.children[i-1].next()
 
-
-    def bindChildren(self):
-        """
-        Create neighbours nodes and relationships
-        """
-        parent = self.parent.createNode()
-        root = self.createNode()
-        parent_relationship = Relationship(parent,"IS_PARENT_OF",root)
-        children_nodes = [n.createNode() for n in self.children]
-        relationships = map(lambda child: Relationship(root,"IS_PARENT_OF",child), children_nodes)
-        relationships.append(parent_relationship)
-        
-        
-        
-        return relationships        
-
         
     def createNode(self):
+        """
+        just a wrapper for getNode because it's used in other methods
+        """
+        x = self.getNode()
+        return x
+
+        
+    def getNode(self):
         """
         This method returns a Node Object based on all the attributes of the Class Level
         """
@@ -733,7 +731,8 @@ class Individual(Level):
     Individual
     ==========
     ..
-    This is the individual (occurrence) class definition
+    This is the individual (occurrence) class definition.
+    It's just a wrapper of the gbif.model.Occurrence
     ..
     Parameters
     ----------
@@ -1227,14 +1226,15 @@ class Root(Level):
     Basic class for Kingdom Level
     """
     
-    def __init__(self,localQuerySet,idif=-999):
+    def __init__(self,localQuerySet,idnum=-999):
         """
         Basic constructor
         """
-        Level.__init__(self,localQuerySet,level=0,levelname='Root',idif=idif)
+        Level.__init__(self,localQuerySet,level=0,levelname='Root',idnum=idnum)
         self.kingdoms = []
         self.geometry = 'N.A.'
         self.setInfo()
+        self.id = idnum
 
         
     def getKingdomMetadata(self):
@@ -1270,22 +1270,22 @@ class Root(Level):
 
 
     def bindParent(self,writeDB=True):
-        for c in self.children:
-            this = self.createNode()
-            graph.create(this)
-            this = self.createNode()
-            parent_props = {'ab' : 1}
-            rel = Relationship(this,"IS_PARENT_OF",this,**parent_props)
-            relations = graph.find(rel)
+        
+        this = self.createNode()
+        graph.create(this)
+        this = self.createNode()
+        parent_props = {'ab' : 1}
+        rel = Relationship(this,"IS_PARENT_OF",this,**parent_props)
+        relations = graph.find(rel)
             
-            if writeDB:
-                relations = False
-                if relations:
-                    for rel in relations:
-                        graph.create(rel)
-                        #continue
-                else:
+        if writeDB:
+            relations = False
+            if relations:
+                for rel in relations:
                     graph.create(rel)
+                        #continue
+            else:
+                graph.create(rel)
                     
                 #if not relations
                 #for i in relations:
@@ -1293,6 +1293,7 @@ class Root(Level):
                 #        continue
                  #   else:
                  #       graph.create(rel)
+        for c in self.children:
             try:
                 c.bindParent()
             except:

@@ -8,6 +8,7 @@ from py2neo import Node, Relationship, Graph
 from mesh.models import initMesh
 from gbif.taxonomy import GriddedTaxonomy
 from gbif.models import Specie
+from mesh.tools import migrateGridToNeo
 #g = Graph("http://localhost:7474/db/data/")
 #tx = g.begin()
 
@@ -37,7 +38,7 @@ def createNetworkOnNode(duple_center_neighbour,writeInDB=False):
     nn = [ Relationship(n0,"IS_NEIGHBOUR_OF",Node("Cell", **n.describeWithDict())) for n in neighbours]
     if writeInDB:
         for relationship in nn:
-            g.merge(relationship)
+            g.create(relationship)
     return nn
 
 
@@ -108,9 +109,15 @@ g.schema.create_uniqueness_constraint("Genus","keyword")
 g.schema.create_uniqueness_constraint("Specie","keyword")
 g.schema.create_uniqueness_constraint("Occurrence","pk")
 
-t =  ggg.taxonomies[0]
-t.TREE.setParent()
-t.TREE.bindParent()
+#t =  ggg.taxonomies[0]
+#t.TREE.migrateToNeo4J()
+
+for t in ggg.taxonomies:
+    t.TREE.migrateToNeo4J()
+    
+    
+#PARA CREAR EL GRID VE A TOOLS EN MESH Y CHECA migrateGridToNeo    
+
 #g.schema.create_uniqueness_constraint("Cell","uniqueid")
 #t=[[g.merge(i) for i in n] for n in m]
 #

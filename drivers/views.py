@@ -4,6 +4,10 @@
 from django.shortcuts import render
 # Create your views here.
 from django.http import HttpResponse
+from django.conf import settings
+
+
+
 """
 
 Http interfaces using Views
@@ -65,21 +69,23 @@ def ExtractDataFromCSVFile(request):
 
     try:
         filename = get['filename']
+        delimiter = get['delimiter']
     except:
-        response.content='Bad request. Check GET variable definitions \n. Check filename value'
+        response.content='Bad request. Check GET variable definitions \n. Check filename value %s' %(filename)
         response.status_code = 400
         return response
     
-    
-    Abspath = CSVABSOLUTEPATH + '/' + filename
+    PATH = settings.CSVABSOLUTEPATH
+    Abspath = PATH + '/' + filename
     html = "Filename to analysed will be: %s" %Abspath
     
     try:
         #dictionary_csv,_file = populate.CSVReadfrom(Abspath)
-        dictionary_csv = populate.CSVLoadfrom(Abspath)
+
+        dictionary_csv = populate.CSVLoadfrom(Abspath,with_delimiter=str(delimiter))
 
     except:
-        html = 'File doesn\'t exist in the filesystem. Check parameters in Settings file '
+        html = 'File doesn\'t exist in the filesystem. Check parameters in Settings file %s' %(Abspath)
         response.status_code = 415
         response.content=(html)
         return response

@@ -221,17 +221,25 @@ def create_square_from_two_points(a_point,b_point):
     return new_dic
     
 
-def migrateGridToNeo(mesh):
+def migrateGridToNeo(mesh,create_unique_index=True):
     """
     Stores the mesh in the Neo4j database
     """
+    if create_unique_index:
+        logger.info("Creating Unique Index")
+        graph.schema.create_uniqueness_constraint("Cell","id")
+    
     cells = mesh.objects.all()
-    neighbours = [bindNeighboursOf(c,mesh) for c in cells ]
+    neighbours = [bindNeighboursOf(c,mesh,writeDB=True) for c in cells ]
     # This is a list of list, we need the union
+        
     U_neighbours = reduce(lambda a,b : a+b ,neighbours )
     
-    map(lambda n : graph.create(n), U_neighbours)
-    return None
+    #map(lambda n : graph.create(n), U_neighbours)
+    for r in U_neighbours:
+        graph.create(r)
+    
+    return U_neighbours
     # Now, write in the database.
     
 

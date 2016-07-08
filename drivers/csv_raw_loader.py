@@ -20,8 +20,10 @@ from django.db import connection
 
 
 cursor = connection.cursor()
-
 logger = logging.getLogger('biospatial.driver.csv_raw_loader')
+
+
+
 
 def LoadFile(PATH,filename,RAWSQL,cursor):
     FILE = PATH + '/' + filename

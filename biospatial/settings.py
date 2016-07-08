@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     'gbif',
     'mesh',
     'sketches',
+    'raster_api',
     'django_pdb',
     'django_extensions',
 )
@@ -52,7 +53,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    #'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_pdb.middleware.PdbMiddleware',
@@ -92,14 +93,15 @@ DATABASES = {
     #     'HOST': 'localhost'
     # },
     #===========================================================================
-    'operational': {
-        'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        #'django.db.backends.postgresql_psycopg2',
-        'NAME': 'gbif',                      
-        'USER': 'gbif',
-        'PASSWORD': 'biology',
-        'HOST': 'geodata'
-    }             
+   # 'operational': {
+   #     'ENGINE': 'django.contrib.gis.db.backends.postgis',
+   #     #'django.db.backends.postgresql_psycopg2',
+   #     'NAME': 'gbif',                      
+   
+   #     'USER': 'gbif',
+   #     'PASSWORD': 'biology',
+   #     'HOST': 'geodata'
+   # }             
     
 }
 
@@ -209,7 +211,7 @@ TAXONOMIC_LEVELS = ['gid','occurrence','species','families','genera','orders','c
 TAXONOMIC_TREE_KEYS = ['sp','gns','fam','ord','cls','phy','kng']
 TAXONOMIC_MAPPER_KEYS = {'gid' : 'gid','oc':'occurrence','sp':'species','gns':'genera','fam':'families','ord':'orders','cls':'classes','phy':'phyla','kng':'kingdoms'}
 
-PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
+
 
 # Prefix for caching
 NESTED_TAXONOMY_PREFIX = 'nstax'
@@ -220,7 +222,7 @@ TAXONOMY_PREFIX = 'tax'
 #GBIF_DATATABLE = "mexico_gbif_subset"
 
 #Uncomment for remote host
-GBIF_DATATABLE = "gbif_occurrence_spatial"
+GBIF_DATATABLE = "gbif_occurrence_csv"
         # Local table name
         #db_table = "mexico_gbif_subset"
  
@@ -269,11 +271,13 @@ MESH_TABLENAMESPACE = MEX_SCALES
 
 GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'
 
-CSVABSOLUTEPATH = "/home/juan/gbif/all_gbif/splitted_gbif/header"
+#CSVABSOLUTEPATH = "/home/juan/gbif/all_gbif/splitted_gbif/header"
+CSVABSOLUTEPATH = "/home/juan/gbif/mexico/bigdatabase_subset/pieces"
 
 ## KEYS FOR WRITING AS PROPERTIES IN THE NEo4j NODE OCCURRENCE
 
 OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','latitude','longitude','geom','event_date','basis_of_record']
 
+PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
 
 

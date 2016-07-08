@@ -5,6 +5,9 @@ from drivers import views as driver_views
 from django.conf.urls.static import static
 from biospatial import settings
 
+
+
+
 urlpatterns = patterns('',
     # Examples:
     # url(r'^$', 'biospatial.views.home', name='home'),
@@ -14,5 +17,5 @@ urlpatterns = patterns('',
     url(r'^test/',views.HelloWorld,name='HelloWorld'),
     url(r'^getTree/',views.showTreeInGrid,name='showTreeInGrid'),
     url(r'^getAllTrees',views.showAllLevelsInTreeInGrid,name='showAllLevelsInTreeInGrid'),
-    url(r'^extractDataOf',driver_views.ExtractDataFromCSVFile,name='ExtractDataFromCSVFile')
+    url(r'^extractDataOf',driver_views.ExtractDataFromCSVFile,name='ExtractDataFromCSVFile'),
 ) 

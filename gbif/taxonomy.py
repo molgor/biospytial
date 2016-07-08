@@ -23,7 +23,7 @@ __email__ ="molgor@gmail.com"
 __status__ = "Prototype"
 
 
-
+from py2neo import Graph, Relationship 
 from django.test import TestCase
 from django.conf import settings
 import logging
@@ -47,6 +47,8 @@ import pickle
 
 #import matplotlib.pyplot as plt
 import numpy as np
+
+graph_driver = Graph()
   
 
 def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,use_id_as_name=True):
@@ -90,7 +92,7 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
             biomes_mesh = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),cell['cell'],cell['id']),cells)
         except:
             logger.error("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] biosphere is not a Geoquery instance model of GBIF")
-        taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2]), biomes_mesh )
+        taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2],build_tree_now=generate_tree_now), biomes_mesh )
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
@@ -99,7 +101,7 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         return taxs_list 
     else:
         cell = mesh.cell
-        taxs = Taxonomy(biosphere.filter(geom__intersects=cell),geometry=cell,id=upper_level_grid_id)
+        taxs = Taxonomy(biosphere.filter(geom__intersects=cell),geometry=cell,id=upper_level_grid_id,build_tree_now=generate_tree_now)
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
@@ -818,6 +820,10 @@ class Taxonomy:
         .. buildInnerTree:
         Calculates the tree generating a ETE2 data type.
         
+        note:
+            Deprecated in new version. Changed method to own class type, for avoiding problematic ETE2.
+            Check generateTREE()
+        
         .. seealso:: 
             
             gbif.taxonomy.Taxonomy 
@@ -1201,7 +1207,7 @@ class GriddedTaxonomy:
         self.taxonomies = embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=upper_level_grid_id,generate_tree_now=generate_tree_now,use_id_as_name=use_id_as_name)
         self.extent = 'N.A.'
         self.area = 'N.A'
-        self.geometry = 'N.A'
+        self.biomeGeometry = 'N.A'
         self.grid_name = grid_name
         self.parent_id = upper_level_grid_id
         self.dArea = self.taxonomies[0].biomeGeometry.area
@@ -1209,7 +1215,7 @@ class GriddedTaxonomy:
 
 
     def __str__(self):
-        return u"GriddedTaxonomy layer: \n Extent: %s" %str(self.geometry.extent)     
+        return u"GriddedTaxonomy layer: \n Extent: %s" %str(self.biomeGeometry.extent)     
         
     def __repr__(self):
         cad = "<GriddedTaxonomy instance: %s@%s >" %(self.parent_id,self.grid_name)
@@ -1242,7 +1248,7 @@ class GriddedTaxonomy:
         """
         #Here I'm supposing that the name of the table, and the extent polygon gives a unique mapping.
         try:
-            extent = self.geometry.extent
+            extent = self.biomeGeometry.extent
             name = self.grid_name
             res = self.dArea
             string = "%s:%s:%s:%s" %(self.parent_id,name,extent,res)
@@ -1575,12 +1581,12 @@ class GriddedTaxonomy:
         Boundary : polygon
             The polygon derived from the merging of all cells.
         """
-        self.geometry = reduce(lambda p1,p2 : p1.union(p2) ,map(lambda tax : tax.biomeGeometry,self.taxonomies))
-        return self.geometry
+        self.biomeGeometry = reduce(lambda p1,p2 : p1.union(p2) ,map(lambda tax : tax.biomeGeometry,self.taxonomies))
+        return self.biomeGeometry
         
     def getArea(self):
         try:
-            self.area = self.geometry.area
+            self.area = self.biomeGeometry.area
             return self.area
         except:
             logger.error('Geometry hasn\'t been defined (instantiate mergeGeometries first!)')
@@ -1765,6 +1771,15 @@ class GriddedTaxonomy:
                 li[tax_name_j] = pn.Series(i_j)
             all_entries[tax_name_i] = li
         return pn.Panel(all_entries)          
+
+
+    def bindTaxonomyToMesh(self,graph_driver):
+        l = []
+        for t in self.taxonomies:
+            nodecell = graph_driver.find_one("Cell","id",t.gid)
+            coto = t.TREE.bindExternalNode(nodecell)
+            l.append(coto)
+        return l
     
 class NestedTaxonomy:
     """

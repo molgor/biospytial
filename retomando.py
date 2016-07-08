@@ -3,10 +3,9 @@
 
 import gbif.taxonomy as tax
 import mesh.tools as mt
-from gbif.taxonomy import Occurrence, Taxonomy
+from gbif.taxonomy import Occurrence, Taxonomy, GriddedTaxonomy
 from py2neo import Node, Relationship, Graph
 from mesh.models import initMesh
-from gbif.taxonomy import GriddedTaxonomy
 from gbif.models import Specie
 from mesh.tools import migrateGridToNeo
 #g = Graph("http://localhost:7474/db/data/")
@@ -79,7 +78,7 @@ mex = biosphere.filter(geom__intersects=d['polygon'].wkt)
 #First bring mesh 
 
 mmm = initMesh(4)
-ggg = GriddedTaxonomy(mex,mmm.objects.all(),generate_tree_now=True,use_id_as_name=False)
+ggg = GriddedTaxonomy(mex,mmm.objects.all(),generate_tree_now=False,use_id_as_name=False)
 
 #mextax = Taxonomy(mex,geometry=d['polygon'],build_tree_now=True)
 
@@ -109,13 +108,20 @@ g.schema.create_uniqueness_constraint("Genus","keyword")
 g.schema.create_uniqueness_constraint("Specie","keyword")
 g.schema.create_uniqueness_constraint("Occurrence","pk")
 
+
+
+
 #t =  ggg.taxonomies[0]
 #t.TREE.migrateToNeo4J()
 
-for t in ggg.taxonomies:
-    t.TREE.migrateToNeo4J()
-    
-    
+
+def bindTaxonomyToMesh(gridded_taxonomy,graph_driver):
+    l = []
+    for t in gridded_taxonomy:
+        nodecell = graph_driver.find_one("Cell","id",t.gid)
+        rel = Relationship( t.TREE.getNode(),"IS_IN",nodecell)
+        l.append(rel)
+    return l
 #PARA CREAR EL GRID VE A TOOLS EN MESH Y CHECA migrateGridToNeo    
 
 #g.schema.create_uniqueness_constraint("Cell","uniqueid")

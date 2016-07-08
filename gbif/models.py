@@ -33,6 +33,7 @@ from py2neo import Node, Relationship, Graph
 from django.conf import settings
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 
+import ipdb;
 
 logger = logging.getLogger('biospatial.gbif')
 
@@ -44,6 +45,7 @@ from django.forms import ModelForm
 class Occurrence_CSV_Verbatim(models.Model):
     #     id_gbif = models.IntegerField()
     id = models.AutoField(primary_key=True, db_column="id_gbif")
+    popo =  models.TextField(db_index=False,blank=True, null=True)
     dataset_id = models.TextField(db_index=False,blank=True, null=True)
     institution_code = models.TextField(db_index=False,blank=True, null=True)
     collection_code = models.TextField(db_index=False,blank=True, null=True)
@@ -600,19 +602,22 @@ class Level(object):
         PAR_REL = parent_child_name
 
         rel = Relationship(parent,PAR_REL,this,**parent_props)
-        relations = graph.match(parent,PAR_REL,this)
-  
+        relations = graph.match(start_node=parent,rel_type=PAR_REL,end_node=this)
+        #relations = [r for r in relations]
+        try: 
+            relations = [r for r in relations]
+        except:
+            if writeDB:
+                graph.create(rel)
         
-        if writeDB:
-            #graph.create(rel)
-            #graph.create(relinv)
-                    
-                if not relations:
-                    for i in relations:
-                        continue
-                else:
-                    graph.create(rel)
-                        
+        if relations:        
+            for r in relations:
+                r.properties['ab'] += self.parent.abundance
+                r.push()
+        else:
+            if writeDB:
+                graph.create(rel)            
+        
         
         
         for c in self.children:
@@ -651,6 +656,20 @@ class Level(object):
                 c.bindChildren()
             except:
                 return None
+
+
+    def bindExternalNode(self,node,relationship_type="IS_IN"):
+        this = self.createNode()
+        properties = {'ab' : self.abundance}
+        rel = Relationship(this,relationship_type,node,**properties)
+        graph.create(rel)
+        
+        for c in self.children:
+            try:
+                c.bindExternalNode(node,relationship_type=relationship_type)
+            except:
+                return None
+
 
     def migrateToNeo4J(self):
         
@@ -1269,6 +1288,12 @@ class Root(Level):
         return True
 
 
+
+       
+        
+        
+        
+        
     def bindParent(self,writeDB=True):
         
         this = self.createNode()
@@ -1298,6 +1323,10 @@ class Root(Level):
                 c.bindParent()
             except:
                 return None
+
+
+
+
 
 
     

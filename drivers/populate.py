@@ -11,7 +11,7 @@ Populate
 
 """
 from posix import fpathconf
-from django.template.context_processors import request
+#from django.template.context_processors import request
 from datetime import datetime
 
 __author__ = "Juan Escamilla Mólgora"

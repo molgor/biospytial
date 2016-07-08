@@ -179,6 +179,7 @@ class mesh(models.Model):
         """
         
         properties = self.describeWithDict()
+        properties['name'] = self.id
         n0 = Node("Cell",**properties)
         old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
         if old_node:
@@ -190,14 +191,18 @@ class mesh(models.Model):
         
         
 def getNeighboursOf(cell,mesh):
-    ns = mesh.objects.filter(cell__touches=cell.cell)
-    return ns
+    # old version ns = mesh.objects.filter(cell__touches=cell.cell)
+    vonNeuman = mesh.objects.filter(cell__touches=cell.cell).filter(cell__overlaps_above=cell.cell).filter(cell__overlaps_below=cell.cell) | mesh.objects.filter(cell__touches=cell.cell).filter(cell__overlaps_left=cell.cell).filter(cell__overlaps_right=cell.cell)
+    
+    
+    return vonNeuman
 
 
-def bindNeighboursOf(cell,mesh):
-    node_c = cell.getNode()
+def bindNeighboursOf(cell,mesh,writeDB=False):
+    node_c = cell.getNode(writeDB=writeDB)
     ns = getNeighboursOf(cell, mesh)
-    nodes = map(lambda n: n.getNode(),ns)
+    
+    nodes = map(lambda n: n.getNode(writeDB=writeDB),ns)
     rels = [Relationship(node_c,"IS_NEIGHBOUR_OF",n) for n in nodes]
     return rels
 

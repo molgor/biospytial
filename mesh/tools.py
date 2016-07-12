@@ -223,12 +223,16 @@ def create_square_from_two_points(a_point,b_point):
 
 def migrateGridToNeo(mesh,create_unique_index=True):
     """
-    Stores the mesh in the Neo4j database
+    Stores the mesh in the Neo4j database.
+    Only the grid! Of course not the taxonomy
+    
     """
     if create_unique_index:
         logger.info("Creating Unique Index")
-        graph.schema.create_uniqueness_constraint("Cell","id")
-    
+        try:
+            graph.schema.create_uniqueness_constraint("Cell","id")
+        except: 
+            logger.warning("Index presumably created already")
     cells = mesh.objects.all()
     neighbours = [bindNeighboursOf(c,mesh,writeDB=True) for c in cells ]
     # This is a list of list, we need the union

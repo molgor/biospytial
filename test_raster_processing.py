@@ -3,8 +3,8 @@ from raster_api.models import DemMexLow
 from django.contrib.gis.db.models.fields import RasterField
 from raster_api.models import intersectWith
 from django.contrib.gis.gdal import GDALRaster
-
-
+from raster_api.aggregates import aggregates_dict
+from raster_api.tools import RasterData
 
 
 
@@ -35,8 +35,10 @@ mmm = initMesh(4)
 ggg = GriddedTaxonomy(mex,mmm.objects.all(),generate_tree_now=False,use_id_as_name=False)
 
 t0 = ggg.taxonomies[0]
-
+t1 = ggg.taxonomies[1]
 
 
 
 aa = DemMexLow.objects.filter(rast__intersect_with=t0.biomeGeometry)
+
+x = RasterData(DemMexLow,t1.biomeGeometry)

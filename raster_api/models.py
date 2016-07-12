@@ -20,10 +20,12 @@ class Test(models.Model):
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
     objects = models.GeoManager()
+    neo_label_name = 'test_viirs'
     
     class Meta:
         managed = False
         db_table = 'testviirs'
+        
 
 
 class DemMex(models.Model):
@@ -42,10 +44,12 @@ class DemMex(models.Model):
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
     objects = models.GeoManager()
+    neo_label_name = 'DEM_120'
     
     class Meta:
         managed = False
         db_table = 'demmex'
+        
 
 
 
@@ -65,7 +69,7 @@ class DemMexLow(models.Model):
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
     objects = models.GeoManager()
-    
+    neo_label_name = 'DEM_120'
     
 
         
@@ -76,6 +80,11 @@ class DemMexLow(models.Model):
         
 
 
+
+
+    def __str__(self):
+        c = "< Digital Elevation Model: %s >"
+        return c
     
 from django.db.models import Lookup
 

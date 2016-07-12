@@ -280,4 +280,5 @@ OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','lat
 
 PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
 
+PATH_OUTPUT = '/home/juan/Research/biospytial-output/'
 

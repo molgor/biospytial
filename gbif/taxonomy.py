@@ -12,6 +12,7 @@ In this module you will find the definition for classes, and nested taxonomies
 for data aggregation, hierarchication and processing.
  
 """
+from django.db.models.aggregates import Aggregate
 
 
 __author__ = "Juan Escamilla Mólgora"
@@ -39,7 +40,7 @@ from django.contrib.gis.db.models.query import GeoQuerySet
 logger = logging.getLogger('biospatial.gbif.taxonomy')
 # Create your tests here.
 
-
+from raster_api.tools import RasterData
 from gbif.buildtree import getTOL
 import biospatial.settings as settings 
 
@@ -441,8 +442,9 @@ class Taxonomy:
             'kingdoms' : 0
             }        
         
+        ## New attributes added for the new version
         self.TREE = None
-        
+        self.associated_data = {}
         
         if build_tree_now:
             self.generateTREE()
@@ -1144,7 +1146,34 @@ class Taxonomy:
             logger.info('Object exists on Cache System. For update activate flag: refresh to True')
             return True
 
-
+    def mergeWithThisRasterData(self,raster_api_model,option=1,lazy_eval=True):
+        """
+        This method associate a new data to the current taxonomy. 
+        It is intented to be used for fussing information from other source, specifically a raster stored
+        in postgis as a raster table. 
+        See: raster_api module for more information.
+        
+        Parameters : 
+            raster_api_model : A raster_api class. (the abstract model).
+            option : The aggregation method to be used. That is, how information is going to be taken from the raw raster.
+                more information see: raster_api.tools.aggregates_dict
+                option : integer
+                    1 : Raw DEM (Elevation)
+                    2 : Slope (angle 0 - 90) 
+                    3 : Aspect Orientation of facet (0, 360) 
+                    4 : Hillshade (for visualising)
+                
+            lazy_eval : if false it will retrieve the data when called.
+        """
+        
+        raster_data = RasterData(raster_api_model,self.biomeGeometry)
+        self.associated_data[raster_data.neo_label_name] = raster_data
+        
+        if lazy_eval:
+            rasterfield = raster_data.processDEM(option=option)
+            return raster_data
+        else: 
+            return raster_data 
 
 
 class GriddedTaxonomy:
@@ -1780,6 +1809,11 @@ class GriddedTaxonomy:
             coto = t.TREE.bindExternalNode(nodecell)
             l.append(coto)
         return l
+
+
+
+
+
     
 class NestedTaxonomy:
     """

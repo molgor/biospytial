@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 """
 Raster Data Aggregates
-===========
+======================
 ..  
 Aggregating function that make use of the POSTGIS RAster functions.
 
@@ -27,6 +27,9 @@ from django.db.models import TextField
 
 
 class Union(Aggregate):
+    """
+        Aggregation method for extracting Raw data
+    """  
     function = 'ST_Clip(ST_Union'
     template = '%(function)s(%(expressions)s)'
     
@@ -44,30 +47,34 @@ class Union(Aggregate):
             output_field = RasterField(),
             **extra
       )
-       # import ipdb;
-       # ipdb.set_trace()
-class Union_with_clip(Aggregate):
-    function = 'ST_Clip(ST_Union'
-    template = '%(function)s(%(expressions)s)'
+
+
+class Aspect(Aggregate):
+    """
+        Aggregation method for calculating Aspect on DEM
+    """        
+    function = 'ST_Clip(ST_Aspect(ST_Union'
+    template = '%(function)s(%(expressions)s))'
     
     
     def __init__(self,expression,**extra):
-        
         geometry = extra.pop('geometry')
         srid = geometry.srid
         #import ipdb; ipdb.set_trace()
         textpoly = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
         self.template += ',' + geomtext + ')'
-        super(Union_with_clip,self).__init__(
+        super(Aspect,self).__init__(
             expression,
             output_field = RasterField(),
             **extra
       )
-
         
         
-class Slope(Aggregate):        
+class Slope(Aggregate):
+    """
+        Aggregation method for calculating SLope on DEM
+    """          
     function = 'ST_Clip(ST_Slope(ST_Union'
     template = '%(function)s(%(expressions)s))'
     
@@ -87,6 +94,9 @@ class Slope(Aggregate):
 
 
 class Hillshade(Aggregate):
+    """
+        Aggregation method for calculating hillshade (standard parameters)
+    """  
     function = 'ST_Clip(ST_Hillshade(ST_Union'
     template = '%(function)s(%(expressions)s))'
     
@@ -105,6 +115,11 @@ class Hillshade(Aggregate):
       )
         
 class SummaryStats(Aggregate):
+    """
+     Aggregation method for calculating summary statistics.
+         Returns : 
+             (count, sum, mean, stdev, min, max)
+    """  
     function = 'ST_SummaryStats(ST_Clip(ST_Union'
     template = '%(function)s(%(expressions)s)'
     
@@ -126,7 +141,7 @@ aggregates_dict = { 'Original' : Union,
                     'Slope' : Slope,
                     'Hillshade' : Hillshade,
                     'SummaryStats' : SummaryStats,
-                    'withclip' : Union_with_clip
+                    'Aspect' : Aspect,
                    }
 
        

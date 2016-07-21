@@ -19,3 +19,6 @@ Match (c:Specie)-[:IS_PARENT_OF]->(o:Occurrence)  RETURN c.name,count(o) as choc
 # Show all the tree
 MATCH (r:Root)-[:IS_PARENT_OF*..7]->(s) return s
 
+# Show complete taxonomy of a given occurrence
+Let occurrence.pk = 875714 be an arbitrary id number 
+MATCH (r: Occurrence {pk:875714})-[d :IS_A_MEMBER_OF*..8]->(s) return d

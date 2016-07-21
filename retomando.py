@@ -80,8 +80,7 @@ mex = biosphere.filter(geom__intersects=d['polygon'].wkt)
 mmm = initMesh(4)
 ggg = GriddedTaxonomy(mex,mmm.objects.all(),generate_tree_now=False,use_id_as_name=False)
 
-#mextax = Taxonomy(mex,geometry=d['polygon'],build_tree_now=True)
-
+mextax = Taxonomy(mex,geometry=d['polygon'],build_tree_now=False)
 
 #sys.path.append("/home/juan/miniconda2/pkgs/gdal-2.0.0-py27_1/lib/python2.7/site-packages/osgeo")
 
@@ -111,6 +110,7 @@ g.schema.create_uniqueness_constraint("Occurrence","pk")
 
 
 
+
 #t =  ggg.taxonomies[0]
 #t.TREE.migrateToNeo4J()
 
@@ -122,6 +122,8 @@ def bindTaxonomyToMesh(gridded_taxonomy,graph_driver):
         rel = Relationship( t.TREE.getNode(),"IS_IN",nodecell)
         l.append(rel)
     return l
+
+
 #PARA CREAR EL GRID VE A TOOLS EN MESH Y CHECA migrateGridToNeo    
 
 #g.schema.create_uniqueness_constraint("Cell","uniqueid")

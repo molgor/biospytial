@@ -11,6 +11,8 @@ Models for GBIF objects.
 
 """
 from ete2.nexml._nexml_tree import Children
+from raster_api.tools import RasterData
+
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2014, JEM"
@@ -299,7 +301,7 @@ class Occurrence(models.Model):
         return reduce(lambda x,y : x+y,cadena)    
  
 
-    def createNode(self):
+    def createNode(self,writeDB=False):
         """
         This method returns a Node Object based on all the attributes of the Class Level
         """
@@ -307,11 +309,11 @@ class Occurrence(models.Model):
         #Node(Tree.level,name=Tree.name,id=Tree.id,parent_id=Tree.parent_id,abundance=Tree.abundance)    
         keys = settings.OCCURRENCE_KEYS_4NEO
         #keys = ['species_id','scientific_name','year','month','day','latitude','longitude','geom','event_date','basis_of_record']
-
+ #       import ipdb; ipdb.set_trace()
         cd = self.__dict__
         dictio = dict([(k,cd[k]) for k in keys])
         dictio['pk'] = self.pk
-
+        dictio['geom'] = dictio['geom'].ewkt
         dictio['name'] = reduce(lambda a,b : a + ' ' +b ,self.scientific_name.split(" ")[0:2])
         #labels = [str(type(self))]
         labels = ["Occurrence"]
@@ -320,16 +322,88 @@ class Occurrence(models.Model):
         
         node = Node(*labels,**dictio)
         
+        ## HERE INSERT CODE FOR CHECKING IF A NEW ATTRIBUTE IS ADDED.
+        
         node2 = graph.find_one("Occurrence",property_key='pk',property_value=self.pk)
         if node2:
             logger.debug("node existss")
             return node2
         else:
+            if writeDB:
+                graph.create(node)
             return node
-            
-        
 
+
+
+    def getNode(self):
+        """
+        Only a wrapper for createNOde. It won't create a node 
+        """
+        node = self.createNode()
+        return node
+        
+    def extractRasterDataFrom(self,RasterModel):
+        raster_data = RasterData(RasterModel,self.geom)
+        #z = raster_data.getValue(self.geom)
+        return raster_data
+
+
+
+    def processDEMAs(self,DemModel,option=1):
+        """
+        Extracts the value from a DEM or secondary product. Based on the options are available.
+        Processes different products using a DEM as input.
+        Currently implements:
+            Parameters : 
+                option : integer
+                    1 : Raw DEM (Elevation)
+                    2 : Slope (angle 0 - 90) 
+                    3 : Aspect Orientation of facet (0, 360) 
+                    4 : Hillshade (for visualising)
+                    
+        Returns : A GDALRaster
+        """
+        
+        dem_data = self.extractRasterDataFrom(DemModel)
+        dem_data.processDEM(option=option)
+        return dem_data
     
+    
+    def nodeRasterData(self,RasterData):
+        """
+        USes the builtin function of RasterData to return a node.
+        See extractRasterDataFromDEM
+        """
+        node = RasterData.getNode()
+        return node
+    
+    def getNodeDEM(self,DemModel,option=1):
+        """
+            Parameters : 
+               option : integer
+                    1 : Raw DEM (Elevation)
+                    2 : Slope (angle 0 - 90) 
+                    3 : Aspect Orientation of facet (0, 360) 
+                    4 : Hillshade (for visualising)
+        """
+        dem_data = self.processDEMAs(DemModel, option=option)
+        node = self.nodeRasterData(dem_data)
+        return node
+    
+    def bind_withNodeDEM(self,DemModel,option=1,writeDB=False):
+        """
+        Creates a DEM nodes, calls the self.node and make a relationship
+        """ 
+        dem_node = self.getNodeDEM(DemModel,option=option)
+        node = self.getNode()
+        relation_name = DemModel.link_type_name
+        rel = Relationship(node,relation_name,dem_node)
+        #parent_props = {'value' : self.parent.abundance}        
+        ### Check this to do not repeat relationships.
+        if writeDB:
+            graph.create(rel)
+        #relations = graph.match(start_node=node,rel_type=relation_name,end_node=dem_node)
+        return rel
 
 #No se, hara algo el puto migartions
 
@@ -597,6 +671,10 @@ class Level(object):
     def bindParent(self,writeDB=True,parent_child_name="IS_PARENT_OF"):
         parent = self.parent.createNode()
         this = self.createNode()
+        #parent = self.parent.createNode()
+        #this = self.createNode()
+        
+        
         parent_props = {'ab' : self.parent.abundance}
         
         PAR_REL = parent_child_name
@@ -629,8 +707,8 @@ class Level(object):
 
 
     def bindChildren(self,writeDB=True,child_parent_name="IS_A_MEMBER_OF",deepth_limit=8):
-        parent = self.parent.createNode()
-        this = self.createNode()
+        parent = self.parent.createNode(writeDB=writeDB)
+        this = self.createNode(writeDB=writeDB)
         parent_props = {'ab' : self.parent.abundance}
         
         
@@ -660,7 +738,10 @@ class Level(object):
 
     def bindExternalNode(self,node,relationship_type="IS_IN"):
         this = self.createNode()
-        properties = {'ab' : self.abundance}
+        try:
+            properties = {'ab' : self.abundance}
+        except:
+            properties = {}
         rel = Relationship(this,relationship_type,node,**properties)
         graph.create(rel)
         
@@ -677,8 +758,9 @@ class Level(object):
         self.setParent()
 
         self.bindParent()
+        # TO go down and follow links very efficient in traversing
         
-        #self.bindChildren()
+        self.bindChildren()
         
         return True 
         
@@ -695,15 +777,15 @@ class Level(object):
             yield self.children[i-1].next()
 
         
-    def createNode(self):
+    def createNode(self,writeDB=False):
         """
         just a wrapper for getNode because it's used in other methods
         """
-        x = self.getNode()
+        x = self.getNode(writeDB=writeDB)
         return x
 
         
-    def getNode(self):
+    def getNode(self,writeDB=False):
         """
         This method returns a Node Object based on all the attributes of the Class Level
         """
@@ -722,6 +804,8 @@ class Level(object):
             logger.debug("node existss")
             return node2
         else:
+            if writeDB:
+                graph.create(node)
             return node
     
     
@@ -812,9 +896,10 @@ class Individual(Level):
         pass
     
 
-    def createNode(self):
+    def createNode(self,writeDB=True):
         yo = self.children.get()
-        nodoyo = yo.createNode()
+        #import ipdb; ipdb.set_trace()
+        nodoyo = yo.createNode(writeDB=writeDB)
         return nodoyo
 
     

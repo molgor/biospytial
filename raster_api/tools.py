@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
-Raster Data Toold
+Raster Data Tool
 ===========
 ..  
 Tools for converting, analysing and migrate to Neo4J
@@ -57,8 +57,9 @@ class RasterData(object):
         """
         self.model = rastermodelinstance.objects.filter(rast__intersect_with=border)
         self.geometry = border
-        self.rasterdata = 'NA'
+        self.rasterdata = ''
         self.neo_label_name = rastermodelinstance.neo_label_name
+        self.aggregatedmodel = ''
         
     def getGDALRaster(self,aggregate):
         """
@@ -85,7 +86,7 @@ class RasterData(object):
                     
         Returns : A GDALRaster
         """
-        options = {1 : 'Slope', 4:'Hillshade', 1:'Original', 3:'Aspect'}
+        options = {2 : 'Slope', 4:'Hillshade', 1:'Original', 3:'Aspect'}
         key_opt = options[option]
         self.neo_label_name += ('-' + key_opt) 
         # First filter by border
@@ -94,20 +95,35 @@ class RasterData(object):
         agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
         raster = aggregateDictToRaster(aggregate_dic=agg_dic)
         self.rasterdata = raster
-        return raster
         
+        return raster
+
+    def getValue(self,point):
+        """
+        Returns the value in the coordinates given by the point.
+        """
+        Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point))
+        z = Z['Z']
+        return z
 
     def getSummaryStats(self):
         """
         Returns the summary statistics given by the function ST_SummaryStats over a ST_UNion of the blobs within the geometry.
         """
+        if self.geometry.dims > 0:
         #self.model = self.model.filter(rast__intersect_with=self.geometry)
-        agg_dic = self.model.aggregate(raster=SummaryStats('rast',geometry=self.geometry))
-        summary_str = agg_dic['raster']
-        summary_str = summary_str.replace('(','').replace(')','')
-        summary = summary_str.split(',')
-        uniqueid = str(self.geometry.wkt)
-        dic_sum = {'uniqueid':uniqueid,'count':int(summary[0]),'sum':float(summary[1]),'mean':float(summary[2]),'stddev':float(summary[3]),'min':float(summary[4]),'max':float(summary[5])}        
+            agg_dic = self.model.aggregate(raster=SummaryStats('rast',geometry=self.geometry))
+            summary_str = agg_dic['raster']
+            summary_str = summary_str.replace('(','').replace(')','')
+            summary = summary_str.split(',')
+            uniqueid = str(self.geometry.ewkt)
+            dic_sum = {'uniqueid':uniqueid,'count':int(summary[0]),'sum':float(summary[1]),'mean':float(summary[2]),'stddev':float(summary[3]),'min':float(summary[4]),'max':float(summary[5])}        
+        else:
+            # It's a point.
+            z = self.getValue(self.geometry)
+            uniqueid = str(self.geometry.ewkt)
+            dic_sum = {'value' : z,'uniqueid':uniqueid}
+            
         return dic_sum
 
 
@@ -167,4 +183,10 @@ class RasterData(object):
         plt.imshow(matrix,**kwargs) 
         plt.show()
         return None
+    
+    
+    
+    
+    
+    
         

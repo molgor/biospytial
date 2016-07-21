@@ -44,7 +44,11 @@ class DemMex(models.Model):
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
     objects = models.GeoManager()
-    neo_label_name = 'DEM_120'
+    neo_label_name = 'DEM_12'
+    link_type_name = 'Elevation'
+    properties = {'units' : 'meters' ,
+                  'resolution' : '12 m', 
+    }
     
     class Meta:
         managed = False

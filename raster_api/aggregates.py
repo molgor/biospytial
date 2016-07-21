@@ -21,9 +21,38 @@ __status__ = "Prototype"
 
 
 from django.db.models import Aggregate
-from django.contrib.gis.db.models import RasterField
+from django.contrib.gis.db.models import RasterField,FloatField
 
 from django.db.models import TextField
+
+
+
+class getValue(Aggregate):
+    """
+    Aggregation method for get the value for a given coordinate point.
+    """
+    function = 'ST_Value'
+    template = '%(function)s(%(expressions)s'
+    
+    def __init__(self,expression,**extra):
+        
+        geometry = extra.pop('geometry')
+        if geometry.dims != 0:
+            raise ValueError('The geometry given is not a Point')
+        srid = geometry.srid
+        #import ipdb; ipdb.set_trace()
+        textpoint = '\'' + str(geometry.wkt) + '\''
+        geomtext = "ST_GeomFromText(%s , %s)" %(textpoint,srid)
+        
+        
+        self.template += ',' + geomtext + ')'        
+        super(getValue,self).__init__(
+            expression,
+            output_field = FloatField(),
+            **extra
+      )
+    
+    
 
 
 class Union(Aggregate):
@@ -142,6 +171,7 @@ aggregates_dict = { 'Original' : Union,
                     'Hillshade' : Hillshade,
                     'SummaryStats' : SummaryStats,
                     'Aspect' : Aspect,
+                    'getValue' : getValue,
                    }
 
        

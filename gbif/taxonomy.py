@@ -534,7 +534,6 @@ class Taxonomy:
         
         return self.richness
 
-
     def calculateShannonEntropy(self):
       
         
@@ -603,8 +602,6 @@ class Taxonomy:
         self.shannon_entropy = entropies
 
         return entropies
-
-
 
     def calculateIntrinsicComplexity(self):
         """
@@ -1175,6 +1172,29 @@ class Taxonomy:
         else: 
             return raster_data 
 
+    def bindRasterNodeOccurrence(self,RasterData,writeDB=False):
+        """
+        Binds the Occurrence (leaves in the tree) with a geospatial match of a RasterData model.
+        
+        Parameters :
+            RasterData : The Raster_api model
+        """
+        for o in self.occurrences:
+            o.bind_withNodeDEM(RasterData,writeDB=writeDB)
+        return None
+    
+
+    def bootstrapTreeToLeaves(self,graph_driver):
+        """
+        Binds every internode to each Occurrences.
+        This is done to make a direct connection to the matching data based on the occurrence (point/time).
+        Rememmber this is done in each single tree bounded by a cell or polygon.
+        """
+        for occurrence in self.occurrences:
+            node = occurrence.getNode()
+            if self.TREE :
+                self.TREE.bindExternalNode(node, relationship_type="HAS_OCURRENCE")
+            
 
 class GriddedTaxonomy:
     """
@@ -1803,6 +1823,9 @@ class GriddedTaxonomy:
 
 
     def bindTaxonomyToMesh(self,graph_driver):
+        """
+        First the mesh needs to be loaded in the GraphDB
+        """
         l = []
         for t in self.taxonomies:
             nodecell = graph_driver.find_one("Cell","id",t.gid)
@@ -1812,6 +1835,7 @@ class GriddedTaxonomy:
 
 
 
+        
 
 
     

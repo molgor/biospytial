@@ -276,7 +276,7 @@ CSVABSOLUTEPATH = "/home/juan/gbif/mexico/bigdatabase_subset/pieces"
 
 ## KEYS FOR WRITING AS PROPERTIES IN THE NEo4j NODE OCCURRENCE
 
-OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','latitude','longitude','geom','event_date','basis_of_record']
+OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','latitude','longitude','event_date','geom']
 
 PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
 

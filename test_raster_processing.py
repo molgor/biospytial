@@ -1,5 +1,5 @@
 from raster_api.aggregates import Union,Slope, Hillshade, SummaryStats
-from raster_api.models import DemMexLow
+from raster_api.models import DemMexLow,DemMex
 from django.contrib.gis.db.models.fields import RasterField
 from raster_api.models import intersectWith
 from django.contrib.gis.gdal import GDALRaster
@@ -42,3 +42,15 @@ t1 = ggg.taxonomies[1]
 aa = DemMexLow.objects.filter(rast__intersect_with=t0.biomeGeometry)
 
 x = RasterData(DemMexLow,t1.biomeGeometry)
+
+
+####
+# HERE I WILL PUT EVERYTHING FOR BUILDING IN NIGHT
+# FIRST put the taxonomies in the database
+
+#for t in ggg.taxonomies:
+#    t.generateTREE()
+ #   t.TREE.migrateToNeo4J()
+    # Now for each occurrence in each taxonomy and write in graph DB:
+ #   rels = map(lambda o : o.bind_withNodeDEM(DemMex,writeDB=True),t.occurrences)
+

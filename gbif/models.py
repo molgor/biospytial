@@ -405,7 +405,25 @@ class Occurrence(models.Model):
         #relations = graph.match(start_node=node,rel_type=relation_name,end_node=dem_node)
         return rel
 
-#No se, hara algo el puto migartions
+
+
+    def getDescendingChain(self,depth,relation_type='IS_A_MEMBER_OF'):
+        """
+        Given the parameter depth it walks through the Subgraph Taxonomy
+        Starting from the Occurrence Node to the depth specified.
+        Remember that there is a loop in the LUCA node there fore, 
+        """
+        n = self.getNode()
+        #rel = n.match(rel_type=relation_type).next()
+        nodes = []
+        #import ipdb; ipdb.set_trace()
+        for i in range(depth):
+            rel = n.match_outgoing(rel_type=relation_type).next()
+            n = rel.end_node
+            nodes.append(n)
+            
+        return nodes
+    
 
 
 class Occurrence_CSV(models.Model):
@@ -687,6 +705,8 @@ class Level(object):
         except:
             if writeDB:
                 graph.create(rel)
+        ## This is the aggregate method when the node has an already existing relation. 
+        ## It aggregates by summing the abundance average.
         
         if relations:        
             for r in relations:
@@ -713,27 +733,34 @@ class Level(object):
         
         
         PAR_REL_INV = child_parent_name
-        parent_props = {'nose':'aaaa'}
-        relinv = Relationship(this,PAR_REL_INV,parent,**parent_props)
-        relationsinv = graph.match(this,PAR_REL_INV,parent)       
+        rel = Relationship(this,PAR_REL_INV,parent,**parent_props)
+        relations = graph.match(this,PAR_REL_INV,parent)       
+        try: 
+            relations = [r for r in relations]
+        except:
+            if writeDB:
+                graph.create(rel)
+        ## This is the aggregate method when the node has an already existing relation. 
+        ## It aggregates by summing the abundance average.
         
-        if writeDB:
-            #graph.create(rel)
-            graph.create(relinv)
-                    
-                #if not relations:
-                #    for i in relations:
-                #        continue
-                #else:
-                #    graph.create(rel)
-                        
+        if relations:        
+            for r in relations:
+                r.properties['ab'] += self.abundance
+                r.push()
+        else:
+            if writeDB:
+                graph.create(rel)            
+        
         
         
         for c in self.children:
             try:
                 c.bindChildren()
             except:
-                return None
+                return None        
+
+        
+        
 
 
     def bindExternalNode(self,node,relationship_type="IS_IN"):
@@ -752,15 +779,15 @@ class Level(object):
                 return None
 
 
-    def migrateToNeo4J(self):
+    def migrateToNeo4J(self,withParent=True,withChildren=True):
         
         
         self.setParent()
-
-        self.bindParent()
+        if withParent:
+            self.bindParent()
         # TO go down and follow links very efficient in traversing
-        
-        self.bindChildren()
+        if withChildren:
+            self.bindChildren()
         
         return True 
         
@@ -1373,12 +1400,7 @@ class Root(Level):
         return True
 
 
-
-       
-        
-        
-        
-        
+     
     def bindParent(self,writeDB=True):
         
         this = self.createNode()
@@ -1409,16 +1431,16 @@ class Root(Level):
             except:
                 return None
 
-
-
-
-
-
     
     def __repr__(self):
         head = u'<gbif.Root: Id = %s > %s \n' %(self.id,self.name)
         body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.kingdoms))
         feet = u'\t <N.Kingdom> %s </> \n </gbif.Root>' %self.abundance
         return head.encode('utf-8') + body + feet.encode('utf-8')    
+
+
+
+
+
 
     

@@ -22,3 +22,20 @@ MATCH (r:Root)-[:IS_PARENT_OF*..7]->(s) return s
 # Show complete taxonomy of a given occurrence
 Let occurrence.pk = 875714 be an arbitrary id number 
 MATCH (r: Occurrence {pk:875714})-[d :IS_A_MEMBER_OF*..8]->(s) return d
+
+#  FLowering families of plants that can be polinated by bees within the neighbours that have records of the family Apidae
+
+MATCH (abeja:Family {name:'Apidae'})-[r1: IS_IN]->(c:Cell)-[IS_NEIGHBOUR_OF]->(n:Cell)
+<-[r2: IS_IN]-(plant: Kingdom {name:'Plantae'})-[IS_PARENT_OF]->
+(d :Phylum {name: 'Magnoliophyta'} )-[r4 : IS_PARENT_OF*..3]->
+(f: Family) 
+WITH f RETURN DISTINCT f.name
+
+# Canidae and the families of vertebrates
+MATCH (carnisaurio:Family {name:'Canidae'})-[r1: IS_IN]->(c:Cell)-[IS_NEIGHBOUR_OF]->(n:Cell)
+<-[r2: IS_IN]-(plant: Kingdom {name:'Animalia'})-[IS_PARENT_OF]->
+(d :Phylum {name: 'Chordata'} )-[r4 : IS_PARENT_OF*..2]->
+(f: Order) 
+WITH f RETURN DISTINCT f.name
+
+

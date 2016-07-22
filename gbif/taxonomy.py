@@ -1184,17 +1184,22 @@ class Taxonomy:
         return None
     
 
-    def bootstrapTreeToLeaves(self,graph_driver):
+    def bootstrapTreeToLeaves(self,depth=6,relationship_type="HAS_EVENT"):
         """
-        Binds every internode to each Occurrences.
+        Binds every inter node to each Occurrences.
         This is done to make a direct connection to the matching data based on the occurrence (point/time).
-        Rememmber this is done in each single tree bounded by a cell or polygon.
+        Remember this is done in each single tree bounded by a cell or polygon.
         """
         for occurrence in self.occurrences:
-            node = occurrence.getNode()
-            if self.TREE :
-                self.TREE.bindExternalNode(node, relationship_type="HAS_OCURRENCE")
-            
+            node_occurrence = occurrence.getNode()
+            chain = occurrence.getDescendingChain(depth)
+            for node in chain:
+                R = Relationship(node,relationship_type,node_occurrence)
+                graph_driver.create(R)
+        return None
+
+
+
 
 class GriddedTaxonomy:
     """

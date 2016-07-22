@@ -17,7 +17,7 @@ from mesh.models import initMesh
 RasterField.register_lookup(intersectWith)
 
 
-
+from mesh.models import MexMesh
 
 a_p = (-106,30)
 
@@ -34,6 +34,11 @@ mex = biosphere.filter(geom__intersects=d['polygon'].wkt)
 mmm = initMesh(4)
 ggg = GriddedTaxonomy(mex,mmm.objects.all(),generate_tree_now=False,use_id_as_name=False)
 
+t = MexMesh.objects.filter(cell__intersects=d['polygon'].wkt)
+ggg = GriddedTaxonomy(mex,t,generate_tree_now=False,use_id_as_name=False)
+
+
+
 t0 = ggg.taxonomies[0]
 t1 = ggg.taxonomies[1]
 
@@ -48,9 +53,12 @@ x = RasterData(DemMexLow,t1.biomeGeometry)
 # HERE I WILL PUT EVERYTHING FOR BUILDING IN NIGHT
 # FIRST put the taxonomies in the database
 
-#for t in ggg.taxonomies:
-#    t.generateTREE()
- #   t.TREE.migrateToNeo4J()
+for t in ggg.taxonomies:
+    t.generateTREE()
+    t.TREE.migrateToNeo4J(withParent=False)
+#    t.bindRasterNodeOccurrence(DemMex,writeDB=True)
+        
+
     # Now for each occurrence in each taxonomy and write in graph DB:
  #   rels = map(lambda o : o.bind_withNodeDEM(DemMex,writeDB=True),t.occurrences)
 

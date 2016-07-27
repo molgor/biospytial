@@ -89,6 +89,46 @@ class DemMexLow(models.Model):
     def __str__(self):
         c = "< Digital Elevation Model: %s >"
         return c
+
+
+class MeanTemperature(models.Model):
+    """
+    ..
+    WorldWide Mean Temperature by month
+    Scale 15m.
+    
+    Attributes
+    ==========
+    I'll us the default attributes given by the raster2pgsql
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    id = models.AutoField(primary_key=True, db_column="rid")
+    rast = models.RasterField()
+    band = models.TextField( db_column="filename")
+    number_bands = 12
+    objects = models.GeoManager()
+    neo_label_name = 'MeanTemp-30s'
+        
+    
+    class Meta:
+        managed = False
+        
+        db_table = 'bioclim\".\"tmean_30s'
+        
+
+
+
+
+    def __str__(self):
+        c = "< Mean Temperature: %s >"
+        return c
+
+
+
+
+
     
 from django.db.models import Lookup
 

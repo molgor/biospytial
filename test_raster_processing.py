@@ -49,13 +49,17 @@ aa = DemMexLow.objects.filter(rast__intersect_with=t0.biomeGeometry)
 x = RasterData(DemMexLow,t1.biomeGeometry)
 
 
+from sketches.models import Country
+
+mexico = Country.objects.filter(name__contains='exico')
+
 ####
 # HERE I WILL PUT EVERYTHING FOR BUILDING IN NIGHT
 # FIRST put the taxonomies in the database
 
-for t in ggg.taxonomies:
-    t.generateTREE()
-    t.TREE.migrateToNeo4J(withParent=False)
+#for t in ggg.taxonomies:
+#    t.generateTREE()
+#    t.TREE.migrateToNeo4J(withParent=False)
 #    t.bindRasterNodeOccurrence(DemMex,writeDB=True)
         
 

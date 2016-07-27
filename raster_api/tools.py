@@ -21,7 +21,7 @@ __status__ = "Prototype"
 
 
 from django.contrib.gis.gdal import GDALRaster
-from raster_api.aggregates import SummaryStats,aggregates_dict
+from raster_api.aggregates import SummaryStats,aggregates_dict, Union
 from django.conf import settings
 from matplotlib import pyplot as plt
 import logging
@@ -61,13 +61,13 @@ class RasterData(object):
         self.neo_label_name = rastermodelinstance.neo_label_name
         self.aggregatedmodel = ''
         
-    def getGDALRaster(self,aggregate):
+    def getRaster(self,**bandnumber):
         """
         Returns : A GDALRaster
         """
         # First filter by border
         #self.model = self.model.filter(rast__intersect_with=self.geometry)
-        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
+        agg_dic = self.model.aggregate(raster=Union('rast',geometry=self.geometry,**bandnumber))
         raster = aggregateDictToRaster(aggregate_dic=agg_dic)
         self.rasterdata = raster
         return raster
@@ -98,21 +98,21 @@ class RasterData(object):
         
         return raster
 
-    def getValue(self,point):
+    def getValue(self,point,**bandnumber):
         """
         Returns the value in the coordinates given by the point.
         """
-        Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point))
+        Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,**bandnumber))
         z = Z['Z']
         return z
 
-    def getSummaryStats(self):
+    def getSummaryStats(self,**bandnumber):
         """
         Returns the summary statistics given by the function ST_SummaryStats over a ST_UNion of the blobs within the geometry.
         """
         if self.geometry.dims > 0:
         #self.model = self.model.filter(rast__intersect_with=self.geometry)
-            agg_dic = self.model.aggregate(raster=SummaryStats('rast',geometry=self.geometry))
+            agg_dic = self.model.aggregate(raster=SummaryStats('rast',geometry=self.geometry,**bandnumber))
             summary_str = agg_dic['raster']
             summary_str = summary_str.replace('(','').replace(')','')
             summary = summary_str.split(',')
@@ -120,7 +120,7 @@ class RasterData(object):
             dic_sum = {'uniqueid':uniqueid,'count':int(summary[0]),'sum':float(summary[1]),'mean':float(summary[2]),'stddev':float(summary[3]),'min':float(summary[4]),'max':float(summary[5])}        
         else:
             # It's a point.
-            z = self.getValue(self.geometry)
+            z = self.getValue(self.geometry,**bandnumber)
             uniqueid = str(self.geometry.ewkt)
             dic_sum = {'value' : z,'uniqueid':uniqueid}
             
@@ -141,6 +141,7 @@ class RasterData(object):
         
         file_ = path + filename +'.tif'
         data = self.rasterdata.bands[0].data()
+        NoData_value = self.rasterdata.bands[0].nodata_value
         proj_str = str(self.rasterdata.srs.wkt)
         driver = gdal.GetDriverByName('GTiff')
         geotransform = self.rasterdata.geotransform
@@ -151,6 +152,7 @@ class RasterData(object):
         #import ipdb; ipdb.set_trace()
         output.GetRasterBand(1).WriteArray(data)
         output.SetProjection(proj_str)
+        output.GetRasterBand(1).SetNoDataValue(NoData_value)
         output.SetGeoTransform(geotransform)
         output.FlushCache()
         
@@ -178,7 +180,7 @@ class RasterData(object):
         try:
             matrix = self.rasterdata.bands[0].data()
         except:
-            logger.error("No raster data associated. Run getGDALRaster or processDEM first")
+            logger.error("No raster data associated. Run getRaster or processDEM first")
             return None
         plt.imshow(matrix,**kwargs) 
         plt.show()

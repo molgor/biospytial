@@ -38,4 +38,20 @@ MATCH (carnisaurio:Family {name:'Canidae'})-[r1: IS_IN]->(c:Cell)-[IS_NEIGHBOUR_
 (f: Order) 
 WITH f RETURN DISTINCT f.name
 
+## Some examples
+MATCH (carnisaurio:Family {name:'Canidae'})-[r1: IS_IN]->(c:Cell)-[IS_NEIGHBOUR_OF]->(n:Cell)
+<-[r2: IS_IN]-(animals: Kingdom {name:'Animalia'})-[IS_PARENT_OF]->
+(d :Phylum {name: 'Chordata'} )-[r4 : IS_PARENT_OF*..3]->
+(f)-[HAS_EVENT]->(o : Occurrence)-[Elevation]->(e) 
+WHERE f.name <> 'Canidae' 
+Return o
+ORDER BY o.event_date
+LIMIT 100
+
+
+
+
+
+
+
 

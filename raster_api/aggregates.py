@@ -40,12 +40,22 @@ class getValue(Aggregate):
         if geometry.dims != 0:
             raise ValueError('The geometry given is not a Point')
         srid = geometry.srid
+
+           
         #import ipdb; ipdb.set_trace()
         textpoint = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoint,srid)
+        try:
+            band = extra.pop('band')
+        except:
+            band = None
+        if band:
+            ## The request is multiband the query should match this: double precision ST_Value(raster rast, integer band, geometry pt, boolean exclude_nodata_value=true);
+            stband = str(band)        
+            self.template += ( ',' +  stband + ',' + geomtext + ')' )
+        else:
+            self.template += ',' + geomtext + ')'        
         
-        
-        self.template += ',' + geomtext + ')'        
         super(getValue,self).__init__(
             expression,
             output_field = FloatField(),
@@ -60,7 +70,7 @@ class Union(Aggregate):
         Aggregation method for extracting Raw data
     """  
     function = 'ST_Clip(ST_Union'
-    template = '%(function)s(%(expressions)s)'
+    template = '%(function)s(%(expressions)s' #Note the missing parenthesis
     
     
     def __init__(self,expression,**extra):
@@ -70,7 +80,20 @@ class Union(Aggregate):
         #import ipdb; ipdb.set_trace()
         textpoly = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
-        self.template += ',' + geomtext + ')'        
+
+        try:
+            band = extra.pop('band')
+        except:
+            band = None
+        if band:
+            ## The request is multiband the query should match this: double precision ST_Value(raster rast, integer band, geometry pt, boolean exclude_nodata_value=true);
+            stband =  str(band)
+            self.template += ',' + stband + ')' # Here I close parenthesis (is for summoning the band) 
+            self.template += ',' + geomtext + ')'  # Proceed normally           
+           
+        else:        
+            self.template += '),' + geomtext + ')'        
+        
         super(Union,self).__init__(
             expression,
             output_field = RasterField(),
@@ -159,7 +182,19 @@ class SummaryStats(Aggregate):
         #import ipdb; ipdb.set_trace()
         textpoly = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
-        self.template += ',' + geomtext + ')' + ')' # Extra parenthesis to close the clip and the summarystats
+        try:
+            band = extra.pop('band')
+        except:
+            band = None
+        if band:
+            ## The request is multiband the query should match this: double precision ST_Value(raster rast, integer band, geometry pt, boolean exclude_nodata_value=true);
+            stband =  str(band)        
+            self.template += ( ',' + geomtext + ')' + ',' +  stband  + ')' )
+        else:
+            self.template += ',' + geomtext + ')'  + ')'       
+        
+        # Extra parenthesis to close the clip and the summarystats
+        
         super(SummaryStats,self).__init__(
             expression,
             output_field = TextField(),

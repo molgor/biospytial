@@ -9,6 +9,7 @@ Tools for converting, analysing and migrate to Neo4J
 
 """
 
+
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2016, JEM"
 __license__ = "GPL"
@@ -29,6 +30,34 @@ from py2neo import Node, Relationship, Graph
 graph = Graph()
 from osgeo import gdal
 logger = logging.getLogger('biospatial.raster_api.tools')
+from numpy.ma import masked_where
+
+class GDALRasterExtended(GDALRaster):
+    
+    def allBandStatistics(self):
+        bands = [b for b in self.bands]
+        stats = [ b.statistics() for b in bands]
+        mins = []
+        maxs = []
+        means = []
+        stds = []
+        for s in stats:
+            m, M, mu, st = s
+            mins.append(m)
+            maxs.append(M)
+            means.append(mu)
+            stds.append(st)
+            
+        ## extract the data
+        min_t = min(mins)
+        max_t = max(maxs)
+        mean_t = sum(means) / float(len(means))
+        # Maybe here put std but it's not important now
+        stds_t = sum(stds) / float(len(stds))
+        b = self.bands[0]
+        
+        return {'min':min_t,'max':max_t,'mean':mean_t,'mean_std':stds_t,'nodata':b.nodata_value}
+
 
 
 def aggregateDictToRaster(aggregate_dic):
@@ -38,7 +67,7 @@ def aggregateDictToRaster(aggregate_dic):
     """
     key = aggregate_dic.keys()[0]
     try:
-        raster = GDALRaster(aggregate_dic[key])
+        raster = GDALRasterExtended(aggregate_dic[key])
         return raster
     except:
         logger.error("Could not extract Raster data from aggregation")
@@ -140,7 +169,11 @@ class RasterData(object):
         """
         
         file_ = path + filename +'.tif'
-        data = self.rasterdata.bands[0].data()
+        try:
+            data = self.rasterdata.bands[0].data()
+        except AttributeError:
+            logger.error("No data defined. Run getRaster first.")
+            return None
         NoData_value = self.rasterdata.bands[0].nodata_value
         proj_str = str(self.rasterdata.srs.wkt)
         driver = gdal.GetDriverByName('GTiff')
@@ -148,11 +181,36 @@ class RasterData(object):
         ysize,xsize = data.shape 
         
         output = driver.Create(file_,xsize,ysize,1,gdal.GDT_Int16)
+        outband = output.GetRasterBand(1)
+        
+        #outband.SetRasterColorInterpretation(gdal.GCI_PaletteIndex)
+        
+        
+        #ct = gdal.ColorTable()
+        # Some examples
+        
+        #ct.CreateColorRamp(0,(0,0,0),127,(255,0,0))
+        #ct.CreateColorRamp(0,(0,0,255),255,(255,0,0))
+        
         
         #import ipdb; ipdb.set_trace()
-        output.GetRasterBand(1).WriteArray(data)
+        #ct.SetColorEntry( 0, (0, 0, 0, 255) )
+        #ct.SetColorEntry( 20, (0, 255, 0, 255) )
+        #ct.SetColorEntry( 40, (255, 0, 0, 255) )
+        #ct.SetColorEntry( 60, (255, 0, 255, 255) )
+        # Set the color table for your band
+        #import ipdb; ipdb.set_trace()
+            
+
+
+
+        
+        outband.WriteArray(data)
+        #outband.SetColorTable(ct)
+        
+        
         output.SetProjection(proj_str)
-        output.GetRasterBand(1).SetNoDataValue(NoData_value)
+        outband.SetNoDataValue(NoData_value)
         output.SetGeoTransform(geotransform)
         output.FlushCache()
         
@@ -176,19 +234,48 @@ class RasterData(object):
             return n0
         
      
-    def display_field(self,**kwargs):
+
+    
+    def plotField(self,stats_dir,band=1,xlabel='Temperatura Promedio (C)',**kwargs):
+        """
+        """
         try:
-            matrix = self.rasterdata.bands[0].data()
+            matrix = self.rasterdata.bands[band - 1].data()
         except:
-            logger.error("No raster data associated. Run getRaster or processDEM first")
+            logger.error("No raster data associated with specified band. Run getRaster or processDEM first")
             return None
-        plt.imshow(matrix,**kwargs) 
+        # Mask data 
+        nodataval = stats_dir['nodata']
+        matrix = masked_where(matrix == nodataval, matrix)
+        f, ax = plt.subplots()
+
+        plt.imshow(matrix,clim=(stats_dir['min'],stats_dir['max']),**kwargs)
+        plt.text(0.2,-0.6,'Made with BiosPYtial: -Biodiversity Informatics-',horizontalalignment='center',verticalalignment='bottom',transform=ax.transAxes,fontsize=10)
+
+        cbar = plt.colorbar(orientation='horizontal',shrink=0.8) 
+        cbar.set_label(xlabel,size=12)
+        # access to cbar tick labels:
+        #cbar.ax.tick_params(labelsize=5) 
+        plt.axis('off')
+        #plt.show()
+        return plt         
+    
+    def display_field(self,stats_dir,title='',band=1,**kwargs):
+        p = self.plotField(stats_dir, band=band,**kwargs)
+        p.title(title)
         plt.show()
         return None
     
-    
-    
-    
-    
+    def exportToJPG(self,filename,stats_dir,path=settings.PATH_OUTPUT,title='',band=1,**kwargs):
+
+        p = self.plotField(stats_dir, band=band,**kwargs)
+        p.title(title)
+        file_ = path + filename + '.png'
+        plt.savefig(file_)
+
+        return None 
+       
+meses = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
+#mex.exportToJPG('0'+name,s,title=month,band=int(name),cmap=plt.cm.inferno)
     
         

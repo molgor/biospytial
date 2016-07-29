@@ -452,7 +452,16 @@ class Taxonomy:
 
 
     def generateTREE(self):
-        self.TREE = Root(self.occurrences,idnum=int(self.gid))
+        """
+        Generate the TREE using the py2neo method
+        Set the attribute TREE.
+        
+        Returns :
+            TREE
+        """
+        #
+        self.TREE = Root(self.occurrences,idnum=int(0))
+        #self.TREE = Root(self.occurrences,idnum=int(self.gid))
         return self.TREE
 
     def removeQuerySets(self):

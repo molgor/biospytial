@@ -1433,8 +1433,13 @@ class Root(Level):
 
     
     def __repr__(self):
+    
         head = u'<gbif.Root: Id = %s > %s \n' %(self.id,self.name)
-        body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.kingdoms))
+        try:    
+            body = str(reduce(lambda sp1,sp2: str(sp1)+str(sp2)+'\n',self.kingdoms))
+        except:
+            body = u' EMPTY TAXONOMY '
+        
         feet = u'\t <N.Kingdom> %s </> \n </gbif.Root>' %self.abundance
         return head.encode('utf-8') + body + feet.encode('utf-8')    
 

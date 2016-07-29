@@ -5,8 +5,9 @@ from raster_api.models import intersectWith
 from django.contrib.gis.gdal import GDALRaster
 from raster_api.aggregates import aggregates_dict
 from raster_api.tools import RasterData
-
-
+from raster_api.models import SolarRadiation
+from raster_api.models import MeanTemperature
+from matplotlib import pyplot as plt
 
 
 
@@ -51,7 +52,11 @@ x = RasterData(DemMexLow,t1.biomeGeometry)
 
 from sketches.models import Country
 
-mexico = Country.objects.filter(name__contains='exico')
+mexico = Country.objects.filter(name__contains='exico').get()
+
+mex = RasterData(MeanTemperature,mexico.geom)
+mex.getRaster(band=1)
+s = mex.rasterdata.allBandStatistics()
 
 ####
 # HERE I WILL PUT EVERYTHING FOR BUILDING IN NIGHT

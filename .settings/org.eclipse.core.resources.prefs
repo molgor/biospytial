@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
+encoding//biospatial/ingest-taxonomies-in-neo4j.py=utf-8
 encoding//biospatial/settings.py=utf-8
 encoding//docs/conf.py=utf-8
 encoding//drivers/csv_raw_loader.py=utf-8

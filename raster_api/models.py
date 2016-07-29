@@ -91,7 +91,7 @@ class DemMexLow(models.Model):
         return c
 
 
-class MeanTemperature(models.Model):
+class CheseaMeanTemperature(models.Model):
     """
     ..
     WorldWide Mean Temperature by month
@@ -111,22 +111,106 @@ class MeanTemperature(models.Model):
     objects = models.GeoManager()
     neo_label_name = 'MeanTemp-30s'
         
-    
     class Meta:
         managed = False
         
+        #db_table = 'bioclim\".\"tmean_30s'
+        
         db_table = 'bioclim\".\"tmean_30s'
         
-
-
-
-
     def __str__(self):
         c = "< Mean Temperature: %s >"
         return c
 
 
 
+
+class BioClimModel(models.Model):
+    """
+    ..
+    Abstract model for all the BioClim variables
+    
+    Attributes
+    ==========
+    I'll us the default attributes given by the raster2pgsql
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    id = models.AutoField(primary_key=True, db_column="rid")
+    rast = models.RasterField()
+    band = models.TextField( db_column="filename")
+    number_bands = 12
+    objects = models.GeoManager()
+        
+    class Meta:
+        managed = False
+        abstract = True
+        #db_table = 'bioclim\".\"tmean_30s'
+        
+        #b_table = 'bioclim\".\"tmean_30s'
+        
+    def __str__(self):
+        c = "< Raster Data: %s >"
+        return c
+
+
+
+class Precipitation(BioClimModel):
+    """
+    Concrete model for the bioclim precipitation.
+    In (mm). Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'Prec-30s'
+    units = '(mm)'
+    
+    class Meta:
+        db_table = 'bioclim\".\"prec'
+        managed = False
+
+    def __str__(self):
+        c = "< Precipitation: %s  >"%self.units
+        return c
+
+
+class SolarRadiation(BioClimModel):
+    """
+    Concrete model for Solar Radiation.
+    In (KJ m^-2 day^-1).
+     Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'SlrRad-30s'
+    units = '(KJ m^-2 day^-1)'
+    
+    class Meta:
+        db_table = 'bioclim\".\"prec'
+        managed = False
+
+    def __str__(self):
+        c = "< Solar Radiation: %s>"%self.units
+        return c
+
+
+
+class MeanTemperature(BioClimModel):
+    """
+    Concrete model for Temperature.
+    In (C).
+     Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'MeanTemp-30s'
+    units = '(C)'
+    
+    class Meta:
+        db_table = 'bioclim\".\"tavg'
+        managed = False
+
+    def __str__(self):
+        c = "< Mean Temperature: %s>"%self.units
+        return c  
 
 
     

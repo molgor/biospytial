@@ -88,6 +88,7 @@ class RasterData(object):
         self.geometry = border
         self.rasterdata = ''
         self.neo_label_name = rastermodelinstance.neo_label_name
+        self.number_bands = rastermodelinstance.number_bands
         self.aggregatedmodel = ''
         
     def getRaster(self,**bandnumber):
@@ -131,9 +132,20 @@ class RasterData(object):
         """
         Returns the value in the coordinates given by the point.
         """
-        Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,**bandnumber))
-        z = Z['Z']
-        return z
+        band = bandnumber.get('band')
+        if band:
+            Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,**bandnumber))
+            z = Z['Z']
+            return z
+        else:
+            nbands = self.number_bands
+            zs = []
+            for i in range(1,nbands + 1):
+                Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,band=i))
+                zi = Z['Z']
+                zs.append(zi)
+            return zs
+
 
     def getSummaryStats(self,**bandnumber):
         """
@@ -218,12 +230,15 @@ class RasterData(object):
 
 
         
-    def getNode(self,writeDB=False):
+    def getNode(self,writeDB=False,month='',**bands):
         """
         Returns a Node data structure that can be put into Neo4j
         """
         class_name = self.neo_label_name
-        properties = self.getSummaryStats()
+        properties = self.getSummaryStats(**bands)
+        if month:
+            properties['reg.val'] = self.getSummaryStats(band=month)['value']
+            
         n0 = Node(class_name,**properties)
         old_node = graph.find_one(class_name,property_key="uniqueid",property_value=properties['uniqueid'])
         if old_node:

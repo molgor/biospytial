@@ -1154,6 +1154,8 @@ class Taxonomy:
 
     def mergeWithThisRasterData(self,raster_api_model,option=1,lazy_eval=True):
         """
+        AREA METHOD!
+        
         This method associate a new data to the current taxonomy. 
         It is intented to be used for fussing information from other source, specifically a raster stored
         in postgis as a raster table. 
@@ -1181,7 +1183,7 @@ class Taxonomy:
         else: 
             return raster_data 
 
-    def bindRasterNodeOccurrence(self,RasterData,writeDB=False):
+    def bindDEMNodeOccurrence(self,RasterData,writeDB=False):
         """
         Binds the Occurrence (leaves in the tree) with a geospatial match of a RasterData model.
         
@@ -1191,7 +1193,17 @@ class Taxonomy:
         for o in self.occurrences:
             o.bind_withNodeDEM(RasterData,writeDB=writeDB)
         return None
-    
+
+    def bindRasterNodeOccurrence(self,RasterModel,writeDB=False):
+        """
+        Binds the Occurrence (leaves in the tree) with a geospatial match of a RasterData model.
+        
+        Parameters :
+            RasterData : The Raster_api model
+        """
+        for o in self.occurrences:
+            o.bind_withNodeRaster(RasterModel,writeDB=writeDB)
+        return None    
 
     def bootstrapTreeToLeaves(self,depth=6,relationship_type="HAS_EVENT"):
         """
@@ -1199,15 +1211,55 @@ class Taxonomy:
         This is done to make a direct connection to the matching data based on the occurrence (point/time).
         Remember this is done in each single tree bounded by a cell or polygon.
         """
-        for occurrence in self.occurrences:
-            node_occurrence = occurrence.getNode()
-            chain = occurrence.getDescendingChain(depth)
-            for node in chain:
-                R = Relationship(node,relationship_type,node_occurrence)
-                graph_driver.create(R)
-        return None
+        if self.occurrences:
+            for occurrence in self.occurrences:
+                try:
+                    node_occurrence = occurrence.getNode()
+                    chain = occurrence.getDescendingChain(depth)
+                    for node in chain:
+                        R = Relationship(node,relationship_type,node_occurrence)
+                        graph_driver.create(R)
+                except:
+                    continue
+            return None
+        else:
+            return None
 
 
+    def bindToMesh(self):
+        """
+        First the mesh needs to be loaded in the GraphDB
+        It will bind the cell to all the nodes in the tree.
+        To make efficient the further querying
+        """
+        nodecell = graph_driver.find_one("Cell","id",self.gid)
+        coto = self.TREE.bindExternalNode(nodecell)
+        return nodecell
+
+
+    
+    def ingestAllDataInNeo(self,list_raster_models):
+        """
+        Migrate the taxonomy, with its corresponding area (typicaly cell node).
+        """
+        self.generateTREE()
+        self.TREE.migrateToNeo4J()
+        self.bindToMesh()
+        self.bootstrapTreeToLeaves()
+        
+        for raster_model in list_raster_models:
+            self.bindRasterNodeOccurrence(raster_model,writeDB=True)
+        
+        # releae ram
+        self.TREE = []
+        self.occurrences = []
+        self.species = [] 
+        self.genera  = []
+        self.families = []
+        self.orders = []
+        self.classes  = []
+        self.phyla = []
+        self.kingdoms = []
 
 
 class GriddedTaxonomy:

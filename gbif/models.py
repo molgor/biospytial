@@ -343,6 +343,10 @@ class Occurrence(models.Model):
         return node
         
     def extractRasterDataFrom(self,RasterModel):
+        """
+        This is an occurrence. 
+        The geom is a point. The result is the minium blob
+        """
         raster_data = RasterData(RasterModel,self.geom)
         #z = raster_data.getValue(self.geom)
         return raster_data
@@ -369,12 +373,21 @@ class Occurrence(models.Model):
         return dem_data
     
     
-    def nodeRasterData(self,RasterData):
+    def nodeRasterData(self,RasterModel):
         """
         USes the builtin function of RasterData to return a node.
         See extractRasterDataFromDEM
+        Attention:
+            
+            This could be Area because the definition is taken on the border.
+        
         """
-        node = RasterData.getNode()
+        rd = RasterData(RasterModel,self.geom)
+        month = self.month
+        if isinstance(month, int):
+            node = rd.getNode(month=self.month)
+        else: 
+            node = rd.getNode()
         return node
     
     def getNodeDEM(self,DemModel,option=1):
@@ -405,7 +418,20 @@ class Occurrence(models.Model):
         #relations = graph.match(start_node=node,rel_type=relation_name,end_node=dem_node)
         return rel
 
-
+    def bind_withNodeRaster(self,RasterModel,writeDB=False):
+        """
+        Creates a DEM nodes, calls the self.node and make a relationship
+        """ 
+        raster_node = self.nodeRasterData(RasterModel)
+        node = self.getNode()
+        relation_name = RasterModel.link_type_name
+        rel = Relationship(node,relation_name,raster_node)
+        #parent_props = {'value' : self.parent.abundance}        
+        ### Check this to do not repeat relationships.
+        if writeDB:
+            graph.create(rel)
+        #relations = graph.match(start_node=node,rel_type=relation_name,end_node=dem_node)
+        return rel
 
     def getDescendingChain(self,depth,relation_type='IS_A_MEMBER_OF'):
         """
@@ -818,7 +844,7 @@ class Level(object):
         """
         
         #Node(Tree.level,name=Tree.name,id=Tree.id,parent_id=Tree.parent_id,abundance=Tree.abundance)    
-        ordered_diction = [self.id,self.level,self.levelname,self.name]
+        ordered_diction = [self.id,self.level,self.levelname,self.name.encode('utf-8')]
         keyword = reduce(lambda a,b : str(a)+'--'+str(b),ordered_diction)
         dictio = {'abundance':self.abundance,'levelname':self.levelname,'name':self.name,'id':self.id,'level':self.level,'keyword':keyword}
         labels = [self.levelname]
@@ -1401,35 +1427,78 @@ class Root(Level):
 
 
      
-    def bindParent(self,writeDB=True):
+    def bindParent(self,writeDB=True,parent_child_name="IS_PARENT_OF"):
+        parent = self.createNode()
+        this = self.createNode()
+        #parent = self.parent.createNode()
+        #this = self.createNode()
+        parent_props = {'ab' : self.parent.abundance}
         
-        this = self.createNode()
-        graph.create(this)
-        this = self.createNode()
-        parent_props = {'ab' : 1}
-        rel = Relationship(this,"IS_PARENT_OF",this,**parent_props)
-        relations = graph.find(rel)
-            
-        if writeDB:
-            relations = False
-            if relations:
-                for rel in relations:
+        PAR_REL = parent_child_name
+
+        rel = Relationship(parent,PAR_REL,this,**parent_props)
+        relations = graph.match(start_node=parent,rel_type=PAR_REL,end_node=this)
+        #relations = [r for r in relations]
+        try: 
+            relations = [r for r in relations]
+        except:
+            if writeDB:
+                try:
                     graph.create(rel)
-                        #continue
-            else:
-                graph.create(rel)
-                    
-                #if not relations
-                #for i in relations:
-                #    if i:
-                #        continue
-                 #   else:
-                 #       graph.create(rel)
+                except:
+                    return None
+        ## This is the aggregate method when the node has an already existing relation. 
+        ## It aggregates by summing the abundance average.
+        
+        if relations:        
+            for r in relations:
+                r.properties['ab'] += self.parent.abundance
+                r.push()
+        else:
+            if writeDB:
+                graph.create(rel)                    
         for c in self.children:
             try:
                 c.bindParent()
             except:
                 return None
+
+    def bindChildren(self,writeDB=True,child_parent_name="IS_A_MEMBER_OF",deepth_limit=8):
+        parent = self.createNode(writeDB=writeDB)
+        this = self.createNode(writeDB=writeDB)
+        parent_props = {'ab' : self.parent.abundance}
+        
+        
+        PAR_REL_INV = child_parent_name
+        rel = Relationship(this,PAR_REL_INV,parent,**parent_props)
+        relations = graph.match(this,PAR_REL_INV,parent)       
+        try: 
+            relations = [r for r in relations]
+        except:
+            if writeDB:
+                graph.create(rel)
+        ## This is the aggregate method when the node has an already existing relation. 
+        ## It aggregates by summing the abundance average.
+        
+        if relations:        
+            for r in relations:
+                r.properties['ab'] += self.abundance
+                r.push()
+        else:
+            if writeDB:
+                graph.create(rel)            
+        
+        
+        
+        for c in self.children:
+            try:
+                c.bindChildren()
+            except:
+                return None        
+
+
+
+
 
     
     def __repr__(self):

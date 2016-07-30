@@ -44,6 +44,7 @@ class DemMex(models.Model):
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
     objects = models.GeoManager()
+    number_bands = 1
     neo_label_name = 'DEM_12'
     link_type_name = 'Elevation'
     properties = {'units' : 'meters' ,
@@ -155,7 +156,6 @@ class BioClimModel(models.Model):
         return c
 
 
-
 class Precipitation(BioClimModel):
     """
     Concrete model for the bioclim precipitation.
@@ -163,6 +163,7 @@ class Precipitation(BioClimModel):
     """
     #number_bands = 12
     neo_label_name = 'Prec-30s'
+    link_type_name = 'Precipitation'
     units = '(mm)'
     
     class Meta:
@@ -182,10 +183,11 @@ class SolarRadiation(BioClimModel):
     """
     #number_bands = 12
     neo_label_name = 'SlrRad-30s'
+    link_type_name = 'SolarRadiation'
     units = '(KJ m^-2 day^-1)'
     
     class Meta:
-        db_table = 'bioclim\".\"prec'
+        db_table = 'bioclim\".\"srad'
         managed = False
 
     def __str__(self):
@@ -202,6 +204,7 @@ class MeanTemperature(BioClimModel):
     """
     #number_bands = 12
     neo_label_name = 'MeanTemp-30s'
+    link_type_name = 'MeanTemperature'
     units = '(C)'
     
     class Meta:
@@ -211,6 +214,82 @@ class MeanTemperature(BioClimModel):
     def __str__(self):
         c = "< Mean Temperature: %s>"%self.units
         return c  
+
+class MaxTemperature(BioClimModel):
+    """
+    Concrete model for Temperature.
+    In (C).
+     Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'MaxTemp-30s'
+    link_type_name = 'MaxTemperature'
+    units = '(C)'
+    
+    class Meta:
+        db_table = 'bioclim\".\"tmax'
+        managed = False
+
+    def __str__(self):
+        c = "< Maximum Temperature: %s>"%self.units
+        return c  
+
+class MinTemperature(BioClimModel):
+    """
+    Concrete model for Temperature.
+    In (C).
+     Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'MinTemp-30s'
+    link_type_name = 'MinTemperature'
+    units = '(C)'
+    
+    class Meta:
+        db_table = 'bioclim\".\"tmin'
+        managed = False
+
+    def __str__(self):
+        c = "< Minimum Temperature: %s>"%self.units
+        return c  
+
+class VaporPressure(BioClimModel):
+    """
+    Concrete model for VaporPressure.
+    In (C).
+     Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'Vapor-30s'
+    link_type_name = 'Vapor'
+    units = 'kPa'
+    
+    class Meta:
+        db_table = 'bioclim\".\"vapr'
+        managed = False
+
+    def __str__(self):
+        c = "< VaporPressure: %s>"%self.units
+        return c  
+    
+class WindSpeed(BioClimModel):
+    """
+    Concrete model for WindSpeed.
+    In (C).
+     Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'WindSpeed-30s'
+    link_type_name = 'WindSpeed'
+    units = '(m/s)'
+    
+    class Meta:
+        db_table = 'bioclim\".\"wind'
+        managed = False
+
+    def __str__(self):
+        c = "< WindSpeed: %s>"%self.units
+        return c      
 
 
     
@@ -237,5 +316,5 @@ class intersectWith(Lookup):
         return 'ST_Intersects( %s ,  %s  )' % things, params
     
     
-
+raster_models = [DemMex,Precipitation,SolarRadiation,MeanTemperature,MinTemperature,MaxTemperature,VaporPressure,WindSpeed]
 

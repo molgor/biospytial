@@ -22,8 +22,11 @@ __status__ = "Prototype"
 
 from raster_api.aggregates import Union,Slope, Hillshade, SummaryStats
 from raster_api.models import DemMexLow,DemMex
+
 from django.contrib.gis.db.models.fields import RasterField
 from raster_api.models import intersectWith
+RasterField.register_lookup(intersectWith)
+
 from django.contrib.gis.gdal import GDALRaster
 from raster_api.aggregates import aggregates_dict
 from raster_api.tools import RasterData
@@ -46,6 +49,9 @@ from mesh.models import MexMesh
 from sketches.models import Country
 mexico_border = Country.objects.filter(name__contains='exico').get()
 
+import logging
+logger = logging.getLogger('biospatial.raster_api.tools')
+
 # Subselect the grid to match the region
 mexgrid = MexMesh.objects.filter(cell__intersects=mexico_border.geom)
 ## Total without filtering: 279 277
@@ -59,6 +65,24 @@ biosphere = Occurrence.objects.all()
 
 #ggg = GriddedTaxonomy(biosphere,mexgrid.all(),generate_tree_now=False,use_id_as_name=False)
 
+## Start the super analysis
+from raster_api.models import raster_models
+import multiprocessing
+
+def doitall(list_of_taxonomies,rastermodels):
+    n = len(list_of_taxonomies)
+    for i,tax in enumerate(list_of_taxonomies):
+        try:
+            tax.ingestAllDataInNeo(rastermodels,with_raster=True)
+        except:
+            logger.error("Something occurred with taxonomy: %s"%i)
+        logger.info("Processed: %s"%(float(i)/n))
+        del(tax)
+    return None
+
+
+
+
 
 #mex = RasterData(MeanTemperature,mexico.geom)
 #mex.getRaster(band=1)
@@ -66,10 +90,14 @@ biosphere = Occurrence.objects.all()
 
 
 
+polystr = "POLYGON((-109 27,-106 27,-106 30,-109 30,-109 27))"
 
 
 
 
+from django.contrib.gis.geos import GEOSGeometry
+polygon = GEOSGeometry(polystr)
+ggg = GriddedTaxonomy(biosphere,mexgrid.filter(cell__intersects=polystr),generate_tree_now=False,use_id_as_name=False)
 
 
 #mmm = initMesh(4)

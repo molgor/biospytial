@@ -126,29 +126,29 @@ LOGGING = {
         'simple': {
             'format': '%(levelname)s %(message)s'
         },
+        'simple_raster': {
+            'format': '%(levelname)s [Raster API] %(message)s'
+        },
     },
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/biospatial.log',
             'formatter': 'verbose'
         },
         'console':{
-            'level': 'DEBUG',
+            'level': 'ERROR',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
-        'biospytial.mesh.tools':{
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+        'file_raster':{
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR+'/logs/biospatial_raster.log',
+            'formatter': 'verbose'
         },
-        'biospatial.raster_api.tools':{
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple'
-        },        
+  
         
     },
     'loggers': {
@@ -159,19 +159,35 @@ LOGGING = {
         },
         'biospatial.gbif.insertion': {
             'handlers': ['file'],
+            #'propagate': True,
             'level': 'DEBUG',
         },
         'biospatial.gbif': {
             'handlers': ['console'],
+            'propagate': False,
             'level': 'DEBUG',
         },
         'biospatial.driver.csv_raw_loader' : {
             'handlers': ['console'],
-            'level': 'DEBUG',                                    
-                                              }
-    }
+            'level': 'DEBUG',                                   
+        
+        },
+         'biospatial.gbif.taxonomy' :{
+            'handlers': ['console'],
+            'level' : 'DEBUG',
+            'propagate': False,
+        },       
+        'biospatial.raster_api.tools':{
+            'handlers': ['file_raster'],
+            'level' : 'INFO',
+        
+        },
+        'biospytial.mesh.tools':{
+            'level': 'INFO',
+            'handlers': ['console'],    
+            },
+    },
 }
-
 
 #######################
 # Internationalization
@@ -287,3 +303,4 @@ PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
 
 PATH_OUTPUT = '/home/juan/Research/biospytial-output/'
 
+RASTERNODATAVALUE = -9999

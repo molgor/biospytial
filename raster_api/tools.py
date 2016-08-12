@@ -136,6 +136,8 @@ class RasterData(object):
         if band:
             Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,**bandnumber))
             z = Z['Z']
+            if z == None:
+                z = settings.RASTERNODATAVALUE
             return z
         else:
             nbands = self.number_bands
@@ -143,6 +145,8 @@ class RasterData(object):
             for i in range(1,nbands + 1):
                 Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,band=i))
                 zi = Z['Z']
+                if zi == None:
+                    zi = settings.RASTERNODATAVALUE
                 zs.append(zi)
             return zs
 
@@ -237,8 +241,14 @@ class RasterData(object):
         class_name = self.neo_label_name
         properties = self.getSummaryStats(**bands)
         if month:
-            properties['reg.val'] = self.getSummaryStats(band=month)['value']
-            
+            try:
+                #Get summary uses the point data and therefore returns the value attribute
+                properties['reg.val'] = self.getSummaryStats(band=month)['value']
+            except:
+                # In the case the data has only one band and we are ingesting the data without care
+                properties['reg.val'] = self.getSummaryStats(band=1)['value']
+                logger.warn("Band number selected (%s) doesn't exist. Using band one instead."%month)
+        
         n0 = Node(class_name,**properties)
         old_node = graph.find_one(class_name,property_key="uniqueid",property_value=properties['uniqueid'])
         if old_node:
@@ -276,19 +286,34 @@ class RasterData(object):
         return plt         
     
     def display_field(self,stats_dir,title='',band=1,**kwargs):
-        p = self.plotField(stats_dir, band=band,**kwargs)
+        p = self.plotField(stats_dir, band=band,xlabel=title+' Month',**kwargs)
         p.title(title)
         plt.show()
         return None
     
-    def exportToJPG(self,filename,stats_dir,path=settings.PATH_OUTPUT,title='',band=1,**kwargs):
+    def exportToJPG(self,filename,stats_dir,path=settings.PATH_OUTPUT,title='',unitstitle='',band=1,**kwargs):
 
-        p = self.plotField(stats_dir, band=band,**kwargs)
+        p = self.plotField(stats_dir, band=band,xlabel=unitstitle,**kwargs)
         p.title(title)
         file_ = path + filename + '.png'
         plt.savefig(file_)
 
         return None 
+
+    def exportMonthlyStack(self,prefix,stats_dict,path=settings.PATH_OUTPUT,prefixtitle='',unitstitle='',lang='eng',**kwargs):
+        """
+        Export layer stack
+        """
+        #stats_dict = self.rasterdata.allBandStatistics()
+        if lang == 'esp':
+            months = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
+        else:
+            months = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'}
+        
+        for i,name in months.items():
+            self.exportToJPG(i+prefix, stats_dict, path=path, title=prefixtitle+name,unitstitle=unitstitle, band=int(i),**kwargs)
+        
+        
        
 meses = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
 #mex.exportToJPG('0'+name,s,title=month,band=int(name),cmap=plt.cm.inferno)

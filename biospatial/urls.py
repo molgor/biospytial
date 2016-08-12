@@ -1,4 +1,5 @@
-from django.conf.urls import patterns, include, url
+
+from django.conf.urls import include, url
 from django.contrib import admin
 from gbif import views
 from drivers import views as driver_views
@@ -8,7 +9,7 @@ from biospatial import settings
 
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Examples:
     # url(r'^$', 'biospatial.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
@@ -18,4 +19,4 @@ urlpatterns = patterns('',
     url(r'^getTree/',views.showTreeInGrid,name='showTreeInGrid'),
     url(r'^getAllTrees',views.showAllLevelsInTreeInGrid,name='showAllLevelsInTreeInGrid'),
     url(r'^extractDataOf',driver_views.ExtractDataFromCSVFile,name='ExtractDataFromCSVFile'),
-) 
+] 

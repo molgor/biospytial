@@ -1238,17 +1238,24 @@ class Taxonomy:
 
 
     
-    def ingestAllDataInNeo(self,list_raster_models):
+    def ingestAllDataInNeo(self,list_raster_models,with_raster=False):
         """
         Migrate the taxonomy, with its corresponding area (typicaly cell node).
         """
-        self.generateTREE()
-        self.TREE.migrateToNeo4J()
-        self.bindToMesh()
-        self.bootstrapTreeToLeaves()
         
-        for raster_model in list_raster_models:
-            self.bindRasterNodeOccurrence(raster_model,writeDB=True)
+        self.generateTREE()
+        logger.info("Tree generated")
+        self.TREE.migrateToNeo4J()
+        logger.info("Migrated to Neo")
+        self.bindToMesh()
+        logger.info("Binded to Mesh")
+        self.bootstrapTreeToLeaves()
+        logger.info("Bootstrapped InnerNodes to Leaves ")
+        
+        if with_raster:
+            for raster_model in list_raster_models:
+                logger.info("Characterizing Occurrences")
+                self.bindRasterNodeOccurrence(raster_model,writeDB=True)
         
         # releae ram
         self.TREE = []

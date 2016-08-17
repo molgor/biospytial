@@ -809,11 +809,14 @@ class Level(object):
         
         
         self.setParent()
-        if withParent:
-            self.bindParent()
+
         # TO go down and follow links very efficient in traversing
         if withChildren:
             self.bindChildren()
+        
+        # Also, for an obfuscated recursion reason the order matters. First the children then the parent.    
+        if withParent:
+            self.bindParent()
         
         return True 
         
@@ -1110,7 +1113,8 @@ class Genus(Level):
         species = self.getSpeciesMetadata()
         for specie_metadata in species:
             self.species.append(Specie(self.QuerySet,specie_metadata))
-        self.abundance = self.QuerySet.filter(genus_id=self.id).distinct('species_id').count()
+        #self.abundance = self.QuerySet.filter(genus_id=self.id).distinct('species_id').count()
+        self.abundance = self.QuerySet.filter(genus_id=self.id).distinct('pk').count()
         self.children = self.species
         return True
     
@@ -1177,7 +1181,8 @@ class Family(Level):
         genera = self.getGenusMetadata()
         for genus_metadata in genera:
             self.genera.append(Genus(self.QuerySet,genus_metadata))
-        self.abundance = self.QuerySet.filter(family_id=self.id).distinct('genus_id').count()
+        #self.abundance = self.QuerySet.filter(family_id=self.id).distinct('genus_id').count()
+        self.abundance = self.QuerySet.filter(family_id=self.id).distinct('pk').count()
         self.children = self.genera
         return True
     
@@ -1224,7 +1229,8 @@ class Order(Level):
         families = self.getFamiliesMetadata()
         for family_metadata in families:
             self.families.append(Family(self.QuerySet,family_metadata))
-        self.abundance = self.QuerySet.filter(order_id=self.id).distinct('family_id').count()
+        #self.abundance = self.QuerySet.filter(order_id=self.id).distinct('family_id').count()
+        self.abundance = self.QuerySet.filter(order_id=self.id).distinct('pk').count()
         self.children = self.families
         return True
     
@@ -1271,7 +1277,8 @@ class Class(Level):
         orders = self.getOrdersMetadata()
         for order_metadata in orders:
             self.orders.append(Order(self.QuerySet,order_metadata))
-        self.abundance = self.QuerySet.filter(class_id=self.id).distinct('order_id').count()
+        #self.abundance = self.QuerySet.filter(class_id=self.id).distinct('order_id').count()
+        self.abundance = self.QuerySet.filter(class_id=self.id).distinct('pk').count()
         self.children = self.orders
         return True
     
@@ -1318,7 +1325,8 @@ class Phylum(Level):
         classes = self.getClassesMetadata()
         for class_metadata in classes:
             self.classes.append(Class(self.QuerySet,class_metadata))
-        self.abundance = self.QuerySet.filter(phylum_id=self.id).distinct('class_id').count()
+        #self.abundance = self.QuerySet.filter(phylum_id=self.id).distinct('class_id').count()
+        self.abundance = self.QuerySet.filter(phylum_id=self.id).distinct('pk').count()
         self.children = self.classes
         return True
     
@@ -1367,7 +1375,8 @@ class Kingdom(Level):
         phyla = self.getPhylaMetadata()
         for phylum_metadata in phyla:
             self.phyla.append(Phylum(self.QuerySet,phylum_metadata))
-        self.abundance = self.QuerySet.filter(kingdom_id=self.id).distinct('phylum_id').count()
+        #self.abundance = self.QuerySet.filter(kingdom_id=self.id).distinct('phylum_id').count()
+        self.abundance = self.QuerySet.filter(kingdom_id=self.id).distinct('pk').count()
         self.children = self.phyla
         return True
     

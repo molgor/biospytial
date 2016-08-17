@@ -1240,7 +1240,7 @@ class Taxonomy:
     
     def ingestAllDataInNeo(self,list_raster_models,with_raster=False):
         """
-        Migrate the taxonomy, with its corresponding area (typicaly cell node).
+        Migrate the taxonomy, with its corresponding area (typically cell node).
         """
         
         self.generateTREE()
@@ -1258,6 +1258,7 @@ class Taxonomy:
                 self.bindRasterNodeOccurrence(raster_model,writeDB=True)
         
         # releae ram
+        """
         self.TREE = []
         self.occurrences = []
         self.species = [] 
@@ -1267,7 +1268,7 @@ class Taxonomy:
         self.classes  = []
         self.phyla = []
         self.kingdoms = []
-
+        """
 
 class GriddedTaxonomy:
     """

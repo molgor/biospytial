@@ -138,12 +138,12 @@ LOGGING = {
             'formatter': 'verbose'
         },
         'console':{
-            'level': 'ERROR',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
         'file_raster':{
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/biospatial_raster.log',
             'formatter': 'verbose'

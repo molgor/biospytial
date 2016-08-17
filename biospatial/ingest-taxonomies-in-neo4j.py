@@ -99,18 +99,12 @@ from django.contrib.gis.geos import GEOSGeometry
 polygon = GEOSGeometry(polystr)
 ggg = GriddedTaxonomy(biosphere,mexgrid.filter(cell__intersects=polystr),generate_tree_now=False,use_id_as_name=False)
 
-
-#mmm = initMesh(4)
-#ggg = GriddedTaxonomy(mex,mmm.objects.all(),generate_tree_now=False,use_id_as_name=False)
-
-#t = MexMesh.objects.filter(cell__intersects=d['polygon'].wkt)
-#ggg = GriddedTaxonomy(mex,t,generate_tree_now=False,use_id_as_name=False)
+#####
+##
+## Uncomment this if the grid hasn't been stored in the neo4j previously
+#
 
 
 
-
-#aa = DemMexLow.objects.filter(rast__intersect_with=t0.biomeGeometry)
-
-#x = RasterData(DemMexLow,t1.biomeGeometry)
 
 

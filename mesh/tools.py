@@ -246,7 +246,7 @@ def migrateGridToNeo(mesh,create_unique_index=True,intersect_with=''):
     for r in U_neighbours:
         graph.create(r)
     
-    return U_neighbours
+    return None
     # Now, write in the database.
     
 

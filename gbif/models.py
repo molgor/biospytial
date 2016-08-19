@@ -312,9 +312,12 @@ class Occurrence(models.Model):
  #       import ipdb; ipdb.set_trace()
         cd = self.__dict__
         dictio = dict([(k,cd[k]) for k in keys])
+        dictio['levelname'] = "Occurrence"
+        dictio['level'] = 999
         dictio['pk'] = self.pk
         dictio['geom'] = dictio['geom'].ewkt
         dictio['name'] = reduce(lambda a,b : a + ' ' +b ,self.scientific_name.split(" ")[0:2])
+        dictio['event_date'] = self.event_date.isoformat()
         #labels = [str(type(self))]
         labels = ["Occurrence"]
         
@@ -439,14 +442,14 @@ class Occurrence(models.Model):
         Starting from the Occurrence Node to the depth specified.
         Remember that there is a loop in the LUCA node there fore, 
         """
-        n = self.getNode()
+        no = self.getNode()
         #rel = n.match(rel_type=relation_type).next()
         nodes = []
         #import ipdb; ipdb.set_trace()
         for i in range(depth):
-            rel = n.match_outgoing(rel_type=relation_type).next()
-            n = rel.end_node
-            nodes.append(n)
+            rel = no.match_outgoing(rel_type=relation_type).next()
+            no = rel.end_node()
+            nodes.append(no)
             
         return nodes
     
@@ -755,7 +758,7 @@ class Level(object):
     def bindChildren(self,writeDB=True,child_parent_name="IS_A_MEMBER_OF",deepth_limit=8):
         parent = self.parent.createNode(writeDB=writeDB)
         this = self.createNode(writeDB=writeDB)
-        parent_props = {'ab' : self.parent.abundance}
+        parent_props = {'ab' : self.abundance}
         
         
         PAR_REL_INV = child_parent_name
@@ -857,7 +860,9 @@ class Level(object):
         
         node2 = graph.find_one(self.levelname,property_key='keyword',property_value=keyword)
         if node2:
-            logger.debug("node existss")
+            logger.debug("Node exists. \n Aggregating abundance values.")
+            #node2['abundance'] += 1
+            #node2.push()
             return node2
         else:
             if writeDB:

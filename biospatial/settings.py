@@ -143,10 +143,15 @@ LOGGING = {
             'formatter': 'simple'
         },
         'file_raster':{
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/biospatial_raster.log',
             'formatter': 'verbose'
+        },
+        'neo4j_reader':{
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
         },
   
         

@@ -438,5 +438,3 @@ class MexMesh(models.Model):
         
 
         
-
-        

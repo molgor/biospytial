@@ -250,6 +250,6 @@ def migrateGridToNeo(mesh,create_unique_index=True,intersect_with=''):
     # Now, write in the database.
     
 
-    
-    
+
+
         

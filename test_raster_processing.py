@@ -47,7 +47,7 @@ t1 = ggg.taxonomies[1]
 
 aa = DemMexLow.objects.filter(rast__intersect_with=t0.biomeGeometry)
 
-x = RasterData(DemMexLow,t1.biomeGeometry)
+x = RasterData(DemMex,t1.biomeGeometry,date='NA')
 
 
 from sketches.models import Country

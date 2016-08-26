@@ -204,6 +204,8 @@ def bindNeighboursOf(cell,mesh,writeDB=False):
     
     nodes = map(lambda n: n.getNode(writeDB=writeDB),ns)
     rels = [Relationship(node_c,"IS_NEIGHBOUR_OF",n) for n in nodes]
+    if writeDB:
+        created = [graph.create(rel) for rel in rels]
     return rels
 
 
@@ -426,7 +428,7 @@ class MexMesh(models.Model):
         """
         
         properties = self.describeWithDict()
-        properties['name'] = self.id
+        properties['name'] = str(self.id)
         n0 = Node("Cell",**properties)
         old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
         if old_node:

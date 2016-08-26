@@ -35,6 +35,8 @@ from py2neo import Node, Relationship, Graph
 from django.conf import settings
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 
+import drivers.neo4j_reader as neo 
+
 import ipdb;
 
 logger = logging.getLogger('biospatial.gbif')
@@ -350,7 +352,8 @@ class Occurrence(models.Model):
         This is an occurrence. 
         The geom is a point. The result is the minium blob
         """
-        raster_data = RasterData(RasterModel,self.geom)
+        date = reduce(lambda a,b : a + '-' + b, [str(self.day),str(self.month),str(self.year)])
+        raster_data = RasterData(RasterModel,self.geom,date=date)
         #z = raster_data.getValue(self.geom)
         return raster_data
 
@@ -385,7 +388,9 @@ class Occurrence(models.Model):
             This could be Area because the definition is taken on the border.
         
         """
-        rd = RasterData(RasterModel,self.geom)
+        date = reduce(lambda a,b : a + '-' + b, [str(self.day),str(self.month),str(self.year)])
+
+        rd = RasterData(RasterModel,self.geom,date=date)
         month = self.month
         if isinstance(month, int):
             node = rd.getNode(month=self.month)
@@ -402,8 +407,10 @@ class Occurrence(models.Model):
                     3 : Aspect Orientation of facet (0, 360) 
                     4 : Hillshade (for visualising)
         """
+        date = reduce(lambda a,b : a + '-' + b, [str(self.day),str(self.month),str(self.year)])
+
         dem_data = self.processDEMAs(DemModel, option=option)
-        node = self.nodeRasterData(dem_data)
+        node = self.nodeRasterData(dem_data,date)
         return node
     
     def bind_withNodeDEM(self,DemModel,option=1,writeDB=False):
@@ -453,6 +460,14 @@ class Occurrence(models.Model):
             
         return nodes
     
+
+    def asOccurrenceOGM(self):
+        """
+        Relate it to the OGM implemented in neo4j_reader.
+        """
+        
+        Occurrence = neo.Occurrence.select(neo.graph, self.pk).first()
+        return Occurrence
 
 
 class Occurrence_CSV(models.Model):

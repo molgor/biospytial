@@ -78,11 +78,12 @@ class RasterData(object):
     This class provides an interface for processing and analysing raster data stored in a postgis database
     """
     
-    def __init__(self,rastermodelinstance,border):
+    def __init__(self,rastermodelinstance,border,date='N.A'):
         """
         Parameters:
             rastermodel :  Is a django.contrib.db.models instance . An ORM in raster_data.models
             border : A polygon geometry. The border geometry that defines the interior of the raster.
+            date : string for date. Important for matchig nodes with date
         """
         self.model = rastermodelinstance.objects.filter(rast__intersect_with=border)
         self.geometry = border
@@ -90,6 +91,7 @@ class RasterData(object):
         self.neo_label_name = rastermodelinstance.neo_label_name
         self.number_bands = rastermodelinstance.number_bands
         self.aggregatedmodel = ''
+        self.eventdate = date
         
     def getRaster(self,**bandnumber):
         """
@@ -161,12 +163,12 @@ class RasterData(object):
             summary_str = agg_dic['raster']
             summary_str = summary_str.replace('(','').replace(')','')
             summary = summary_str.split(',')
-            uniqueid = str(self.geometry.ewkt)
+            uniqueid = str(self.geometry.ewkt) + '-' + str(self.eventdate)
             dic_sum = {'uniqueid':uniqueid,'count':int(summary[0]),'sum':float(summary[1]),'mean':float(summary[2]),'stddev':float(summary[3]),'min':float(summary[4]),'max':float(summary[5])}        
         else:
             # It's a point.
             z = self.getValue(self.geometry,**bandnumber)
-            uniqueid = str(self.geometry.ewkt)
+            uniqueid = str(self.geometry.ewkt) + '-' + str(self.eventdate)
             dic_sum = {'value' : z,'uniqueid':uniqueid}
             
         return dic_sum

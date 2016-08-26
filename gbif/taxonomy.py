@@ -1173,8 +1173,8 @@ class Taxonomy:
                 
             lazy_eval : if false it will retrieve the data when called.
         """
-        
-        raster_data = RasterData(raster_api_model,self.biomeGeometry)
+        date='N.A'
+        raster_data = RasterData(raster_api_model,self.biomeGeometry,date=date)
         self.associated_data[raster_data.neo_label_name] = raster_data
         
         if lazy_eval:

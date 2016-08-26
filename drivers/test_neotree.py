@@ -39,7 +39,10 @@ subbiosphere = biosphere.filter(geom__intersects=polygon)
 
 ggg = GriddedTaxonomy(subbiosphere,mexgrid.filter(cell__intersects=polystr),generate_tree_now=False,use_id_as_name=False)
 
-ts = ggg.taxonomies[0:12]
+ts = ggg.taxonomies[0:150]
+
+
+#ts = ggg.taxonomies[0:150]
 
 
 yea = TreeNeo()
@@ -50,13 +53,13 @@ yea = TreeNeo()
 yea.setOccurrencesFromTaxonomies(ts)  
 
 
-yea.loadNodes()
+yea.refreshNodes()
 
-sp = TaxonomicLevel(yea.nodes,selected_level=999)
-lll = sp.getNodeCells(12)
-c = lll[0]
-rrr = Cell.select(g,c['id']).first()
+#sp = TaxonomicLevel(yea.nodes,selected_level=999)
+#lll = sp.getNodeCells(12)
+#c = lll[0]
+#rrr = Cell.select(g,c['id']).first()
 
+#Maybe load all taonomies and measure the time.
 
-#####
 ## 

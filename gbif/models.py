@@ -464,6 +464,7 @@ class Occurrence(models.Model):
     def asOccurrenceOGM(self):
         """
         Relate it to the OGM implemented in neo4j_reader.
+        This is a bad design
         """
         
         Occurrence = neo.Occurrence.select(neo.graph, self.pk).first()

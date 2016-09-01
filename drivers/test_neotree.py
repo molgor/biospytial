@@ -8,7 +8,6 @@ Scripts for testing and playing around with the Taxonomy tree read from neo.
 from drivers.neo4j_reader import TreeNeo
 from mesh.models import MexMesh
 from gbif.taxonomy import Occurrence, Taxonomy, GriddedTaxonomy
-from drivers.neo4j_reader import TaxonomicLevel
 from drivers.neo4j_reader import Cell
 from py2neo import Graph
 # Load data from a Country polygon 
@@ -55,10 +54,12 @@ yea.setOccurrencesFromTaxonomies(ts)
 
 yea.refreshNodes()
 
-#sp = TaxonomicLevel(yea.nodes,selected_level=999)
-#lll = sp.getNodeCells(12)
-#c = lll[0]
-#rrr = Cell.select(g,c['id']).first()
+from itertools import chain
+
+from drivers.neo4j_reader import aggregator
+
+coso = list(yea.nodeOccurrences)
+
 
 #Maybe load all taonomies and measure the time.
 

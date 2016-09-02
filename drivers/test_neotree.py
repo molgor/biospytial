@@ -8,7 +8,7 @@ Scripts for testing and playing around with the Taxonomy tree read from neo.
 from drivers.neo4j_reader import TreeNeo
 from mesh.models import MexMesh
 from gbif.taxonomy import Occurrence, Taxonomy, GriddedTaxonomy
-from drivers.neo4j_reader import Cell
+from drivers.neo4j_reader import Cell,extractOccurrencesFromTaxonomies
 from py2neo import Graph
 # Load data from a Country polygon 
 #from sketches.models import Country
@@ -43,24 +43,7 @@ ts = ggg.taxonomies[0:150]
 
 #ts = ggg.taxonomies[0:150]
 
+occurs = extractOccurrencesFromTaxonomies(ts)
 
-yea = TreeNeo()
+yea = TreeNeo(occurs)
   
-
-# put list of taxonomies 
-
-yea.setOccurrencesFromTaxonomies(ts)  
-
-
-yea.refreshNodes()
-
-from itertools import chain
-
-from drivers.neo4j_reader import aggregator
-
-coso = list(yea.nodeOccurrences)
-
-
-#Maybe load all taonomies and measure the time.
-
-## 

@@ -12,7 +12,8 @@ from itertools import groupby
 from collections import OrderedDict
 from compiler.ast import nodes
 from raster_api.models import raster_models
-
+from raster_api.models import raster_models_dic
+import copy
 
 logger = logging.getLogger('biospatial.neo4j_reader')
 
@@ -145,9 +146,9 @@ class Occurrence(GraphObject):
     #species = RelatedFrom("Specie", "HAS_EVENT")
     is_in  = RelatedTo("Cell",ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")
-    parent_link = RelatedTo("Tree",TAXDESCEND)
-    children_link = RelatedTo("Tree",TAXASCEND)
-    has_event = RelatedFrom("Tree",HASEVENT)
+    parent_link = RelatedTo("TreeNode",TAXDESCEND)
+    children_link = RelatedTo("TreeNode",TAXASCEND)
+    has_event = RelatedFrom("TreeNode",HASEVENT)
     
     
 
@@ -170,7 +171,7 @@ class Occurrence(GraphObject):
 
     def getParent(self):
         parent = list(self.parent_link)
-        if len(parent) > 1 or not isinstance(parent[0],Tree):
+        if len(parent) > 1 or not isinstance(parent[0],TreeNode):
             raise TypeError
         else:
             return parent.pop()
@@ -245,7 +246,7 @@ class Occurrence(GraphObject):
     
     
 
-class Tree(GraphObject):
+class TreeNode(GraphObject):
     """
     """
     __primarykey__ = "id"
@@ -258,8 +259,8 @@ class Tree(GraphObject):
     abundance = Property()
     keyword = Property()
     
-    parent_link = RelatedTo("Tree",TAXDESCEND)
-    children_link = RelatedTo("Tree",TAXASCEND)
+    parent_link = RelatedTo("TreeNode",TAXDESCEND)
+    children_link = RelatedTo("TreeNode",TAXASCEND)
     is_in = RelatedTo("Cell",ISIN)
     
     has_events = RelatedTo("Occurrence",HASEVENT)
@@ -290,21 +291,21 @@ class Tree(GraphObject):
     def cells(self):
         """
         Returns all the cells that are associated with this taxa.
-        Does not take into account the current leaf nodes in the Tree.
+        Does not take into account the current leaf nodes in the TreeNode.
         It gives all the nodes of type cell where this node has been found in all the database.
         """
         return iter(self.is_in)
 
 
     def __repr__(self):
-        c = "<Tree type: %s id = %s name: %s>"%(str(self.levelname),str(self.__primaryvalue__),str(self.name.encode('utf-8')))
+        c = "<TreeNode type: %s id = %s name: %s>"%(str(self.levelname),str(self.__primaryvalue__),str(self.name.encode('utf-8')))
         return c
 
 
 
     def getParent(self):
         parent = list(self.parent_link)
-        if len(parent) > 1 or not isinstance(parent[0],Tree):
+        if len(parent) > 1 or not isinstance(parent[0],TreeNode):
             raise TypeError
         else:
             return parent.pop()
@@ -315,16 +316,6 @@ class Tree(GraphObject):
         #siblings = filter(lambda node : node != self,siblings)
         return siblings
     
-    
-    def filterWithThis(self,occurrence_list):
-        """
-        Supposing the list is made of NODE Occurrence
-        """
-        for occurrence in occurrence_list:
-            pass
-        
-
-
 
     def _isOccurrence(self):
         if self.level == 999:
@@ -410,7 +401,7 @@ class Cell(GraphObject):
     connected_to = RelatedTo("Cell", ISNEIGHBOUR)
     
     #connected_from = RelatedFrom("Cell", ISNEIGHBOUR)
-    LocaTree  = RelatedFrom(Tree, ISIN)
+    LocaTree  = RelatedFrom(TreeNode, ISIN)
     #families = RelatedFrom("Family",ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
@@ -452,9 +443,14 @@ class LocalTree(object):
         self.name = self.node.name
         self.id = self.node.id
         self.levelname = self.node.levelname
-        self.level = self.node.levelname
+        
+        self.level = self.node.level
         self.occurrences = []
         self.involvedCells = []
+        # Experiment 1
+        # this is a very good method for 
+        map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
+        
         #self.setOccurrences()
                 
 
@@ -467,8 +463,9 @@ class LocalTree(object):
         return self.parent
 
 
+
     def __repr__(self):
-        cad = "<SubTree Of Life | %s: %s -%s- >"%(self.levelname,self.name,self.id)
+        cad = "<TreeNode | %s: %s - n.count : %s- >"%(self.levelname,self.name,self.richness)
         return cad.encode('utf-8')
 
     def setOccurrences(self):
@@ -498,7 +495,16 @@ class LocalTree(object):
 
     def __iter__(self):
         return iter(self.children)
-    
+
+
+    def __or__(self,other):
+        if isinstance(other, LocalTree):
+            other = other.plantTreeNode()
+            this = self.plantTreeNode()
+            new =  other + this    
+            return new
+        else:
+            raise TypeError("Not same type")
     
     def pullbackRasterNodes(self,raster_name):
         """
@@ -511,8 +517,11 @@ class LocalTree(object):
              'MinTemperature', 'Precipitation', 'Vapor' , 'SolarRadiation' ,
           'WindSpeed'}
         """
-        nodes_iters = map(lambda oc : oc.pullbackRasterNodes(raster_name),self.occurrences)
-        nodes = reduce(lambda n1,n2 : list(n1) + list(n2) , nodes_iters)
+        nodes_iters = map(lambda oc : (oc.pullbackRasterNodes(raster_name),oc),self.occurrences)
+        #nodes_iters = map(lambda oc : oc.pullbackRasterNodes(raster_name),self.occurrences)
+        #nodes = reduce(lambda n1,n2 : list(n1) + list(n2) , nodes_iters)
+        nodes = map(lambda node_occ : (list(node_occ[0])[0],node_occ[1]),nodes_iters) 
+
         return nodes
     
 
@@ -541,7 +550,143 @@ class LocalTree(object):
 
 
 
+    def plantTreeNode(self):
+        """
+        Returns this TreeNode in the form of a TreeNeo.
+        It adds the remaining nodes until root.
+        """
+        occurrences = self.occurrences
+        ts = TreeNeo(occurrences)
+        return ts
+
+
+
+    def __eq__(self,other):
+        """
+        Checks if two local trees are equivalent.
+        Remember, this is the principle of invariantness (me, Badiou).
+        """ 
+
+        this = self.node
+        other = other.node
+        return this == other
 #    def pullbackCellNodes(self):
+
+
+    def __hash__(self):
+        """
+        This is needed for set operations.
+        """
+        return self.node.__hash__()
+
+
+    def __and__(self,otherlocaltree):
+        """
+        Operator Overloading for calculating difference of Trees!
+        In the search of the Monoid!
+        New version!
+        """
+        
+        # First, perform set operation on children.
+        this = set(self.children)
+        other = set(otherlocaltree.children)
+        new = this & other
+        # Now collapse occurrences (PROTOTYPE)
+        # First we need to take select it's proper structure, looking for the distinct occurrences even if they have same node.
+        idx_this = []
+        idx_other = []
+        for child in new:
+            try:
+                i = self.children.index(child)
+                idx_this.append(i)
+            except ValueError:
+                continue 
+            try:
+                i = otherlocaltree.children.index(child)
+                idx_other.append(i)
+            except ValueError:
+                continue
+                
+        occurrences_this = map(lambda i : self.children[i].occurrences,idx_this)
+        occurrences_other = map(lambda i : otherlocaltree.children[i].occurrences,idx_other)
+        new = occurrences_other + occurrences_this
+        # reduce into a single cell
+        new = reduce(lambda a,b : a+b , new)
+        return TreeNeo(list_occurrences=new)     
+
+
+    def __sub__(self,otherlocaltree):
+        """
+        Operator Overloading for calculating difference of Trees!
+        In the search of the Monoid!
+        New version!
+        """
+        
+        # First, perform set operation on children.
+        this = set(self.children)
+        other = set(otherlocaltree.children)
+        new = this - other
+        # Now collapse occurrences (PROTOTYPE)
+        # First we need to take select it's proper structure, looking for the distinct occurrences even if they have same node.
+        idx_this = []
+        idx_other = []
+        for child in new:
+            try:
+                i = self.children.index(child)
+                idx_this.append(i)
+            except ValueError:
+                continue 
+            try:
+                i = otherlocaltree.children.index(child)
+                idx_other.append(i)
+            except ValueError:
+                continue
+                
+        occurrences_this = map(lambda i : self.children[i].occurrences,idx_this)
+        occurrences_other = map(lambda i : otherlocaltree.children[i].occurrences,idx_other)
+        new = occurrences_other + occurrences_this
+        # reduce into a single cell
+        new = reduce(lambda a,b : a+b , new)
+        return TreeNeo(list_occurrences=new)   
+
+
+    def __xor__(self,otherlocaltree):
+        """
+        Operator Overloading for calculating difference of Trees!
+        In the search of the Monoid!
+        New version!
+        """
+        
+        # First, perform set operation on children.
+        this = set(self.children)
+        other = set(otherlocaltree.children)
+        new = this ^ other
+        # Now collapse occurrences (PROTOTYPE)
+        # First we need to take select it's proper structure, looking for the distinct occurrences even if they have same node.
+        idx_this = []
+        idx_other = []
+        for child in new:
+            try:
+                i = self.children.index(child)
+                idx_this.append(i)
+            except ValueError:
+                continue 
+            try:
+                i = otherlocaltree.children.index(child)
+                idx_other.append(i)
+            except ValueError:
+                continue
+                
+        occurrences_this = map(lambda i : self.children[i].occurrences,idx_this)
+        occurrences_other = map(lambda i : otherlocaltree.children[i].occurrences,idx_other)
+        new = occurrences_other + occurrences_this
+        # reduce into a single cell
+        new = reduce(lambda a,b : a+b , new)
+        return TreeNeo(list_occurrences=new) 
+
+
+
+
 
 
 def aggregator(list_sp):
@@ -554,6 +699,7 @@ def aggregator(list_sp):
     output = []
     for node,children in grouper:
         s = LocalTree(node,list(children))
+        #s = TreeNeo(node,list(children))
         output.append(s)
     return output
        
@@ -562,6 +708,8 @@ def extractOccurrencesFromTaxonomies(list_of_taxonomies):
     Updates the occurrences attribute to fit all the occurrences of the given list of taxonomies
     """
     occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_of_taxonomies ]])
+
+    occurrences = map(lambda o : o.asOccurrenceOGM(),occurrences)
     return occurrences
     #self.windUpLevels()
 
@@ -574,7 +722,7 @@ class TreeNeo(LocalTree):
     def __init__(self,list_occurrences,spatiotemporalcontext=''):
         """
         THIS IS A PROTOTYPE.
-        For now it need a list of occurrences GeoQuerySet.
+        For now it need a list of node occurrences. Use the function extractOccurrencesFromTaxonomies
         spatiotemporalcontext should be a structure that defines a compact set.
         
         """
@@ -584,26 +732,8 @@ class TreeNeo(LocalTree):
         #self.occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_taxonomies ]])
         self.occurrences = list_occurrences
         self.windUpLevels()
-        """
-        self.species = []
-        self.genera = []
-        self.families = []
-        self.orders = []
-        self.classes = []
-        self.phyla = []
-        self.kingdoms = []
-        """
-                
-    @property
-    def nodeOccurrences(self):
-        """
-        Converts the occurrences to OGM occurrences
-        It's a generator. For avoiding massive use of memory.
-        """
-        
-        for occurrence in self.occurrences:
-            yield occurrence.asOccurrenceOGM()
 
+            
    
     def setOccurrencesFromTaxonomies(self,list_of_taxonomies):
         """
@@ -617,7 +747,7 @@ class TreeNeo(LocalTree):
         """
         It uses the aggregator method to generate a nested LocalTree Structure.
         """
-        self.species = aggregator(list(self.nodeOccurrences))
+        self.species = aggregator(list(self.occurrences))
         self.genera = aggregator(self.species)
         self.families = aggregator(self.genera)
         self.orders = aggregator(self.families)
@@ -629,6 +759,14 @@ class TreeNeo(LocalTree):
         super(TreeNeo,self).__init__(root,root.children)
         # Reload Occurrences
         self.setOccurrences()
+
+
+    def __repr__(self):
+        cad = "<LocalTree Of Life | %s: %s -%s- >"%(self.levelname,self.name,self.id)
+        return cad.encode('utf-8') 
+
+
+'''
     
     def __add__(self, tree_neo):
         """
@@ -640,14 +778,78 @@ class TreeNeo(LocalTree):
         other_occurrences = tree_neo.occurrences
         new_occs = occurrences + other_occurrences
         new_occs = list(set(new_occs))
+        occs = copy.copy(new_occs)
         logger.info("Merging Trees")
-        return TreeNeo(list_occurrences=new_occs)
+        return TreeNeo(list_occurrences=occs)
+
+
+    def __and__(self,tree_neo):
+        """
+        Operator Overloading for calculating difference of Trees!
+        In the search of the Monoid!
+        New version!
+        """
+        this = set(self.occurrences)
+        other = set(tree_neo.occurrences)
+        new = this & other
+        new_occs = list(new)
+        occs = copy.copy(new_occs)
+        logger.info("Merging Trees")
+        return TreeNeo(list_occurrences=occs) 
+
         
-    
-    def __repr__(self):
-        cad = "<LocalTree Of Life | %s: %s -%s- >"%(self.levelname,self.name,self.id)
-        return cad.encode('utf-8') 
+
+    def __sub__(self,tree_neo):
+        """
+        Operator Overloading for calculating difference of Trees!
+        In the search of the Monoid!
+        New version!
+        """
+        this = set(self.occurrences)
+        other = set(tree_neo.occurrences)
+        new = this - other
+        new_occs = list(new)
+        occs = copy.copy(new_occs)
+        logger.info("Merging Trees")
+        return TreeNeo(list_occurrences=occs) 
  
+    
+    def __xor__(self,tree_neo):
+        """
+        XOR  Symmetric Difference, ^
+        The resulting set has elements
+         which are unique to each set.
+          An element will be in the result
+           set if either it is in the left-hand
+            set and not in the right-hand set or 
+            it is in the right-hand set and not 
+            in the left-hand set. 
+        """
+        this = set(self.occurrences)
+        other = set(tree_neo.occurrences)
+        new = this ^ other
+        new_occs = list(new)
+        occs = copy.copy(new_occs)
+        logger.info("Merging Trees")
+        return TreeNeo(list_occurrences=occs) 
+    
+
+    
+    
+
+ 
+
+    def __eq__(self,other):
+        if isinstance(other, TreeNeo):
+            this_ocs = self.occurrences
+            other_ocs = other.occurrences
+            # Sort them
+            this_ocs.sort(key=lambda l : l.pk)
+            other_ocs.sort(key=lambda l : l.pk)
+            return this_ocs == other_ocs
+        else:
+            return False
+'''
  
  
 class RasterCollection(object):
@@ -661,22 +863,44 @@ class RasterCollection(object):
         self.table = []
 
     
-    def getMeanTemperaturePoints(self):
-        temps = self.tree.pullbackRasterNodes('MeanTemperature')
-        self.rasternodes = temps
-        return temps
+    def getValuesFromPoints(self,string_selection):
+        """
+        Returns the values from the associated raster nodes based on the linked occurrence node.
+        Options:
+               
+            string_selection $in$ {'Elevation', 'MaxTemperature', 'MeanTemperature',
+             'MinTemperature', 'Precipitation', 'Vapor' , 'SolarRadiation' ,
+          'WindSpeed'
+            
+        """
+        values = self.tree.pullbackRasterNodes(string_selection)
+        struct = RasterPointNodesList(values)
+        return struct
     
     
-    def associateMeanTemperatureRasterData(self):
+    def getAssociatedRasterAreaData(self,string_selection,aggregated=True):
         """
-        Get the cells involved
-        PROTOTYPE NEED CHANGE FOR INCLUDING OTHER RASTER DATA
+        Returns the associated RasterData type for each cell where the occurrence happened.
+        Options:
+               
+            string_selection $in$ {'Elevation', 'MaxTemperature', 'MeanTemperature',
+             'MinTemperature', 'Precipitation', 'Vapor' , 'SolarRadiation' ,
+          'WindSpeed'        
         """
-        polygon = self.tree.mergeCells()
-        raster = RasterData(raster_models[3],polygon)
-        raster.getRaster()
-        return raster
         
+        raster_model = raster_models_dic[string_selection]
+        if aggregated:
+            polygons = self.tree.mergeCells()
+            rasters =  RasterData(raster_model,polygons)
+            rasters.getRaster()
+        else:
+            cells = self.tree.getExactCells()
+            polygons = map(lambda c : c.polygon,cells)
+            rasters = map(lambda polygon : RasterData(raster_model,polygon),polygons)             
+            map(lambda raster : raster.getRaster() , rasters)
+        return rasters        
+
+    
     
     def transformToTable(self):
         """
@@ -687,6 +911,66 @@ class RasterCollection(object):
         return pd
     
     
+class RasterPointNodesList(object):
+    """
+    This class provides the operations and interface for handling list of raster nodes retrieved mainly by the Raster Collector on occurrence data.
+    """    
+    
+    def __init__(self,list_duple_raster_occs):
+        self.data, self.occurrences = zip(*list_duple_raster_occs)
+        self.values = self.transformToTable()
+        self.nametype = self.setNameType()
+        
+    def transformToTable(self):
+        """
+        Transforms the list of raster nodes into 
+        """
+        
+        values = map(lambda node : ( node.value) ,self.data)
+        dates = map(lambda o : o.event_date, self.occurrences)
+        pd = pandas.DataFrame(values)
+        pd.columns = ['January','February','March','April','May','June','July','August','September','October','November','December']
+        real_val = map(lambda node : node.regval, self.data)
+        pd['registered value'] = real_val
+        pd['date'] = dates
+        pd['date'] = pandas.to_datetime(pd['date'],format='%Y-%m-%dT%H:%M:%S')
+        return pd
+ 
+
+    def areTypeHegemonic(self):
+        """
+        Check if the data is of the same type.
+        """
+        x = self.data[0]
+        xlabel = x.__primarylabel__
+        for i in self.data:
+            ilabel = i.__primarylabel__
+            if xlabel != ilabel:
+                return False
+        return True 
+        
+    def setNameType(self):
+        """
+        Only set an attribute for the name
+        """
+        x =  self.data[0]
+        if self.areTypeHegemonic():
+            return x.__primarylabel__
+        else:
+            return "MIXED DATATYPES"
+        
+    def summaryStatistics(self):
+        """
+        Returns:
+            max
+            min
+            mean,
+            std,
+            count
+            In a dict form.
+            
+        """
+        pass 
     
     
         

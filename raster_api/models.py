@@ -318,3 +318,13 @@ class intersectWith(Lookup):
     
 raster_models = [DemMex,Precipitation,SolarRadiation,MeanTemperature,MinTemperature,MaxTemperature,VaporPressure,WindSpeed]
 
+raster_models_dic = {
+'WindSpeed' : raster_models[7],
+'Elevation' : raster_models[0],
+'Vapor' : raster_models[6],
+'MaxTemperature' : raster_models[5] ,
+'MinTemperature' : raster_models[4] ,
+'MeanTemperature' : raster_models[3] ,
+'SolarRadiation' : raster_models[2], 
+'Precipitation' : raster_models[1] 
+}

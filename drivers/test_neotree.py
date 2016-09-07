@@ -38,12 +38,42 @@ subbiosphere = biosphere.filter(geom__intersects=polygon)
 
 ggg = GriddedTaxonomy(subbiosphere,mexgrid.filter(cell__intersects=polystr),generate_tree_now=False,use_id_as_name=False)
 
-ts = ggg.taxonomies[0:150]
+t = ggg.taxonomies[0:150]
 
+t1 = ggg.taxonomies[0:75]
 
+t2 = ggg.taxonomies[75:150]
+
+import pandas
+
+from drivers.neo4j_reader import RasterCollection
 #ts = ggg.taxonomies[0:150]
 
-occurs = extractOccurrencesFromTaxonomies(ts)
+occurs = extractOccurrencesFromTaxonomies(t)
 
-yea = TreeNeo(occurs)
+occurs1 = extractOccurrencesFromTaxonomies(t1)
+
+occurs2 = extractOccurrencesFromTaxonomies(t2)
+
+
+complete = TreeNeo(occurs)
+
+part1 = TreeNeo(occurs1)
+part2 = TreeNeo(occurs2)
+
+plants2 = part2.to_Plantae
+
+plants1 = part1.to_Plantae
   
+arthropods = complete.children[0].children[1]
+birds = complete.classes[2]
+
+#art1 = part1.children[0].children[1]
+#art2 = part2.children[0].children[1]
+
+#birds = complete.classes[2]
+
+
+
+#rd = RasterCollection(arthropods)
+

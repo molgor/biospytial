@@ -430,6 +430,29 @@ class Cell(GraphObject):
 
 
 
+def aggregator(list_sp):
+    ##Comming from the first collider
+    
+    list_sp.sort(key=lambda l : l.getParent().id)
+    
+    #list_nodes.sort(key=lambda node :  node.getParent().id)
+    grouper = groupby(list_sp, lambda node : node.getParent())
+    output = []
+    for node,children in grouper:
+        s = LocalTree(node,list(children))
+        #s = TreeNeo(node,list(children))
+        output.append(s)
+    return output
+       
+def extractOccurrencesFromTaxonomies(list_of_taxonomies):
+    """
+    Updates the occurrences attribute to fit all the occurrences of the given list of taxonomies
+    """
+    occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_of_taxonomies ]])
+
+    occurrences = map(lambda o : o.asOccurrenceOGM(),occurrences)
+    return occurrences
+    #self.windUpLevels()
         
 
  
@@ -443,7 +466,7 @@ class LocalTree(object):
         self.name = self.node.name
         self.id = self.node.id
         self.levelname = self.node.levelname
-        
+        self.associatedData = RasterCollection(self)
         self.level = self.node.level
         self.occurrences = []
         self.involvedCells = []
@@ -452,8 +475,9 @@ class LocalTree(object):
         map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
         
         #self.setOccurrences()
-                
 
+
+    
     @property
     def richness(self):
         return len(self.occurrences)
@@ -493,18 +517,14 @@ class LocalTree(object):
         return self.occurrences
 
 
+
+
+
     def __iter__(self):
         return iter(self.children)
 
 
-    def __or__(self,other):
-        if isinstance(other, LocalTree):
-            other = other.plantTreeNode()
-            this = self.plantTreeNode()
-            new =  other + this    
-            return new
-        else:
-            raise TypeError("Not same type")
+
     
     def pullbackRasterNodes(self,raster_name):
         """
@@ -686,32 +706,16 @@ class LocalTree(object):
 
 
 
+    def __or__(self,other):
+        if isinstance(other, LocalTree):
+            other = other.plantTreeNode()
+            this = self.plantTreeNode()
+            new =  other + this    
+            return new
+        else:
+            raise TypeError("Not same type")
 
 
-
-def aggregator(list_sp):
-    ##Comming from the first collider
-    
-    list_sp.sort(key=lambda l : l.getParent().id)
-    
-    #list_nodes.sort(key=lambda node :  node.getParent().id)
-    grouper = groupby(list_sp, lambda node : node.getParent())
-    output = []
-    for node,children in grouper:
-        s = LocalTree(node,list(children))
-        #s = TreeNeo(node,list(children))
-        output.append(s)
-    return output
-       
-def extractOccurrencesFromTaxonomies(list_of_taxonomies):
-    """
-    Updates the occurrences attribute to fit all the occurrences of the given list of taxonomies
-    """
-    occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_of_taxonomies ]])
-
-    occurrences = map(lambda o : o.asOccurrenceOGM(),occurrences)
-    return occurrences
-    #self.windUpLevels()
 
 
 class TreeNeo(LocalTree):
@@ -768,19 +772,7 @@ class TreeNeo(LocalTree):
 
 '''
     
-    def __add__(self, tree_neo):
-        """
-        Operator Overloading for adding Trees!
-        In the search of the Monoid!
-        New version!
-        """
-        occurrences = self.occurrences
-        other_occurrences = tree_neo.occurrences
-        new_occs = occurrences + other_occurrences
-        new_occs = list(set(new_occs))
-        occs = copy.copy(new_occs)
-        logger.info("Merging Trees")
-        return TreeNeo(list_occurrences=occs)
+
 
 
     def __and__(self,tree_neo):
@@ -859,10 +851,7 @@ class RasterCollection(object):
     
     def __init__(self,Tree):
         self.tree = Tree
-        self.rasternodes = []
-        self.table = []
-
-    
+        
     def getValuesFromPoints(self,string_selection):
         """
         Returns the values from the associated raster nodes based on the linked occurrence node.
@@ -875,6 +864,8 @@ class RasterCollection(object):
         """
         values = self.tree.pullbackRasterNodes(string_selection)
         struct = RasterPointNodesList(values)
+        prefix = 'points_'
+        setattr(self,prefix + string_selection, struct)
         return struct
     
     
@@ -898,18 +889,25 @@ class RasterCollection(object):
             polygons = map(lambda c : c.polygon,cells)
             rasters = map(lambda polygon : RasterData(raster_model,polygon),polygons)             
             map(lambda raster : raster.getRaster() , rasters)
+        
+        prefix = 'raster_'
+        setattr(self,prefix + string_selection, rasters)
         return rasters        
 
-    
-    
-    def transformToTable(self):
+    def __add__(self, tree_neo):
         """
-        Transforms the list of raster nodes into 
+        Operator Overloading for adding Trees!
+        In the search of the Monoid!
+        New version!
         """
-        values = map(lambda node : node.value,self.rasternodes)
-        pd = pandas.DataFrame(values)
-        return pd
-    
+        occurrences = self.occurrences
+        other_occurrences = tree_neo.occurrences
+        new_occs = occurrences + other_occurrences
+        new_occs = list(set(new_occs))
+        occs = copy.copy(new_occs)
+        logger.info("Merging Trees")
+        return TreeNeo(list_occurrences=occs)    
+
     
 class RasterPointNodesList(object):
     """
@@ -918,7 +916,7 @@ class RasterPointNodesList(object):
     
     def __init__(self,list_duple_raster_occs):
         self.data, self.occurrences = zip(*list_duple_raster_occs)
-        self.values = self.transformToTable()
+        self.table = self.transformToTable()
         self.nametype = self.setNameType()
         
     def transformToTable(self):
@@ -931,9 +929,10 @@ class RasterPointNodesList(object):
         pd = pandas.DataFrame(values)
         pd.columns = ['January','February','March','April','May','June','July','August','September','October','November','December']
         real_val = map(lambda node : node.regval, self.data)
-        pd['registered value'] = real_val
+        pd['registered_value'] = real_val
         pd['date'] = dates
         pd['date'] = pandas.to_datetime(pd['date'],format='%Y-%m-%dT%H:%M:%S')
+        pd = pd.where(pd > -9999) # the no data value
         return pd
  
 

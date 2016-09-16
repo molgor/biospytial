@@ -401,7 +401,10 @@ class Cell(GraphObject):
     connected_to = RelatedTo("Cell", ISNEIGHBOUR)
     
     #connected_from = RelatedFrom("Cell", ISNEIGHBOUR)
-    LocaTree  = RelatedFrom(TreeNode, ISIN)
+    #
+    Occurrences = RelatedFrom(Occurrence, ISIN)
+    
+    #LocalTree  = RelatedFrom(TreeNode, ISIN)
     #families = RelatedFrom("Family",ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
@@ -422,12 +425,12 @@ class Cell(GraphObject):
         rn = [n for n in self.connected_to]
         return rn
         
-    def OccurrencesHere(self):
+    def occurrencesHere(self):
         """
         Filter the list of occurrences.
         """
-
-
+        occs = filter(lambda l : l.pk,self.Occurrences)
+        return occs        
 
 
 def aggregator(list_sp):
@@ -558,6 +561,32 @@ class LocalTree(object):
         self.involvedCells = cells
         return cells
         
+
+    def getNeighboringTrees(self):
+        """
+        It will return the trees associated with the neighbouring cells.
+        Algorithm : 
+            Get the exact cells,
+            Get the neighbours
+            Extract the occurrences for each cell.
+            Instantiate the tree.
+            
+        Returns:
+            List of NeoTrees
+        """
+        cells = self.getExactCells()
+        cell_neighbours = map(lambda c: c.getNeighbours(),cells)
+        # A reduce in case we are using more than one cell within the tree
+        cells = reduce(lambda l1 , l2  : l1 + l2, cell_neighbours)
+        occurrences = map(lambda oc : oc.occurrencesHere(),cells)
+        trees = []
+        for list_ in occurrences:
+            if list_:
+                trees.append(TreeNeo(list_))
+            else:
+                continue
+        return trees
+
 
     def mergeCells(self):
         """
@@ -737,7 +766,6 @@ class TreeNeo(LocalTree):
         self.occurrences = list_occurrences
         self.windUpLevels()
 
-            
    
     def setOccurrencesFromTaxonomies(self,list_of_taxonomies):
         """
@@ -766,9 +794,30 @@ class TreeNeo(LocalTree):
 
 
     def __repr__(self):
-        cad = "<LocalTree Of Life | %s: %s -%s- >"%(self.levelname,self.name,self.id)
-        return cad.encode('utf-8') 
+        cad = "<LocalTree Of Life | %s: %s - n.count : %s- >"%(self.levelname,self.name,self.richness)
+        return cad.encode('utf-8')
 
+
+    def __add__(self, tree_neo):
+        """
+        Operator Overloading for adding Trees!
+        In the search of the Monoid!
+        New version!
+        """
+        occurrences = self.occurrences
+        other_occurrences = tree_neo.occurrences
+        new_occs = occurrences + other_occurrences
+        new_occs = list(set(new_occs))
+        occs = copy.copy(new_occs)
+        logger.info("Merging Trees")
+        return TreeNeo(list_occurrences=occs)  
+
+
+    def filterBy(self,taxa_level,string):
+        """
+        Filter taxa levels by name.
+        """
+        
 
 '''
     
@@ -894,19 +943,7 @@ class RasterCollection(object):
         setattr(self,prefix + string_selection, rasters)
         return rasters        
 
-    def __add__(self, tree_neo):
-        """
-        Operator Overloading for adding Trees!
-        In the search of the Monoid!
-        New version!
-        """
-        occurrences = self.occurrences
-        other_occurrences = tree_neo.occurrences
-        new_occs = occurrences + other_occurrences
-        new_occs = list(set(new_occs))
-        occs = copy.copy(new_occs)
-        logger.info("Merging Trees")
-        return TreeNeo(list_occurrences=occs)    
+  
 
     
 class RasterPointNodesList(object):

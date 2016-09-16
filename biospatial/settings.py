@@ -132,7 +132,7 @@ LOGGING = {
     },
     'handlers': {
         'file': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/biospatial.log',
             'formatter': 'verbose'
@@ -142,8 +142,14 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
-        'file_raster':{
+        'gbif.taxonomy':{
             'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+                 
+        'file_raster':{
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/biospatial_raster.log',
             'formatter': 'verbose'
@@ -158,40 +164,41 @@ LOGGING = {
     },
     'loggers': {
         'django': {
-            'handlers':['console'],
-            'propagate': True,
+            'handlers':['gbif.taxonomy'],
+            'propagate': False,
             'level':'DEBUG',
-        },
-        'biospatial.gbif.insertion': {
-            'handlers': ['file'],
-            #'propagate': True,
-            'level': 'DEBUG',
-        },
-        'biospatial.gbif': {
-            'handlers': ['console'],
-            'propagate': False,
-            'level': 'DEBUG',
-        },
-        'biospatial.driver.csv_raw_loader' : {
-            'handlers': ['console'],
-            'level': 'DEBUG',                                   
-        
-        },
-         'biospatial.gbif.taxonomy' :{
-            'handlers': ['console'],
-            'level' : 'DEBUG',
-            'propagate': False,
-        },       
-        'biospatial.raster_api.tools':{
-            'handlers': ['file_raster'],
-            'level' : 'INFO',
-        
-        },
-        'biospytial.mesh.tools':{
-            'level': 'INFO',
-            'handlers': ['console'],    
-            },
-    },
+       },
+#         'biospatial.gbif.insertion': {
+#             'handlers': ['file'],
+#             'propagate': True,
+#             'level': 'DEBUG',
+#         },
+#         'biospatial.gbif': {
+#             'handlers': ['gbif.taxonomy'],
+#             'propagate': False,
+#             'level': 'DEBUG',
+#         },
+#         'biospatial.driver.csv_raw_loader' : {
+#             'handlers': ['console'],
+#             'level': 'DEBUG',                                   
+#         
+#         },
+#          'biospatial.gbif.taxonomy' :{
+#             'handlers': ['gbif.taxonomy'],
+#             'level' : 'DEBUG',
+#             'propagate': False,
+#         },       
+#         'biospatial.raster_api.tools':{
+#             'handlers': ['file_raster'],
+#             'level' : 'DEBUG',
+#         
+#         },
+#         'biospytial.mesh.tools':{
+#             'level': 'DEBUG',
+#             'handlers': ['console'],    
+#             },
+
+},
 }
 
 #######################
@@ -309,3 +316,12 @@ PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
 PATH_OUTPUT = '/home/juan/Research/biospytial-output/'
 
 RASTERNODATAVALUE = -9999
+
+NOTEBOOK_ARGUMENTS = [
+    # exposes IP and port
+    '--ip=0.0.0.0',
+    '--port=8888',
+    # disables the browser
+    '--no-browser',
+]
+

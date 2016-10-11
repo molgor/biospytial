@@ -6,6 +6,7 @@ import logging
 from django.contrib.gis.geos import GEOSGeometry
 
 import pandas
+import numpy
 from py2neo.ogm import GraphObject, Property, RelatedTo, RelatedFrom
 from raster_api.tools import RasterData
 from itertools import groupby
@@ -14,6 +15,9 @@ from compiler.ast import nodes
 from raster_api.models import raster_models
 from raster_api.models import raster_models_dic
 import copy
+import networkx as nx
+
+
 
 logger = logging.getLogger('biospatial.neo4j_reader')
 
@@ -286,6 +290,7 @@ class TreeNode(GraphObject):
     #def localOccurrences(self):
     #    ls = filter(lambda o: o.isDescendantOf(self),self.localoccurrences)
      #   return ls
+
     
     @property
     def cells(self):
@@ -301,6 +306,7 @@ class TreeNode(GraphObject):
         c = "<TreeNode type: %s id = %s name: %s>"%(str(self.levelname),str(self.__primaryvalue__),str(self.name.encode('utf-8')))
         return c
 
+    
 
 
     def getParent(self):
@@ -473,6 +479,7 @@ class LocalTree(object):
         self.level = self.node.level
         self.occurrences = []
         self.involvedCells = []
+        #self.graph = self.setGraph()
         # Experiment 1
         # this is a very good method for 
         map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
@@ -480,6 +487,19 @@ class LocalTree(object):
         #self.setOccurrences()
 
 
+
+    def setGraph(self,graph):
+        node = self
+        for child in self.children:            
+            graph.add_edge(node,child,weight=node.richness)
+            try:
+                graph = child.setGraph(graph)
+            except: 
+                continue
+                #return graph
+            #G.add_edge(node, child.node,attr_dict=None)
+        return graph
+        
     
     @property
     def richness(self):
@@ -746,6 +766,37 @@ class LocalTree(object):
 
 
 
+    def exportTreeFormat(self):
+        """
+        Creates a string representation in a XML like structure.
+        Isomorphic to a Context Free Language.
+        Returns:
+            string
+            
+        note : 
+            This method is recursive
+        """
+        expression = "<%s:%s> \n " %(self.levelname,self.id)
+        expression += "\t <name>%s<\name>\n" %( self.name)
+        expression += "\t <count>%s<\count>\n" %( self.richness)
+        expression = expression.encode('utf-8')
+        #expression = "< Id: %s-%s: %s  : %s " %(self.level,self.levelname,self.levelname,self.name)
+        for occurrence in self.children:
+            try:    
+                expression += occurrence.exportTreeFormat()
+                #return expression                   
+            except:
+                 
+                expression += "<\%s:%s>\n" %(self.levelname,self.id)
+                #return expression  
+                # magic step!
+        return expression
+
+
+    
+
+
+
 
 class TreeNeo(LocalTree):
     """
@@ -813,10 +864,7 @@ class TreeNeo(LocalTree):
         return TreeNeo(list_occurrences=occs)  
 
 
-    def filterBy(self,taxa_level,string):
-        """
-        Filter taxa levels by name.
-        """
+
         
 
 '''
@@ -964,9 +1012,13 @@ class RasterPointNodesList(object):
         values = map(lambda node : ( node.value) ,self.data)
         dates = map(lambda o : o.event_date, self.occurrences)
         pd = pandas.DataFrame(values)
+        means = map(lambda v : numpy.mean(v),values)
+        std = map(lambda v : numpy.std(v),values)
         pd.columns = ['January','February','March','April','May','June','July','August','September','October','November','December']
         real_val = map(lambda node : node.regval, self.data)
         pd['registered_value'] = real_val
+        pd['mean_yr_val'] = means
+        pd['std_yr_val'] = std
         pd['date'] = dates
         pd['date'] = pandas.to_datetime(pd['date'],format='%Y-%m-%dT%H:%M:%S')
         pd = pd.where(pd > -9999) # the no data value
@@ -995,18 +1047,6 @@ class RasterPointNodesList(object):
         else:
             return "MIXED DATATYPES"
         
-    def summaryStatistics(self):
-        """
-        Returns:
-            max
-            min
-            mean,
-            std,
-            count
-            In a dict form.
-            
-        """
-        pass 
-    
+
     
         

@@ -53,6 +53,9 @@ import pandas
 from drivers.neo4j_reader import RasterCollection
 #ts = ggg.taxonomies[0:150]
 
+
+## Remember t needs to be a list of taxonomies
+
 occurs = extractOccurrencesFromTaxonomies(t)
 
 occurs1 = extractOccurrencesFromTaxonomies(t1)
@@ -71,6 +74,28 @@ plants1 = part1.to_Plantae
   
 arthropods = complete.children[0].children[1]
 birds = complete.classes[2]
+
+
+ggg.taxonomies.sort(key=lambda l : len(l.occurrences))
+map(lambda l : len(l.occurrences),ggg.taxonomies)
+chiqui = map(lambda l : len(l.occurrences),ggg.taxonomies)
+
+
+alta_biodiv = ggg.taxonomies[3800:]
+
+t = alta_biodiv[0]
+
+T = TreeNeo(extractOccurrencesFromTaxonomies([t]))
+
+trees = T.getNeighboringTrees()
+
+neighbour_tree = reduce(lambda a,b : a + b , trees)
+
+o = neighbour_tree.occurrences[0]
+
+
+
+
 
 #art1 = part1.children[0].children[1]
 #art2 = part2.children[0].children[1]

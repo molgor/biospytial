@@ -5,11 +5,24 @@
 Scripts for testing and playing around with the Taxonomy tree read from neo.
 """
 
-from drivers.neo4j_reader import TreeNeo
+#from drivers.neo4j_reader import TreeNeo, LocalTree
+
+
+from drivers.tree_builder import TreeNeo
+
 from mesh.models import MexMesh
 from gbif.taxonomy import Occurrence, Taxonomy, GriddedTaxonomy
-from drivers.neo4j_reader import Cell,extractOccurrencesFromTaxonomies
+#from drivers.neo4j_reader import Cell,extractOccurrencesFromTaxonomies
+
+from drivers.graph_models import Cell
+from drivers.tree_builder import extractOccurrencesFromTaxonomies
+
 from py2neo import Graph
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+
 # Load data from a Country polygon 
 #from sketches.models import Country
 #mexico_border = Country.objects.filter(name__contains='exico').get()
@@ -50,17 +63,18 @@ t2 = ggg.taxonomies[75:150]
 
 import pandas
 
-from drivers.neo4j_reader import RasterCollection
+#from drivers.neo4j_reader import RasterCollection
+from drivers.raster_node_builder import RasterCollection
 #ts = ggg.taxonomies[0:150]
 
 
 ## Remember t needs to be a list of taxonomies
 
-occurs = extractOccurrencesFromTaxonomies(t)
+occurs,g0 = extractOccurrencesFromTaxonomies(t)
 
-occurs1 = extractOccurrencesFromTaxonomies(t1)
+occurs1,g1 = extractOccurrencesFromTaxonomies(t1)
 
-occurs2 = extractOccurrencesFromTaxonomies(t2)
+occurs2,g2 = extractOccurrencesFromTaxonomies(t2)
 
 
 complete = TreeNeo(occurs)
@@ -76,22 +90,35 @@ arthropods = complete.children[0].children[1]
 birds = complete.classes[2]
 
 
-ggg.taxonomies.sort(key=lambda l : len(l.occurrences))
-map(lambda l : len(l.occurrences),ggg.taxonomies)
-chiqui = map(lambda l : len(l.occurrences),ggg.taxonomies)
+ggg.taxonomies.sort(key=lambda l : len(l.occurrences),reverse=True)
+
+t = ggg.taxonomies[300]
+ocs , cell = extractOccurrencesFromTaxonomies([t])
+
+t = TreeNeo(ocs,cell)
+
+#ocs = map(lambda l : extractOccurrencesFromTaxonomies([l]), ggg.taxonomies)
+
+#trees = map(lambda o : TreeNeo(o[0],o[1]),ocs)
 
 
-alta_biodiv = ggg.taxonomies[3800:]
 
-t = alta_biodiv[0]
+# REmove null cells:
+#ocs_free = filter(lambda l : l, ocs)
 
-T = TreeNeo(extractOccurrencesFromTaxonomies([t]))
 
-trees = T.getNeighboringTrees()
+#trees_f = map(lambda l : TreeNeo(l),ocs_free)
 
-neighbour_tree = reduce(lambda a,b : a + b , trees)
 
-o = neighbour_tree.occurrences[0]
+
+#trees_f = TreeNeo(extractOccurrencesFromTaxonomies([ggg.taxonomies[3400]]))
+
+#central = trees_f
+
+
+#trees = T.getNeighboringTrees()
+
+
 
 
 

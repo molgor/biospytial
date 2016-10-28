@@ -11,6 +11,7 @@ NAME
 from posix import fpathconf
 from django.template.context_processors import request
 from datetime import datetime
+from drivers.neo4j_reader import TreeNeo
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2016, JEM"
@@ -202,6 +203,17 @@ def getAllOccurrences(WKT,url=URLOCCURRENCE,offset=0,safeinDB=False):
 # Create your tests here.
 
 
+
+def get_distribution_per_level(gridded_taxonomy):
+    g = gridded_taxonomy
+    n = len(g)
+    l = []
+    for i,t in enumerate(g):
+        ocs = extractOccurrencesFromTaxonomies([t])
+        t = TreeNeo(ocs)
+        logger.info('Done %s/%s'%(i,n))
+        l.append(t)
+    return l
 
 
 

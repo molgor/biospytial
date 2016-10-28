@@ -650,41 +650,7 @@ class Taxonomy:
         self.vectorIntrinsic = np.array(map(lambda M :np.linalg.det(M),submatrices))
         return mat
 
-    def distanceToTree_deprec(self,taxonomic_forest,update_inner_attributes=True):
-        """
-        This function calculates the distance from this object to the taxonomic_forest given as input.
-        The distance is based on an a given metric between all the partial trees.
-        
-        .. note:: Deprecated because it uses Robinson-Foulds distance.
-        This method does the Robinson_foulds metric. It has been found to be not a good metric for the purposes of measuring diffrence accros scales.
-        Not working for comparing between scales.
-
-        Parameters
-        ----------
-        taxonomic_forest : dictionary of trees
-            The dictionary obtained by the pruning of the taxonomic tree at species level to obtain the other levels.
-        update_inner_attributes : Boolean
-            When true it will set the attributes (like forest) to be this value.
-            
-        Returns
-        -------
-        Jacobian : numpy.matrix
-            The matrix obtained from the comparison (distance) between the two taxonomies
-        """
-        #Thankfully the distance is symmetric by definition so order doesn't matter.
-        Jacobian = []
-        logger.warning('[FOR DEVELOPER] This is not optimized. Should be necessary to use attr_t1 and attr_t2 with name_id (integer)')
-        for i in settings.TAXONOMIC_TREE_KEYS:
-            F1 = []
-            for j in settings.TAXONOMIC_TREE_KEYS:
-                d = self.forest[i].robinson_foulds(taxonomic_forest[j],unrooted_trees=True)[0]
-                F1.append(float(d))
-            Jacobian.append(F1)
-        if update_inner_attributes:
-            self.JacobiM = np.matrix(Jacobian)
-            self.Jacobi = np.linalg.det(self.JacobiM)
-        return np.matrix(Jacobian)  
-
+ 
     def distanceToTree(self,parent_taxonomic_forest,update_inner_attributes=True):
         """
         This method calculated the taxonomic distance between the current taxonomy and qn external taxonomy.

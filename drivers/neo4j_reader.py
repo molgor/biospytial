@@ -248,7 +248,81 @@ class Occurrence(GraphObject):
         
         return iter(models[raster_name])
     
+
+class Cell(GraphObject):
     
+    __primarykey__ = 'id'
+    __primarylabel__ = 'Cell'
+    
+    name = Property()
+    longitude = Property()
+    latitude = Property()
+    cell = Property()
+    id = Property()
+       
+    
+    
+    connected_to = RelatedTo("Cell", ISNEIGHBOUR)
+    
+    #connected_from = RelatedFrom("Cell", ISNEIGHBOUR)
+    #
+    Occurrences = RelatedFrom(Occurrence, ISIN)
+    
+    #LocalTree  = RelatedFrom(TreeNode, ISIN)
+    #families = RelatedFrom("Family",ISIN)
+    #families = RelatedFrom("Family", "HAS_EVENT")    
+
+    @property
+    def centroid(self):
+        pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
+        point = GEOSGeometry(pointstr)
+        return point
+    
+    @property
+    def polygon(self):
+        polygon = GEOSGeometry(self.cell)
+        return polygon
+
+
+    def getNeighbours(self):
+        #ln = [n for n in self.connected_from]
+        rn = [n for n in self.connected_to]
+        return rn
+        
+    def occurrencesHere(self):
+        """
+        Filter the list of occurrences.
+        """
+        occs = filter(lambda l : l.pk,self.Occurrences)
+        return occs        
+
+
+def aggregator(list_sp):
+    ##Comming from the first collider
+    
+    list_sp.sort(key=lambda l : l.getParent().id)
+    
+    #list_nodes.sort(key=lambda node :  node.getParent().id)
+    grouper = groupby(list_sp, lambda node : node.getParent())
+    output = []
+    for node,children in grouper:
+        s = LocalTree(node,list(children))
+        #s = TreeNeo(node,list(children))
+        output.append(s)
+    return output
+       
+def extractOccurrencesFromTaxonomies(list_of_taxonomies):
+    """
+    Updates the occurrences attribute to fit all the occurrences of the given list of taxonomies
+    """
+    occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_of_taxonomies ]])
+
+    occurrences = map(lambda o : o.asOccurrenceOGM(),occurrences)
+    return occurrences
+    #self.windUpLevels()    
+
+
+
 
 class TreeNode(GraphObject):
     """
@@ -391,77 +465,7 @@ class TreeNode(GraphObject):
 
 
 
-class Cell(GraphObject):
-    
-    __primarykey__ = 'id'
-    __primarylabel__ = 'Cell'
-    
-    name = Property()
-    longitude = Property()
-    latitude = Property()
-    cell = Property()
-    id = Property()
-       
-    
-    
-    connected_to = RelatedTo("Cell", ISNEIGHBOUR)
-    
-    #connected_from = RelatedFrom("Cell", ISNEIGHBOUR)
-    #
-    Occurrences = RelatedFrom(Occurrence, ISIN)
-    
-    #LocalTree  = RelatedFrom(TreeNode, ISIN)
-    #families = RelatedFrom("Family",ISIN)
-    #families = RelatedFrom("Family", "HAS_EVENT")    
 
-    @property
-    def centroid(self):
-        pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
-        point = GEOSGeometry(pointstr)
-        return point
-    
-    @property
-    def polygon(self):
-        polygon = GEOSGeometry(self.cell)
-        return polygon
-
-
-    def getNeighbours(self):
-        #ln = [n for n in self.connected_from]
-        rn = [n for n in self.connected_to]
-        return rn
-        
-    def occurrencesHere(self):
-        """
-        Filter the list of occurrences.
-        """
-        occs = filter(lambda l : l.pk,self.Occurrences)
-        return occs        
-
-
-def aggregator(list_sp):
-    ##Comming from the first collider
-    
-    list_sp.sort(key=lambda l : l.getParent().id)
-    
-    #list_nodes.sort(key=lambda node :  node.getParent().id)
-    grouper = groupby(list_sp, lambda node : node.getParent())
-    output = []
-    for node,children in grouper:
-        s = LocalTree(node,list(children))
-        #s = TreeNeo(node,list(children))
-        output.append(s)
-    return output
-       
-def extractOccurrencesFromTaxonomies(list_of_taxonomies):
-    """
-    Updates the occurrences attribute to fit all the occurrences of the given list of taxonomies
-    """
-    occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_of_taxonomies ]])
-
-    occurrences = map(lambda o : o.asOccurrenceOGM(),occurrences)
-    return occurrences
-    #self.windUpLevels()
         
 
  
@@ -479,7 +483,10 @@ class LocalTree(object):
         self.level = self.node.level
         self.occurrences = []
         self.involvedCells = []
-        #self.graph = self.setGraph()
+        self.neighbouringtrees = []
+        
+    
+    #self.graph = self.setGraph()
         # Experiment 1
         # this is a very good method for 
         map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
@@ -489,6 +496,9 @@ class LocalTree(object):
 
 
     def setGraph(self,graph):
+        """
+        Converts to a Networkx object
+        """
         node = self
         for child in self.children:            
             graph.add_edge(node,child,weight=node.richness)
@@ -524,7 +534,7 @@ class LocalTree(object):
         notes :
         
             This method is elegant!
-            Took me some time to figure it out. I think I cannot make something more efficient.
+            Took me some time to figure it out. I think I cannot make something more efficient,yet/.
         
         
         """
@@ -535,6 +545,7 @@ class LocalTree(object):
                 # magic step!
                 self.occurrences += occurrences_on_children
             else:
+                import ipdb; ipdb.set_trace()
                 self.occurrences.append(occurrence)
                 
         return self.occurrences
@@ -582,7 +593,7 @@ class LocalTree(object):
         return cells
         
 
-    def getNeighboringTrees(self):
+    def getNeighboringTrees(self,filter_central_cell=True,reduce_trees=False):
         """
         It will return the trees associated with the neighbouring cells.
         Algorithm : 
@@ -593,6 +604,10 @@ class LocalTree(object):
             
         Returns:
             List of NeoTrees
+            
+        Parameters:
+            filter_central_cell : boolean flag, if False it will include de central cell as part of the neighbour list.
+        
         """
         cells = self.getExactCells()
         cell_neighbours = map(lambda c: c.getNeighbours(),cells)
@@ -605,7 +620,38 @@ class LocalTree(object):
                 trees.append(TreeNeo(list_))
             else:
                 continue
-        return trees
+        
+        # This if the filter central cell parameter is chosen.
+        if filter_central_cell:    
+            trees = filter(lambda t : t!= self, trees)    
+
+        if not reduce_trees:
+            return trees
+        else:
+            tree = reduce(lambda t1,t2 : t1 + t2, trees)
+            return tree
+
+    def expandNeighbouringTrees(self,n_order=1,filter_central_cell=True):
+        """
+        Expand the neighbourhood of influence
+        """
+        list_trees = self.getNeighboringTrees()
+        ns = list_trees
+        neighbours = []
+        for i in range(n_order):
+            ns = map(lambda n : n.getNeighboringTrees(),ns)
+            ns = reduce(lambda a,b : a + b , ns)
+            neighbours.append(ns)
+        
+        neighbours = reduce(lambda a , b  : a + b, neighbours)
+        
+        neighbours = list(set(neighbours))
+        if filter_central_cell:    
+            neighbours = filter(lambda t : t!= self, neighbours)    
+        self.neighbouringtrees = neighbours
+        return neighbours
+
+
 
 
     def mergeCells(self):
@@ -630,16 +676,31 @@ class LocalTree(object):
 
 
 
-    def __eq__(self,other):
+    def __eq__(self,other_tree):
         """
         Checks if two local trees are equivalent.
         Remember, this is the principle of invariantness (me, Badiou).
         """ 
 
-        this = self.node
-        other = other.node
-        return this == other
+        this = self.node.node
+        other_node = other_tree.node.node
+        
+        this_cells = self.getExactCells()
+        other_cells = other_tree.getExactCells()
+        if (this == other_node) and (this_cells == other_cells):
+        ## Because it can be on the same cell but different taxonomic level or same taxonomic level different cell.    
+        #if this_cells == other_cells:
+            return True
+        else:
+            return False
 #    def pullbackCellNodes(self):
+
+    ## This is necesary, apparently the != is not working properly. 
+    def __ne__(self,other_tree):
+        truth = (self == other_tree)
+        
+        return not truth
+
 
 
     def __hash__(self):
@@ -793,9 +854,37 @@ class LocalTree(object):
         return expression
 
 
-    
 
-
+    def pseudoPresenceAbsence(self,catalog_ids,level_id,selected_field='id'):
+        """
+        This method generates a list of presence absence based on a catalog list.
+        That is, a list that includes the ids of certain taxa (e.g. taxa found at bigger scale). 
+        It returns a list of 1 and 0's where each entry is a particular taxon and the entry 0 or 1 is if that taxon
+        was found in the level_id of the current tree (self)
+        
+        Parameters:
+            
+            selected_field : id makes the selection for id. 
+                          : name the selection for the name
+            
+        
+        """
+        levels = [self,self.kingdoms,self.phyla,self.classes,self.orders,self.families,self.genera,self.species,self.occurrences]
+        level = levels[level_id]
+        catalog_ids.sort()
+        output = {}
+        for id in catalog_ids:
+            if selected_field == 'id':
+                s = filter(lambda l : l.id == id,level)
+            else:
+                s = filter(lambda l : l.name == id,level)
+            if s:
+                output[id] = 1
+            else:
+                output[id] = 0
+        return pandas.DataFrame.from_dict(output,orient='index')
+                
+            
 
 
 class TreeNeo(LocalTree):
@@ -814,8 +903,17 @@ class TreeNeo(LocalTree):
         # i.e. take all the occurrences, extract the node then put everything in a list
         #self.occurrences = reduce( lambda one,two : one + two, [ map(lambda occurrence : occurrence.getNode(),occurrences )for occurrences in [ taxonomy.occurrences for taxonomy in list_taxonomies]])
         #self.occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_taxonomies ]])
-        self.occurrences = list_occurrences
-        self.windUpLevels()
+        if list_occurrences:
+            self.occurrences = list_occurrences
+            self.windUpLevels()
+        else:
+            logger.warning('No occurrence found. Returning empty')
+            self.occurrences = []
+            root = 'No Data found'
+            children = []
+            return None
+            #super(TreeNeo,self).__init__(root,children)
+            
 
    
     def setOccurrencesFromTaxonomies(self,list_of_taxonomies):
@@ -991,7 +1089,49 @@ class RasterCollection(object):
         setattr(self,prefix + string_selection, rasters)
         return rasters        
 
-  
+
+    
+
+    def getEnvironmentalVariablesPoints(self,vars=['MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
+        """
+        
+        """
+        df = pandas.DataFrame()
+        for variable in vars:
+            raster = self.getValuesFromPoints(variable)
+            environment_mean = raster.table.mean_yr_val
+            environment_std = raster.table.std_yr_val
+            df[variable + '_mean'] = environment_mean
+            df[variable + '_std' ] = environment_std
+        return df
+
+
+    def getEnvironmentalVariablesCells(self,vars=['MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_std=False):
+        """
+        This is by cell.
+        But by definition each Tree is defined in a united cell. 
+        It could be the union of multiple dijoint cells but the raster aggregation type is taken as ONE raster.
+        
+        Parameters :
+            (Boolean flag) 
+            with_std =  Returns the data with means and standard deviation
+        
+        THIS CAN BE PRIORS!!
+        """
+        df = {}
+        for variable in vars:
+            raster = self.getAssociatedRasterAreaData(variable)
+            statistics = raster.rasterdata.allBandStatistics()
+            mean_env = statistics['mean']
+            df[variable + '_mean'] = mean_env
+            
+            if with_std:
+                std_env = statistics['mean_std']
+                df[variable + '_std' ] = std_env
+        return df
+
+
+
 
     
 class RasterPointNodesList(object):

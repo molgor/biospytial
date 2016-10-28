@@ -35,8 +35,8 @@ from py2neo import Node, Relationship, Graph
 from django.conf import settings
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 
-import drivers.neo4j_reader as neo 
 
+import drivers.graph_models as graphmodel
 import ipdb;
 
 logger = logging.getLogger('biospatial.gbif')
@@ -467,7 +467,7 @@ class Occurrence(models.Model):
         This is a bad design
         """
         
-        Occurrence = neo.Occurrence.select(neo.graph, self.pk).first()
+        Occurrence = graphmodel.Occurrence.select(graphmodel.graph, self.pk).first()
         return Occurrence
 
 

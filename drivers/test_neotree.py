@@ -101,6 +101,20 @@ t = TreeNeo(ocs,cell)
 
 #trees = map(lambda o : TreeNeo(o[0],o[1]),ocs)
 
+flowers = t.to_Plantae.to_Magnoliophyta.to_Magnoliopsida
+n = t.getNeighboringTrees(filter_central_cell=True) 
+n.expandNeighbourhood(size=7)  
+y = map(lambda t : int(t.hasNode(flowers)),n.neighbours)
+Y = pandas.DataFrame({'Y':y})
+
+X = n.getEnvironmentalData()  
+Z = n.getCooccurrenceMatrix(3) 
+
+## build of data set
+data = pandas.concat((Y,X,Z),axis=1)
+
+md = smf.mixedlm("Y ~ MeanTemperature_mean + Precipitation_mean",data,groups=data["Mammalia"])
+
 
 
 # REmove null cells:

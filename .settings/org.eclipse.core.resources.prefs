@@ -3,6 +3,7 @@ encoding//biospatial/ingest-taxonomies-in-neo4j.py=utf-8
 encoding//biospatial/settings.py=utf-8
 encoding//docs/conf.py=utf-8
 encoding//drivers/csv_raw_loader.py=utf-8
+encoding//drivers/modeler.py=utf-8
 encoding//drivers/neo4j_reader.py=utf-8
 encoding//drivers/populate.py=utf-8
 encoding//drivers/test_neotree.py=utf-8

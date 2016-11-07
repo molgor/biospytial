@@ -77,7 +77,7 @@ class LocalTree(object):
         self.occurrences = []
         self.involvedCells = []
         self.neighbouringtrees = []
-        
+
     
     #self.graph = self.setGraph()
         # Experiment 1
@@ -210,32 +210,39 @@ class LocalTree(object):
             filter_central_cell : boolean flag, if False it will include de central cell as part of the neighbour list.
         
         """
-        cells = self.getExactCells()
-        cell_neighbours = map(lambda c: c.getNeighbours(),cells)
-        # A reduce in case we are using more than one cell within the tree
-        cells = reduce(lambda l1 , l2  : l1 + l2, cell_neighbours)
-        occurrences = map(lambda oc : oc.occurrencesHere(),cells)
-        ## prototyping
-        duples = zip(occurrences,cells)
-        trees = []
-        for list_, cell in duples:
-            ## prot
-            trees.append(TreeNeo(list_,[cell]))
-            #trees.append(TreeNeo(list_))
-            #if list_:
-            #    trees.append(TreeNeo(list_))
-            #else:
-            #    continue
-        
-        # This if the filter central cell parameter is chosen.
-        if filter_central_cell:    
-            trees = filter(lambda t : t!= self, trees)    
+        neighbourhood = Neighbourhood(self,1)
+        return neighbourhood
+#         cells = self.getExactCells()
+#         cell_neighbours = map(lambda c: c.getNeighbours(),cells)
+#         # A reduce in case we are using more than one cell within the tree
+#         cells = reduce(lambda l1 , l2  : l1 + l2, cell_neighbours)
+#         occurrences = map(lambda oc : oc.occurrencesHere(),cells)
+#         ## prototyping
+#         duples = zip(occurrences,cells)
+#         trees = []
+#         for list_, cell in duples:
+#             ## prot
+#             trees.append(TreeNeo(list_,[cell]))
+#             #trees.append(TreeNeo(list_))
+#             #if list_:
+#             #    trees.append(TreeNeo(list_))
+#             #else:
+#             #    continue
+#         
+#         # This if the filter central cell parameter is chosen.
+#         if filter_central_cell:    
+#             trees = filter(lambda t : t!= self, trees)    
+# 
+#         if not reduce_trees:
+#             return trees
+#         else:
+#             tree = reduce(lambda t1,t2 : t1 + t2, trees)
+#             return tree
 
-        if not reduce_trees:
-            return trees
-        else:
-            tree = reduce(lambda t1,t2 : t1 + t2, trees)
-            return tree
+
+
+
+
 
     def expandNeighbouringTrees(self,n_order=1,filter_central_cell=True):
         """
@@ -560,6 +567,7 @@ class TreeNeo(LocalTree):
             self.node = None
             self.involvedCells = cell_object
             self.associatedData = RasterCollection(self)
+            self.levels = [self]
             #return None
             #super(TreeNeo,self).__init__(root,children)
             
@@ -589,6 +597,7 @@ class TreeNeo(LocalTree):
         super(TreeNeo,self).__init__(root,root.children)
         # Reload Occurrences
         self.setOccurrences()
+        self.levels = [self,self.kingdoms,self.phyla,self.classes,self.orders,self.families,self.genera,self.species,self.occurrences]
 
 
 
@@ -597,7 +606,7 @@ class TreeNeo(LocalTree):
         Checks if node exists in current tree.
         """
         if self.richness != 0:
-            levels = [self,self.kingdoms,self.phyla,self.classes,self.orders,self.families,self.genera,self.species,self.occurrences]
+            levels = self.levels
             t_l = TreeNode.level
             ids_for_level = map(lambda l : l.id, levels[t_l])
             truth = TreeNode.id in ids_for_level
@@ -630,3 +639,107 @@ class TreeNeo(LocalTree):
         return TreeNeo(list_occurrences=occs)  
 
 
+class Neighbourhood(object):
+    """
+    Class that defines the neighbourhood object (Similar to gridded taxonomy)
+    """
+    def __init__(self,central_node,size):
+        """
+        Constructor
+        """
+        self.center = central_node
+        self.size = size
+        self.neighbours = self.getNeighboringTrees()
+
+    @property
+    def extendedTree(self):
+        """
+        Merges the neighbouring trees into one
+        """
+        bigtree = reduce(lambda t1,t2 : t1 + t2 , self.neighbours)
+        return bigtree
+
+
+    def getEnvironmentalData(self):
+        """
+        Returns a DataFrame of all the environmental covariates
+        """
+        environment = map(lambda t : t.associatedData.getEnvironmentalVariablesCells(),self.neighbours)
+        env = pandas.DataFrame.from_dict(environment)
+        return env
+
+
+
+    def getNeighboringTrees(self,filter_central_cell=True,reduce_trees=False,size=1,update_attribute=True):
+        """
+        It will return the trees associated with the neighbouring cells.
+        Algorithm : 
+            Get the exact cells,
+            Get the neighbours
+            Extract the occurrences for each cell.
+            Instantiate the tree.
+            
+        Returns:
+            List of NeoTrees
+            
+        Parameters:
+            filter_central_cell : boolean flag, if False it will include de central cell as part of the neighbour list.
+        
+        """
+        cells = self.center.getExactCells()
+        cells = map(lambda c: c.getNeighbours(),cells)
+        # to extract the cells from the nested list. i.e. all the cells are in a list 
+        cells = reduce(lambda a,b : a+b , cells)
+        for i in range(size -1):
+            cell_neighbours = map(lambda c: c.getNeighbours(),cells)
+            cells = reduce(lambda l1 , l2  : l1 + l2, cell_neighbours)
+            # remove repeated
+            cells = list(set(cells))
+
+            
+        occurrences = map(lambda oc : oc.occurrencesHere(),cells)
+        ## prototyping
+        duples = zip(occurrences,cells)
+        trees = []
+        for list_, cell in duples:
+            trees.append(TreeNeo(list_,[cell]))
+
+        # This if the filter central cell parameter is chosen.
+        if filter_central_cell:    
+            trees = filter(lambda t : t!= self.center, trees)    
+
+        if reduce_trees:
+            trees = reduce(lambda t1,t2 : t1 + t2, trees)
+
+        if update_attribute:
+            self.neighbours = trees
+            self.size = size
+            
+        return trees
+        
+
+    def expandNeighbourhood(self,size,filter_central_cell=True, reduce_trees=False):
+        """
+        Set the desire neighbourhood as the attribute.
+        """
+        ns = self.getNeighboringTrees(filter_central_cell=filter_central_cell, reduce_trees=reduce_trees, size=size)
+
+        self.neighbours = ns
+
+    def getCooccurrenceMatrix(self,taxonomic_level=1):
+        """
+        Returns the matrix of co-occurrences (taxa that share a given cell (neighbour's cell) ) for a specific taxonomic level.
+        """
+        bt = self.extendedTree
+        nodes = bt.levels[taxonomic_level]
+        # sort the nodes according to its id
+        nodes.sort(key=lambda t : t.id)
+        occurrences = {}
+        #for neighbour in self.neighbours:
+        for node in nodes:
+            existence = map(lambda neighbour : int(neighbour.hasNode(node)),self.neighbours)
+            occurrences[node.name] = existence
+            #existence = map(lambda node : int(neighbour.hasNode(node)),nodes)
+            #occurrences.append(existence)
+        ocs = pandas.DataFrame.from_dict(occurrences)
+        return ocs

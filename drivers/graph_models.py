@@ -424,6 +424,8 @@ class Cell(GraphObject):
     def getNeighbours(self):
         #ln = [n for n in self.connected_from]
         rn = [n for n in self.connected_to]
+        # testing thingy
+        rn.append(self)
         return rn
         
     def occurrencesHere(self):

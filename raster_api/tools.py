@@ -31,6 +31,8 @@ graph = Graph()
 from osgeo import gdal
 logger = logging.getLogger('biospatial.raster_api.tools')
 from numpy.ma import masked_where
+import numpy
+
 
 class GDALRasterExtended(GDALRaster):
     
@@ -263,7 +265,7 @@ class RasterData(object):
      
 
     
-    def plotField(self,stats_dir,band=1,xlabel='Temperatura Promedio (C)',**kwargs):
+    def plotField(self,stats_dir='default',band=1,xlabel='Temperatura Promedio (C)',**kwargs):
         """
         """
         try:
@@ -271,6 +273,8 @@ class RasterData(object):
         except:
             logger.error("No raster data associated with specified band. Run getRaster or processDEM first")
             return None
+        if stats_dir == 'default':
+            stats_dir = self.rasterdata.allBandStatistics()
         # Mask data 
         nodataval = stats_dir['nodata']
         matrix = masked_where(matrix == nodataval, matrix)
@@ -287,7 +291,7 @@ class RasterData(object):
         #plt.show()
         return plt         
     
-    def display_field(self,stats_dir,title='',band=1,**kwargs):
+    def display_field(self,stats_dir='default',title='',band=1,**kwargs):
         p = self.plotField(stats_dir, band=band,xlabel=title+' Month',**kwargs)
         p.title(title)
         plt.show()
@@ -315,7 +319,28 @@ class RasterData(object):
         for i,name in months.items():
             self.exportToJPG(i+prefix, stats_dict, path=path, title=prefixtitle+name,unitstitle=unitstitle, band=int(i),**kwargs)
         
+
+
+    def toNumpyArray(self):
+        """
+        Returns a narray
+        """
+        bands = map(lambda b : b.data(),self.rasterdata.bands)
+        return numpy.array(bands) 
+
+
+    def getCoordinates(self):
+        """
+        Returns array of coordinates for each pixel
+        """
+        raster = self.rasterdata
+        startx,starty,endx,endy = raster.extent
+        xs = numpy.linspace(startx,endx,raster.width)
+        ys = numpy.linspace(starty,endy,raster.height)
+        return xs, ys 
+
         
+
        
 meses = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
 #mex.exportToJPG('0'+name,s,title=month,band=int(name),cmap=plt.cm.inferno)

@@ -113,7 +113,17 @@ Z = n.getCooccurrenceMatrix(3)
 ## build of data set
 data = pandas.concat((Y,X,Z),axis=1)
 
-md = smf.mixedlm("Y ~ MeanTemperature_mean + Precipitation_mean",data,groups=data["Mammalia"])
+#md = smf.mixedlm("Y ~ MeanTemperature_mean + Precipitation_mean",data,groups=data["Mammalia"])
+
+
+#New things !
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from raster_api import tools as tls
+from raster_api.models import MeanTemperature
+from raster_api import models as rm
 
 
 

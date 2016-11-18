@@ -16,7 +16,7 @@ from itertools import groupby
 from drivers.graph_models import Occurrence
 from drivers.graph_models import Cell
 from drivers.raster_node_builder import RasterCollection
-
+import numpy as np
 
 
 from collections import OrderedDict
@@ -210,7 +210,7 @@ class LocalTree(object):
             filter_central_cell : boolean flag, if False it will include de central cell as part of the neighbour list.
         
         """
-        neighbourhood = Neighbourhood(self,1)
+        neighbourhood = Neighbourhood(self,1,filter_central_cell=filter_central_cell)
         return neighbourhood
 #         cells = self.getExactCells()
 #         cell_neighbours = map(lambda c: c.getNeighbours(),cells)
@@ -643,13 +643,13 @@ class Neighbourhood(object):
     """
     Class that defines the neighbourhood object (Similar to gridded taxonomy)
     """
-    def __init__(self,central_node,size):
+    def __init__(self,central_node,size,filter_central_cell=True):
         """
         Constructor
         """
         self.center = central_node
         self.size = size
-        self.neighbours = self.getNeighboringTrees()
+        self.neighbours = self.getNeighboringTrees(filter_central_cell=filter_central_cell)
 
     @property
     def extendedTree(self):
@@ -690,11 +690,16 @@ class Neighbourhood(object):
         cells = map(lambda c: c.getNeighbours(),cells)
         # to extract the cells from the nested list. i.e. all the cells are in a list 
         cells = reduce(lambda a,b : a+b , cells)
+        # Insert the central cell
+        #cells.append(self.center.getExactCells().pop()) 
+        
         for i in range(size -1):
             cell_neighbours = map(lambda c: c.getNeighbours(),cells)
             cells = reduce(lambda l1 , l2  : l1 + l2, cell_neighbours)
+            #if not filter_central_cell:
+            #cells.append(self.center.getExactCells().pop()) 
             # remove repeated
-            cells = list(set(cells))
+            cells = list(set(cells))    
 
             
         occurrences = map(lambda oc : oc.occurrencesHere(),cells)
@@ -743,3 +748,17 @@ class Neighbourhood(object):
             #occurrences.append(existence)
         ocs = pandas.DataFrame.from_dict(occurrences)
         return ocs
+    
+    
+    def getCentroids(self,asnumpyarray=True):
+        """
+        Returns the Points of position, long,lat
+        """
+        cells = map(lambda tree : tree.getExactCells(),self.neighbours)
+        cells = reduce(lambda a,b : a + b , cells)
+        points = map(lambda c : c.centroid,cells)
+        if asnumpyarray:
+            ps = map(lambda p : (p.x,p.y), points)
+            points = np.atleast_2d(ps)
+        return points
+    

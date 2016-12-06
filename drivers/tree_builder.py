@@ -760,5 +760,8 @@ class Neighbourhood(object):
         if asnumpyarray:
             ps = map(lambda p : (p.x,p.y), points)
             points = np.atleast_2d(ps)
-        return points
+            
+            p = pandas.DataFrame(points)
+            p.columns = ['x','y']
+        return p
     

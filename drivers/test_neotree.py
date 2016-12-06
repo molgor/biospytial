@@ -108,10 +108,11 @@ y = map(lambda t : int(t.hasNode(flowers)),n.neighbours)
 Y = pandas.DataFrame({'Y':y})
 
 X = n.getEnvironmentalData()  
-Z = n.getCooccurrenceMatrix(3) 
+Z = n.getCooccurrenceMatrix(3)
+L = n.getCentroids()
 
 ## build of data set
-data = pandas.concat((Y,X,Z),axis=1)
+data = pandas.concat((Y,X,Z,L),axis=1)
 
 #md = smf.mixedlm("Y ~ MeanTemperature_mean + Precipitation_mean",data,groups=data["Mammalia"])
 
@@ -126,7 +127,30 @@ from raster_api.models import MeanTemperature
 from raster_api import models as rm
 
 
+Y = data[[0]]
+locs = data[[26,27]]
+locs
+environment = data[[1,2,3,4,5,6,7,26,27]]
+coocs = data[[8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27]]
 
+
+
+kernel = C(10.0, (1e-3, 1e3)) * RBF(19, (1e-2, 1e2))
+
+gp = GaussianProcessRegressor(kernel=kernel, alpha=0.01,
+                              optimizer=None, normalize_y=True)
+
+gp.fit(environment.values,Y)
+
+rm.raster_models.pop(0)
+rdata = map(lambda r : tls.RasterData(r,polygon),rm.raster_models)
+map(lambda r : r.getRaster(),rdata)
+
+cells = reduce(lambda a,b : a+b , map(lambda l : l.getExactCells(),n.neighbours))
+
+polys = reduce(lambda a,b : a + b , map(lambda l :  l.polygon,cells))
+rdata2 = map(lambda r : tls.RasterData(r,polys),rm.raster_models) 
+map(lambda r : r.getRaster(),rdata2)
 # REmove null cells:
 #ocs_free = filter(lambda l : l, ocs)
 

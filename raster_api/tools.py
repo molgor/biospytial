@@ -30,7 +30,7 @@ from py2neo import Node, Relationship, Graph
 graph = Graph()
 from osgeo import gdal
 logger = logging.getLogger('biospatial.raster_api.tools')
-from numpy.ma import masked_where
+from numpy.ma import masked_where,masked_equal
 import numpy
 
 
@@ -326,7 +326,9 @@ class RasterData(object):
         Returns a narray
         """
         bands = map(lambda b : b.data(),self.rasterdata.bands)
-        return numpy.array(bands) 
+        nodataval = self.rasterdata.allBandStatistics()['nodata']
+        bands = map(lambda b : masked_equal(b,nodataval),bands)
+        return bands
 
 
     def getCoordinates(self):
@@ -340,8 +342,15 @@ class RasterData(object):
         return xs, ys 
 
         
-
-       
+    def meanLayer(self):
+        """
+        Returns a single layer (Matrix nxm) that represents the cellwise average value  
+        """
+        bands = self.toNumpyArray()
+        total = reduce(lambda a,b : a+b ,bands)
+        return total * (1/float(len(bands)))
+    
+    
 meses = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
 #mex.exportToJPG('0'+name,s,title=month,band=int(name),cmap=plt.cm.inferno)
     

@@ -107,7 +107,7 @@ DATABASES = {
 
 NEO4J_DATABASES = {
     'default' : {
-        'HOST':'localhost',
+        'HOST':'148.88.197.8',
         'PORT':7474,
         'ENDPOINT':'/db/data'
     }
@@ -324,4 +324,7 @@ NOTEBOOK_ARGUMENTS = [
     # disables the browser
     '--no-browser',
 ]
+
+
+
 

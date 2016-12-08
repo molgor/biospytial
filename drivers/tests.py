@@ -43,7 +43,7 @@ import requests
 URLBASE = "http://api.gbif.org/v1/"
 URLOCCURRENCE = URLBASE+"occurrence/search"
 
-logger = logging.getLogger('biospatial.gbif.drivers.populate')
+logger = logging.getLogger('biospytial.gbif.drivers.populate')
 
 
 def getOccurrencesDriver(WKT,url=URLOCCURRENCE):

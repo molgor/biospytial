@@ -10,7 +10,9 @@ from gbif.models import Specie
 from mesh.tools import migrateGridToNeo
 #g = Graph("http://localhost:7474/db/data/")
 #tx = g.begin()
-
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
 
 def bindNode(Tree,node=False):
@@ -95,7 +97,7 @@ mextax = Taxonomy(mex,geometry=d['polygon'],build_tree_now=False)
 #m = map(createNetworkOnNode,vecinos)
 
 ## Create unique constraint with concatenated labels
-g = Graph()
+g = Graph(uri)
 
 g.schema.create_uniqueness_constraint("Root","id")
 g.schema.create_uniqueness_constraint("Kingdom","keyword")

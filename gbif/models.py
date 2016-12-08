@@ -39,9 +39,11 @@ from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 import drivers.graph_models as graphmodel
 import ipdb;
 
-logger = logging.getLogger('biospatial.gbif')
-
-graph = Graph()
+logger = logging.getLogger('biospytial.gbif')
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
+graph = Graph(uri)
 from django.forms import ModelForm
 # Model for GBIF as given by Raúl Jimenez
 

@@ -10,17 +10,19 @@
 
 
 import logging
-logger = logging.getLogger('biospatial.graph_models')
+logger = logging.getLogger('biospytial.graph_models')
 
 from py2neo.ogm import GraphObject, Property, RelatedTo, RelatedFrom
 from django.contrib.gis.geos import GEOSGeometry
 from itertools import groupby
-
 #from drivers.tree_builder import LocalTree
 
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
 import py2neo
-graph = py2neo.Graph()
+graph = py2neo.Graph(uri)
 
 global TAXDESCEND
 TAXDESCEND = "IS_A_MEMBER_OF"

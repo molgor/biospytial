@@ -16,13 +16,17 @@ from raster_api.models import raster_models
 from raster_api.models import raster_models_dic
 import copy
 import networkx as nx
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
 
 
-logger = logging.getLogger('biospatial.neo4j_reader')
+
+logger = logging.getLogger('biospytial.neo4j_reader')
 
 import py2neo
-graph = py2neo.Graph()
+graph = py2neo.Graph(uri)
 
 global TAXDESCEND
 TAXDESCEND = "IS_A_MEMBER_OF"

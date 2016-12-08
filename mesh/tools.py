@@ -35,7 +35,7 @@ def createGridOnThisSquare(square,tablename,n_partitions_in_x):
     This function creates a GRID in the database.
     It makes use of the function: generategridon(polygon,t_name_grid_division)
     defined in the database. 
-    It you need to install this functions the scripts are in biospatial/SQL_functions
+    It you need to install this functions the scripts are in biospytial/SQL_functions
     .. update:: The functions and schema can be installed using the script: install_mesh_functions.sql
     
     .. note:: This function needs a SQUARE polygon given as parameter if this requirement is not

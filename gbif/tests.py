@@ -28,8 +28,8 @@ from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 from gbif.models import Specie,Genus,Family,Order,Class,Phylum,Kingdom
 from mesh.models import NestedMesh
 from django.contrib.gis.db.models.query import GeoQuerySet
-logger = logging.getLogger('biospatial.gbif.general_test')
-import biospatial.settings as settings 
+logger = logging.getLogger('biospytial.gbif.general_test')
+import biospytial.settings as settings
 # Create your tests here.
 
 from ete2 import Tree, TreeStyle

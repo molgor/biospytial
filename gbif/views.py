@@ -25,7 +25,7 @@ __status__ = "Prototype"
 
 
 from django.shortcuts import render
-import biospatial.settings as settings
+import biospytial.settings as settings
 
 from django.template.loader import get_template
 from django.template import Context
@@ -39,7 +39,7 @@ from mesh.models import initMesh
 from gbif.taxonomy import GriddedTaxonomy
 from ete2 import TreeStyle
 import logging
-logger = logging.getLogger('biospatial.gbif.views')
+logger = logging.getLogger('biospytial.gbif.views')
 
 
 def HelloWorld(request):

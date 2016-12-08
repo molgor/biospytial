@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 """
-Django settings for biospatial project.
+Django settings for biospytial project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/1.7/topics/settings/
@@ -59,9 +59,9 @@ MIDDLEWARE_CLASSES = (
     'django_pdb.middleware.PdbMiddleware',
 )
 
-ROOT_URLCONF = 'biospatial.urls'
+ROOT_URLCONF = 'biospytial.urls'
 
-WSGI_APPLICATION = 'biospatial.wsgi.application'
+WSGI_APPLICATION = 'biospytial.wsgi.application'
 
 
 # Database
@@ -134,7 +134,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR+'/logs/biospatial.log',
+            'filename': BASE_DIR+'/logs/biospytial.log',
             'formatter': 'verbose'
         },
         'console':{
@@ -168,27 +168,27 @@ LOGGING = {
             'propagate': False,
             'level':'DEBUG',
        },
-#         'biospatial.gbif.insertion': {
+#         'biospytial.gbif.insertion': {
 #             'handlers': ['file'],
 #             'propagate': True,
 #             'level': 'DEBUG',
 #         },
-#         'biospatial.gbif': {
+#         'biospytial.gbif': {
 #             'handlers': ['gbif.taxonomy'],
 #             'propagate': False,
 #             'level': 'DEBUG',
 #         },
-#         'biospatial.driver.csv_raw_loader' : {
+#         'biospytial.driver.csv_raw_loader' : {
 #             'handlers': ['console'],
 #             'level': 'DEBUG',                                   
 #         
 #         },
-#          'biospatial.gbif.taxonomy' :{
+#          'biospytial.gbif.taxonomy' :{
 #             'handlers': ['gbif.taxonomy'],
 #             'level' : 'DEBUG',
 #             'propagate': False,
 #         },       
-#         'biospatial.raster_api.tools':{
+#         'biospytial.raster_api.tools':{
 #             'handlers': ['file_raster'],
 #             'level' : 'DEBUG',
 #         
@@ -225,7 +225,7 @@ STATIC_URL = '/static/'
 #STATIC_ROOT = '/var/tmp/trees/'
 
 TEMPLATE_DIRS = (
-    '/Users/juan/git_projects/biospatial/templates/',
+    '/Users/juan/git_projects/biospytial/templates/',
 )
 
 STATICFILES_DIRS = (
@@ -311,7 +311,7 @@ CSVABSOLUTEPATH = "/home/juan/gbif/mexico/bigdatabase_subset/pieces"
 
 OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','latitude','longitude','event_date','geom']
 
-PATH_IMAGES = '/Users/juan/git_projects/biospatial/static/trees/'
+PATH_IMAGES = '/Users/juan/git_projects/biospytial/static/trees/'
 
 PATH_OUTPUT = '/home/juan/Research/biospytial-output/'
 

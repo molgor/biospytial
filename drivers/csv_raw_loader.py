@@ -20,7 +20,7 @@ from django.db import connection
 
 
 cursor = connection.cursor()
-logger = logging.getLogger('biospatial.driver.csv_raw_loader')
+logger = logging.getLogger('biospytial.driver.csv_raw_loader')
 
 
 

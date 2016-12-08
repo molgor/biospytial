@@ -37,19 +37,21 @@ from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 from gbif.models import Specie,Genus,Family,Order,Class,Phylum,Kingdom,Root
 from mesh.models import NestedMesh
 from django.contrib.gis.db.models.query import GeoQuerySet
-logger = logging.getLogger('biospatial.gbif.taxonomy')
+logger = logging.getLogger('biospytial.gbif.taxonomy')
 # Create your tests here.
 
 from raster_api.tools import RasterData
 from gbif.buildtree import getTOL
-import biospatial.settings as settings 
+import biospytial.settings as settings
 
 import pickle
 
 #import matplotlib.pyplot as plt
 import numpy as np
-
-graph_driver = Graph()
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
+graph_driver = Graph(uri)
   
 
 def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,use_id_as_name=True):
@@ -92,11 +94,11 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         try:
             biomes_mesh = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),cell['cell'],cell['id']),cells)
         except:
-            logger.error("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] biosphere is not a Geoquery instance model of GBIF")
+            logger.error("[biospytial.gbif.taxonomy.embedTaxonomyinGrid] biosphere is not a Geoquery instance model of GBIF")
         taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2],build_tree_now=generate_tree_now), biomes_mesh )
         #logger.info(type(taxs_list))
         if generate_tree_now:
-            logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
+            logger.info("[biospytial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
             map(lambda taxonomy: taxonomy.buildInnerTree(deep=True,only_id=use_id_as_name),taxs_list)
             map(lambda taxonomy: taxonomy.calculateIntrinsicComplexity(),taxs_list)        
         return taxs_list 
@@ -105,7 +107,7 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         taxs = Taxonomy(biosphere.filter(geom__intersects=cell),geometry=cell,id=upper_level_grid_id,build_tree_now=generate_tree_now)
         #logger.info(type(taxs_list))
         if generate_tree_now:
-            logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
+            logger.info("[biospytial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
             map(lambda taxonomy: taxonomy.buildInnerTree(deep=True,only_id=use_id_as_name),[taxs])
             map(lambda taxonomy: taxonomy.calculateIntrinsicComplexity(),taxs_list)                 
         return [taxs]   
@@ -156,7 +158,7 @@ def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,g
     meshes = NestedMesh(id_in_grid,start_level=start_level,end_level=end_level)
     nested_taxonomies ={} 
     for mesh in meshes.levels.keys():   
-        logger.info("[biospatial.gbif.taxonomy.embedTaxonomyinNestedGrid] Embeding local biomes in grid ")
+        logger.info("[biospytial.gbif.taxonomy.embedTaxonomyinNestedGrid] Embeding local biomes in grid ")
         m = meshes.levels[mesh]
         tablename = meshes.table_names[mesh]
         #taxs_list = embedTaxonomyInGrid(biosphere,m,upper_level_grid_id=id_in_grid,generate_tree_now=generate_tree_now)
@@ -683,7 +685,7 @@ class Taxonomy:
                 ni = float(len(self.forest[level_i].get_leaves()))
                 d_ij = 1 - ((nj - ni)/(nj + ni))
                 if d_ij < 0:
-                    logger.info("[biospatial.gbif.taxonomy.distanceToTree] The parent tree has less nodes than the current one.\n Perhaps the analysis is not spatially nested.")
+                    logger.info("[biospytial.gbif.taxonomy.distanceToTree] The parent tree has less nodes than the current one.\n Perhaps the analysis is not spatially nested.")
                 gradLevel.append(d_ij)
             Jacobian.append(gradLevel)
         if update_inner_attributes:
@@ -721,7 +723,7 @@ class Taxonomy:
             try:
                 return pdi[level]
             except:
-                logger.error("[biospatial.gbif.taxonomy.distanceToTree] level selected non existent (used %s)" %level)
+                logger.error("[biospytial.gbif.taxonomy.distanceToTree] level selected non existent (used %s)" %level)
                
     def getFreqs(self,sel='richness'):
         """
@@ -772,10 +774,10 @@ class Taxonomy:
                 values = map(lambda tup : tup[0] / float(tup[1]) , zip(val2,val1))
                 color = 'g'
             else:
-                logger.error("[biospatial.gbif.taxonomy.getFreq] Selection not valid")
+                logger.error("[biospytial.gbif.taxonomy.getFreq] Selection not valid")
                 return False
         except:
-            logger.error("[biospatial.gbif.taxonomy.getFreq] No data values for richness. \n Hint: Run Summary()")
+            logger.error("[biospytial.gbif.taxonomy.getFreq] No data values for richness. \n Hint: Run Summary()")
             return False
         fig, ax = plt.subplots()
         bar = ax.bar(ind, values, width, color=color)
@@ -1066,7 +1068,7 @@ class Taxonomy:
             string = "%s-%s:%s:%s" %(name,self.gid,extent,res)
             return string
         except:
-            logger.error("[biospatial.gbif.taxonomy.GriddedTaxonomy] \n The total geometry area has not been defined. Try running mergeGeometries first")
+            logger.error("[biospytial.gbif.taxonomy.GriddedTaxonomy] \n The total geometry area has not been defined. Try running mergeGeometries first")
             raise Exception("Geometry Extent has not been instantiated")
             return None 
         
@@ -1343,7 +1345,7 @@ class GriddedTaxonomy:
             string = "%s:%s:%s:%s" %(self.parent_id,name,extent,res)
             return string
         except:
-            logger.error("[biospatial.gbif.taxonomy.GriddedTaxonomy] \n The total geometry area has not been defined. Try running mergeGeometries first")
+            logger.error("[biospytial.gbif.taxonomy.GriddedTaxonomy] \n The total geometry area has not been defined. Try running mergeGeometries first")
             raise Exception("Geometry Extent has not been instantiated")
             return None   
 
@@ -1519,7 +1521,7 @@ class GriddedTaxonomy:
                     layer.CreateFeature(feat)
                     feat = geom = None
                 except:
-                    logger.error('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n\n Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                    logger.error('[biospytial.gbif.taxonomy.GriddedTaxonomy]\n\n Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
                     return False
             return True
         
@@ -1561,7 +1563,7 @@ class GriddedTaxonomy:
                     layer.CreateFeature(feat)
                     feat = geom = None
                 except:
-                    logger.error('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n\n Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                    logger.error('[biospytial.gbif.taxonomy.GriddedTaxonomy]\n\n Something occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
                     return False
             return True        
         
@@ -1583,7 +1585,7 @@ class GriddedTaxonomy:
             for idx,tax in enumerate(self.taxonomies):
                 #logger.debug("there are %s taxonomies" %(len(self.taxonomies)))
                 if not isinstance(tax.JacobiM,np.matrixlib.defmatrix.matrix):
-                    logger.error("[biospatial.gbif.taxonomy.NestedTaxonomy] \nDistance Matrix hasn't been defined.\n Try running NestedTaxonomy.getDistancesAtLevel(level) or GriddedTaxonomy.distanceToTree(arbitray_tax_forest)")
+                    logger.error("[biospytial.gbif.taxonomy.NestedTaxonomy] \nDistance Matrix hasn't been defined.\n Try running NestedTaxonomy.getDistancesAtLevel(level) or GriddedTaxonomy.distanceToTree(arbitray_tax_forest)")
                     raise Exception("Distance Matrix not defined")
                     return None
                 else:
@@ -1600,7 +1602,7 @@ class GriddedTaxonomy:
                         layer.CreateFeature(feat)
                         feat = geom = None
                     except:
-                        logger.error('[biospatial.gbif.taxonomy.NestedTaxonomy] \nSomething occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                        logger.error('[biospytial.gbif.taxonomy.NestedTaxonomy] \nSomething occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
                         return False
             return True
         
@@ -1616,7 +1618,7 @@ class GriddedTaxonomy:
             for idx,tax in enumerate(self.taxonomies):
                 #logger.debug("there are %s taxonomies" %(len(self.taxonomies)))
                 if not isinstance(tax.intrinsicM,np.matrixlib.defmatrix.matrix):
-                    logger.error("[biospatial.gbif.taxonomy.NestedTaxonomy] \n Intrinsic Matrix hasn't been defined.")
+                    logger.error("[biospytial.gbif.taxonomy.NestedTaxonomy] \n Intrinsic Matrix hasn't been defined.")
                     raise Exception("Intrinsic Matrix not defined")
                     return None
                 else:
@@ -1633,7 +1635,7 @@ class GriddedTaxonomy:
                         layer.CreateFeature(feat)
                         feat = geom = None
                     except:
-                        logger.error('[biospatial.gbif.taxonomy.NestedTaxonomy] \nSomething occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
+                        logger.error('[biospytial.gbif.taxonomy.NestedTaxonomy] \nSomething occurred with the feature definition \n See: gbif.GriddedTaxonomy.createShapefile')
                         return False
             return True
 
@@ -1646,7 +1648,7 @@ class GriddedTaxonomy:
         driver = ogr.GetDriverByName('Esri Shapefile')
         ds = driver.CreateDataSource(store+self.grid_name)
         layer = ds.CreateLayer(option, None, ogr.wkbPolygon)
-        logger.info('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n Creating Shapefile %s' %option+'@'+store)
+        logger.info('[biospytial.gbif.taxonomy.GriddedTaxonomy]\n Creating Shapefile %s' %option+'@'+store)
         
         if option == 'richness':
             selectRichness(layer)  
@@ -1657,7 +1659,7 @@ class GriddedTaxonomy:
             selectShannon(layer)
         # Save and close everything
         ds = layer = feat = geom = None
-        logger.info('[biospatial.gbif.taxonomy.GriddedTaxonomy]\n Shapefile Created in %s/%s' %(store,option))
+        logger.info('[biospytial.gbif.taxonomy.GriddedTaxonomy]\n Shapefile Created in %s/%s' %(store,option))
         return True
     
     def mergeGeometries(self):
@@ -1692,7 +1694,7 @@ class GriddedTaxonomy:
         
         .. note:: 
             taxonomic_forest is a dictionary which uses keys: ['sp','gns','fam','ord','cls','phy','kng'] 
-            This can be seen in the biospatial.settings file.
+            This can be seen in the biospytial.settings file.
          
         Parameters
         ==========
@@ -1896,7 +1898,7 @@ class NestedTaxonomy:
         An instance of the gbif database, could be a prefiltered one (e.g. a biome )
     start_level : int
         Id of the parent mesh level.
-        See: gbif.mesh.NestedMesh and biospatial.settings
+        See: gbif.mesh.NestedMesh and biospytial.settings
     end_level : int
         Id for the bottom of the stack
     generate_tree_now : Boolean (flag default: True)
@@ -2003,7 +2005,7 @@ class NestedTaxonomy:
         levels.sort()
         a = str(levels)
         
-        logger.info('[biospatial.gbif.taxonomy.NestedTaxonomy]\n Available Levels %s' %a)
+        logger.info('[biospytial.gbif.taxonomy.NestedTaxonomy]\n Available Levels %s' %a)
         return a
         
     def getDistancesAtLevel(self,level,foreign_forest='Top'):
@@ -2034,7 +2036,7 @@ class NestedTaxonomy:
             mats = self.levels[level].distanceToTree(parent_forest)
             return mats
         except:
-            logger.error('[biospatial.gbif.taxonomy.NestedTaxonomy] \nSomethng went wrong. Perhaps the selected level doesn\'t exist for this NestedTaxonomy')
+            logger.error('[biospytial.gbif.taxonomy.NestedTaxonomy] \nSomethng went wrong. Perhaps the selected level doesn\'t exist for this NestedTaxonomy')
             return None
         
     def getMaximumDistances(self):

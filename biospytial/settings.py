@@ -73,7 +73,7 @@ DATABASES = {
         'NAME': 'gbif',
         'USER': 'juan',
         'PASSWORD': 'y0sh1t0',
-        'HOST': 'localhost'
+        'HOST': '148.88.197.8'
         
     #local
         #'NAME' : 'masterthesis',                      

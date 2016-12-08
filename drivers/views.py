@@ -32,7 +32,7 @@ __status__ = "Prototype"
 
 
 import logging
-logger = logging.getLogger('biospatial.gbif.views')
+logger = logging.getLogger('biospytial.gbif.views')
 
 
 def ExtractDataFromCSVFile(request):
@@ -59,7 +59,7 @@ def ExtractDataFromCSVFile(request):
     """
 
     import ipdb
-    from biospatial.settings import CSVABSOLUTEPATH
+    from biospytial.settings import CSVABSOLUTEPATH
     import drivers.populate as populate
     
     response = HttpResponse()

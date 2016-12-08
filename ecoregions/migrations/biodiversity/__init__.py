@@ -5,7 +5,7 @@ Models for GBIF objects.
 
 """
 
-__author__ = "Juan Escamilla M—lgora"
+__author__ = "Juan Escamilla Mï¿½lgora"
 __copyright__ = "Copyright 2014, JEM"
 __license__ = "GPL"
 __version__ = "2.2.1"
@@ -25,7 +25,7 @@ import dateutil.parser
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 
 
-logger = logging.getLogger('biospatial.gbif')
+logger = logging.getLogger('biospytial.gbif')
 
 def richness(taxonomy):
     """

@@ -4,14 +4,14 @@ from django.contrib import admin
 from gbif import views
 from drivers import views as driver_views
 from django.conf.urls.static import static
-from biospatial import settings
+from biospytial import settings
 
 
 
 
 urlpatterns = [
     # Examples:
-    # url(r'^$', 'biospatial.views.home', name='home'),
+    # url(r'^$', 'biospytial.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),

@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 """
 This file is intented to implent selected specific comand-line tools for using it with QGIS.
-This will be an interfce between biospatial and QGIS
+This will be an interfce between biospytial and QGIS
 
 """
 
@@ -26,14 +26,14 @@ import os
 import sys
 
 #sys.path.append('/home/username/www/site_folder')
-os.environ['DJANGO_SETTINGS_MODULE'] = 'biospatial.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'biospytial.settings'
 
 
 from django.utils import unittest
 
 from django.test.client import Client
 
-logger = logging.getLogger('biospatial.actionsQGIS')
+logger = logging.getLogger('biospytial.actionsQGIS')
 
 from ete2 import Tree, TreeStyle
 

@@ -21,6 +21,9 @@ from py2neo import Graph
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
 
 # Load data from a Country polygon 
@@ -32,9 +35,9 @@ import matplotlib.pyplot as plt
 
 
 import logging
-logger = logging.getLogger('biospatial.raster_api.tools')
+logger = logging.getLogger('biospytial.raster_api.tools')
 
-g = Graph()
+g = Graph(uri)
 
 
 from django.contrib.gis.geos import GEOSGeometry

@@ -30,9 +30,11 @@ from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 from py2neo import Node, Relationship, Graph
 
 
-logger = logging.getLogger('biospatial.mesh')
-
-graph = Graph()
+logger = logging.getLogger('biospytial.mesh')
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
+graph = Graph(uri)
 
 
 
@@ -96,10 +98,10 @@ def initMesh(Intlevel,scales=scales):
     m = copy.deepcopy(mesh)
     try:
         m._meta.db_table = scales[Intlevel]
-        logger.info('[biospatial.mesh] table name %s' %m._meta.db_table)
+        logger.info('[biospytial.mesh] table name %s' %m._meta.db_table)
         return m
     except:
-        logger.error("[biospatial.mesh] Selected zoom level not implemented yet")
+        logger.error("[biospytial.mesh] Selected zoom level not implemented yet")
         return False
 
 class mesh(models.Model):
@@ -330,7 +332,7 @@ class NestedMesh:
         try:
             cell1 = m1.objects.get(id=id)
         except:
-            logger.error("[biospatial.mesh] Selected id does not exist in selected grid")
+            logger.error("[biospytial.mesh] Selected id does not exist in selected grid")
             return None
         self.levels[start_level] = cell1
         self.table_names[start_level] = m1._meta.db_table

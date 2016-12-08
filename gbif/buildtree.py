@@ -25,7 +25,7 @@ __status__ = "Prototype"
 from ete2 import Tree
 import logging
 
-logger = logging.getLogger('biospatial.gbif.buildtree')
+logger = logging.getLogger('biospytial.gbif.buildtree')
 
 
         

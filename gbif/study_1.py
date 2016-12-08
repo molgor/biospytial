@@ -32,7 +32,7 @@ from gbif.taxonomy import NestedTaxonomy
 from gbif.models import Occurrence
 from ecoregions.models import Ecoregion
 from django.contrib.gis.db.models import Union, Min
-import biospatial.settings as settings
+import biospytial.settings as settings
 import pandas as pn
 from sketches.models import Country
 

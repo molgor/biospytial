@@ -24,7 +24,7 @@ import dateutil.parser
 
 
 
-logger = logging.getLogger('biospatial.gbif')
+logger = logging.getLogger('biospytial.gbif')
 # Create your tests here.
 
 

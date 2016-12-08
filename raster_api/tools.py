@@ -27,9 +27,12 @@ from django.conf import settings
 from matplotlib import pyplot as plt
 import logging
 from py2neo import Node, Relationship, Graph
-graph = Graph()
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
+graph = Graph(uri)
 from osgeo import gdal
-logger = logging.getLogger('biospatial.raster_api.tools')
+logger = logging.getLogger('biospytial.raster_api.tools')
 from numpy.ma import masked_where,masked_equal
 import numpy
 

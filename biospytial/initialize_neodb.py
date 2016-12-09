@@ -2,8 +2,10 @@
 # While adding more data it would be necessary to put the corresponding constraints here
 
 from py2neo import Graph
-
-g = Graph()
+from biospytial import settings
+neoparams = settings.NEO4J_DATABASES['default']
+uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
+g = Graph(uri)
 
 # For Taxonomies
 g.schema.create_uniqueness_constraint("Root","id")

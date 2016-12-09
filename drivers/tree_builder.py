@@ -51,8 +51,9 @@ def extractOccurrencesFromTaxonomies(list_of_taxonomies):
     """
     Updates the occurrences attribute to fit all the occurrences of the given list of taxonomies
     """
-
-    g = Graph()
+    neoparams = settings.NEO4J_DATABASES['default']
+    uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
+    g = Graph(uri)
     occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_of_taxonomies ]])
 
     occurrences = map(lambda o : o.asOccurrenceOGM(),occurrences)

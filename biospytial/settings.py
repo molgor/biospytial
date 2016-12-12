@@ -15,7 +15,7 @@ import os,sys
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 CONDA_PREFIX = '/home/juan/miniconda2/envs/biospytial'
-
+CONDA_PREFIX = '/opt/conda/envs/biospytial'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 

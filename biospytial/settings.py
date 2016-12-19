@@ -307,7 +307,7 @@ GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'
 
 #CSVABSOLUTEPATH = "/home/juan/gbif/all_gbif/splitted_gbif/header"
 CSVABSOLUTEPATH = "/home/juan/gbif/mexico/bigdatabase_subset/pieces"
-
+CSVABSOLUTEPATH = "/RawDataCSV"
 ## KEYS FOR WRITING AS PROPERTIES IN THE NEo4j NODE OCCURRENCE
 
 OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','latitude','longitude','event_date','geom']

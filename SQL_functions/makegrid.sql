@@ -59,6 +59,6 @@ BEGIN
 END;
 $BODY$
   LANGUAGE plpgsql VOLATILE
-  COST 100;
-ALTER FUNCTION mesh.makegrid(geometry, integer)
-  OWNER TO juan;
+--  COST 100;
+--ALTER FUNCTION mesh.makegrid(geometry, integer)
+--  OWNER TO juan;

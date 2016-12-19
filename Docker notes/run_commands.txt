@@ -18,15 +18,11 @@ Example: docker run -d -P --name algo -v /mountingpoint [training/webapp] [pytho
 
 
 ## build container named postgis with shared data volume
-docker run -i -t -v /home/juan/D --name postgis molgor/postgis_biospytial
-
-### Run postgres as daemon inside the container
-
-/usr/lib/postgresql/9.4/bin/postgres -D /etc/postgresql/9.4/main/
+docker run -i -t -v /home/juan/DataVolumes:/DataVolumes  --name postgis molgor/postgis_biospytial bash
 
 
 ## Run the database postgis in the container
-docker run -v /home/juan/DataVolumes:/DataVolumes -v /home/juan/RawDataCSV:/RawDataCSV -d --name postgis molgor/postgis_biospytial /bin/sh -c "/root/startPostgres"
+docker run -v /home/juan/DataVolumes:/DataVolumes  -d --name postgis molgor/postgis_biospytial /bin/sh -c "/root/startPostgres"
 
-
-
+## Run the docker biospytial
+docker run --name biospytial --rm -v /home/juan/RawDataCSV:/RawDataCSV -t -i molgor/biospytial bash

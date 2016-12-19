@@ -1,0 +1,32 @@
+# This notes are for running Docker Containers.
+
+* Docker Pull to retrive an image
+## This is to use a downloaded image as a new project.
+* Docker tag [container Id] user/branch:version 
+
+## Docker RUn
+docker run -i -t user/image bash
+-- Means run the bash command interactively from the image user/image -t means to allocate a tty
+
+-d option means to dettach i.e. runs in background
+
+
+## Mounting data volumes
+The -v option multiple times if you're about to mount several volumes.
+
+Example: docker run -d -P --name algo -v /mountingpoint [training/webapp] [python app.py]
+
+
+## build container named postgis with shared data volume
+docker run -i -t -v /home/juan/D --name postgis molgor/postgis_biospytial
+
+### Run postgres as daemon inside the container
+
+/usr/lib/postgresql/9.4/bin/postgres -D /etc/postgresql/9.4/main/
+
+
+## Run the database postgis in the container
+docker run -v /home/juan/DataVolumes:/DataVolumes -d --name postgis molgor/postgis_biospytial /bin/sh -c "/root/startPostgres"
+
+
+

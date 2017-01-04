@@ -81,7 +81,7 @@ def ExtractDataFromCSVFile(request):
     
     try:
         #dictionary_csv,_file = populate.CSVReadfrom(Abspath)
-        ipdb.set_trace()
+        #ipdb.set_trace()
         dictionary_csv = populate.CSVLoadfrom(Abspath,with_delimiter=str(delimiter))
 
     except:

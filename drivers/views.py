@@ -75,13 +75,13 @@ def ExtractDataFromCSVFile(request):
         response.status_code = 400
         return response
     
-    PATH = settings.CSVABSOLUTEPATH
+    PATH = CSVABSOLUTEPATH
     Abspath = PATH + '/' + filename
     html = "Filename to analysed will be: %s" %Abspath
     
     try:
         #dictionary_csv,_file = populate.CSVReadfrom(Abspath)
-
+        
         dictionary_csv = populate.CSVLoadfrom(Abspath,with_delimiter=str(delimiter))
 
     except:

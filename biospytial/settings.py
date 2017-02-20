@@ -27,7 +27,7 @@ DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = ['172.17.0.3']
+ALLOWED_HOSTS = ['172.17.0.3','localhost']
 
 # Application definition
 
@@ -69,12 +69,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
         #'django.db.backends.postgresql_psycopg2',
-        'NAME': 'gbif',
+        'NAME': 'biospytial',
         'USER': 'biospytial',
         'PASSWORD': 'biospytial.',
         #'HOST': '148.88.197.8'
-        'HOST' : '172.17.0.2'
-        
+        #'HOST' : '172.17.0.2'
+        'HOST':'postgis'
     #local
         #'NAME' : 'masterthesis',                      
         #'USER' : 'juan',
@@ -107,9 +107,13 @@ DATABASES = {
 
 NEO4J_DATABASES = {
     'default' : {
-        'HOST':'148.88.197.8',
+        #'HOST':'148.88.197.8',
+        'HOST':'neo4j',
         'PORT':7474,
-        'ENDPOINT':'/db/data'
+        'ENDPOINT':'/db/data',
+        'USERNAME':'neo4j',
+        'PASSWORD':'perro'
+        
     }
 }
 
@@ -143,7 +147,7 @@ LOGGING = {
             'formatter': 'simple'
         },
         'gbif.taxonomy':{
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },

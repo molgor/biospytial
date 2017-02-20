@@ -1,0 +1,20 @@
+delimiter = ','
+ls
+filename='xaa'
+from biospytial.settings import CSVABSOLUTEPATH
+import drivers.populate as populate
+PATH = CSVABSOLUTEPATH
+Abspath = PATH + '/' + filename
+Abspath
+dictionary_csv = populate.CSVLoadfrom(Abspath,with_delimiter=str(delimiter))
+dictionary_csv
+len(dictionary_csv)
+from gbif.models import Occurrence_CSV
+populate.instantiateOccurrence(dictionary_csv[0])
+cosas = map(lambda l : populate.instantiateOccurrence(l), dictionary_csv)
+cosas
+cosas[0]
+cosas[1]
+cosas[1].insertOccurrence()
+map(lambda c : c.insertOccurrence(c),cosas)
+map(lambda c : c.insertOccurrence(),cosas)

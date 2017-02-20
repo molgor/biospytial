@@ -260,15 +260,15 @@ def instantiateOccurrence(keyvalues):
     occ.insertOccurrence()
     return occ
 
-def createOccurrenceFromCSVFile(list_csv_dic):
+def createOccurrenceFromCSVFile(list_csv_dic,numcores=2):
     #listoccs = []
     
 
-    p = Pool(4)
+    p = Pool(numcores)
     listoccs = p.map( instantiateOccurrence,list_csv_dic)
     p.close()
     #for row in list_csv_dic:
-
+    
         #listoccs.append(occ)
         #f.close()   
     #f.close()

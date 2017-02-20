@@ -73,7 +73,7 @@ def doitall(list_of_taxonomies,rastermodels):
     n = len(list_of_taxonomies)
     for i,tax in enumerate(list_of_taxonomies):
         try:
-            tax.ingestAllDataInNeo(rastermodels,with_raster=True)
+            tax.ingestAllDataInNeo(rastermodels,with_raster=False)
         except:
             logger.error("Something occurred with taxonomy: %s"%i)
         logger.info("Processed: %s"%(float(i)/n))

@@ -1,0 +1,20 @@
+#!/bin/bash
+# This script will install the mesh types and functions in the database.
+# You have to have a database called Biospytial (or change accordingly) with postgis 2.x
+# Created by:
+# Juan M. Escamilla
+# 25/04/2016
+# Modified: 26/01/2017
+
+# Arguments: $1 HOST_IP_ADDR $2 User
+# $2 : username 
+
+# First Create Schema GRID
+psql -d biospytial -f create_schema.sql -h $1 -U $2
+# Make Grid
+psql -d biospytial -f makegrid.sql -h $1 -U $2
+# Install build grid
+psql -d biospytial -f buildgrid.sql -h $1 -U $2
+# Install build grid on
+psql -d biospytial -f buildgridon.sql -h $1 -U $2
+

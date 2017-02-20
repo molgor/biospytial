@@ -41,3 +41,38 @@ Currently the entire GBIF database is mirrored
 
 Bios`py`tial uses the Django framework to build complex object representation of
  biological occurrences.
+## 
+# Biospytial
+## A Computer tool for modelling biodiversity patterns in space and time.
+## Juan Escamilla Mólgora 
+## Last modified: 29/01/2017
+
+## Installation
+The suite is currently installed in a Docker container. (molgor/biospytial)
+It uses a ne4j and a postgis backend that can be found in the molgor reprositoryin the Docker Hub.
+
+## Run postgis backend container
+## Use the following command to run the Postgis backend.
+docker run \
+    --name=postgis \
+    --network=biospytial_network \
+    -it \
+    --publish=5432:5432 \
+    --volume=[postgis_data_PATH]:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/bash
+
+The containers need to be defined in the same network. In this case "biospytial_network"
+
+
+### Install Postgis function.
+Once the postgis container is up and running. Install the functions for buildinggrids.
+There are some SQL functions that are needed to be installed in the Postgis database.
+
+cd SQL_functions ;
+
+./install_mesh_functions.sql localhost biospytial
+
+#### localhost (server name)  biospytial (user name) 
+
+

@@ -583,10 +583,12 @@ class Occurrence_CSV(models.Model):
         Return True if validation is correct. False otherwise. See log file if it's the case.
         """
         
-        fields =  self._meta.get_all_field_names()
+        #fields =  self._meta.get_all_field_names()
+        fields = [f.name for f in self._meta.get_fields()]
         status = []
         for f in fields:
-            internalType = self._meta.get_field_by_name(f)[0].get_internal_type()
+            #internalType = self._meta.get_field_by_name(f)[0].get_internal_type()
+            internalType = self._meta.get_field(f).get_internal_type()
             if (isinstance(getattr(self,f),str) or isinstance(getattr(self, f), unicode)) and ('Char' not in internalType):
                 msg = "Non character type found in: %s but need to be: %s \n Casting feature..." %(getattr(self,f),internalType)
                 logger.info(msg)

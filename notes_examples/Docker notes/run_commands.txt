@@ -1,0 +1,87 @@
+# This notes are for running Docker Containers.
+
+* Docker Pull to retrive an image
+## This is to use a downloaded image as a new project.
+* Docker tag [container Id] user/branch:version 
+
+## Docker RUn
+docker run -i -t user/image bash
+-- Means run the bash command interactively from the image user/image -t means to allocate a tty
+
+-d option means to dettach i.e. runs in background
+
+
+## Mounting data volumes
+The -v option multiple times if you're about to mount several volumes.
+
+Example: docker run -d -P --name algo -v /mountingpoint [training/webapp] [python app.py]
+
+
+## build container named postgis with shared data volume
+docker run -i -t -v /home/juan/DataVolumes:/DataVolumes  --name postgis molgor/postgis_biospytial bash
+
+
+## Run the database postgis in the container
+docker run -v /home/juan/DataVolumes:/DataVolumes  -d --name postgis molgor/postgis_biospytial /bin/sh -c "/root/startPostgres" --rm
+## In my mac
+
+docker run \
+    --name=postgis \
+    --network=biospytial_network \
+    -d \
+    --rm \
+    --publish=5432:5432 \
+    --volume=/Users/juan/Biospytial/gbif_data/postgisdata:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+
+
+##Console
+docker run \
+    --name=postgis \
+    --network=biospytial_network \
+    -it \
+    --publish=5432:5432 \
+    --volume=/Users/juan/Biospytial/gbif_data/postgisdata:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/bash
+
+
+
+
+
+
+## Run the docker biospytial
+docker run --name biospytial --rm -v /home/juan/RawDataCSV:/RawDataCSV -t -i molgor/biospytial bash
+
+
+## Biospytial on My Mac with shared repository
+
+docker run \
+   --name=biospytial \
+   --publish=8000:8000 \
+   --rm \
+   --volume=/Users/juan/Biospytial/gbif_data/RawDataCSV:/RawDataCSV \
+   --volume=/Users/juan/git/biospytial/:/apps \
+   --network=biospytial_network \
+   -ti molgor/biospytial bash
+
+
+## Run Neo4J thingy
+
+docker run \
+  --name=neo4j \
+  -d \
+  --env NEO4J_AUTH=none \
+  --rm \
+  --publish=7474:7474 \
+  --publish=7687:7687 \
+  --volume=/Users/juan/Biospytial/gbif_data/neo4j/data:/data \
+  --volume=/Users/juan/Biospytial/gbif_data/neo4j/logs:/logs \
+  --network=biospytial_network \
+  neo4j:3.1
+    
+    
+# Create Network    
+docker network create biospytial_network    
+    

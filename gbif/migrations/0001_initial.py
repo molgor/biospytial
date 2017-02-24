@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name='Occurrence_CSV',
+            name='Occurrence_CSV_4insert',
             fields=[
                 ('id', models.AutoField(db_column=b'id_gbif', primary_key=True, serialize=False)),
                 ('dataset_id', models.TextField(blank=True, null=True)),

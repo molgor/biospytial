@@ -473,7 +473,11 @@ class Occurrence(models.Model):
         return Occurrence
 
 
-class Occurrence_CSV(models.Model):
+###
+## ATENTION:: The name here is for inserting data into the table but it has the same name!
+
+
+class Occurrence_CSV_4insert(models.Model):
     chars = {'l1':15,'l2':15,'l3':25,'l4':100,'l5':60,'l6':70,'l7':100}
     #     id_gbif = models.IntegerField()
     id = models.AutoField(primary_key=True, db_column="id_gbif")

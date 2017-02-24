@@ -1,0 +1,29 @@
+= Installation Notes
+
+This document explains how to install the Biospytial full suite including the Postgres and Neo4J backends.
+
+The system uses a customised version of Postgres/Postgis and Neo4J that are available in https://hub.docker.com/r/molgor: 
+
+First initialize the Posgis container and Database as explained in the documentation. 
+
+Or simply run:
+    docker run \
+    --name=postgis \
+    --net=biospytial_network \
+    -d \
+    --publish=5432:5432 \
+    --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/sh -c "bash INITIALISATION_NOTES"
+    
+Once the file structure has been built, start the postgis container as normal.
+
+    docker run \
+    --name=postgis \
+    --net=biospytial_network \
+    -d \
+    --publish=5432:5432 \
+    --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+        

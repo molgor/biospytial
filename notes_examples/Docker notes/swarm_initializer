@@ -1,0 +1,89 @@
+# Swarm Initialiser
+
+These notes are for initialize and join a SWARM docker orchestration.
+
+## INit the Swarm
+     docker swarm init --advertise-addr 10.42.17.241
+     
+To add a worker to this swarm, run the following command:
+
+    docker swarm join \
+    --token SWMTKN-1-5j3l1efcn7in08u56sykjj9eri8xfbgsrjmenrg6s6sx5r8i14-0hysd8gq67k58faxspf1gskmi \
+    10.42.17.241:2377
+    
+
+
+Note:
+	Everything is taken from here.
+
+#####
+## Random notes	
+
+## Create a service with some replicas
+    
+    docker service create   --name my-web   --publish 8080:80   --replicas 2   nginx
+
+## Modify a service to include a new port for publishing
+    docker service update --publish 8124:80/udp my-web
+
+## Get information from the node
+    docker service inspect --format="{{json .Endpoint.Spec.Ports}}" my-web
+
+## Get information of the processes
+    docker service ps my-web
+
+## Remove a service in the swarm
+    docker service rm my-web
+
+
+## Inspect service (ochestration)
+    docker service inspect --pretty my-web
+
+
+## Drain Nodes (turn off a node for maintenance or scaling)
+    docker node update --availability drain pyrocephalus 
+    docker node update --availability active pytocephalus
+
+
+
+
+#####################################################
+##### SWARM RUNS ################################
+#####################################################
+
+## Initialise an overlay network
+
+docker network create --driver overlay --attachable  biospytial_network
+
+
+docker service create \
+    --name=postgis \
+    --network=biospytial_network \
+    --replicas=1 \
+    --publish=5432:5432 \
+    --mount='type=volume,src=mexico-database,dst=/DataVolumes' \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+    
+
+docker service create \
+    --name=biospytial \
+    --publish=8000:8000 \
+    --network=biospytial_network \
+    -t \
+    molgor/biospytial 
+
+
+*****    
+docker service create \
+    --name=postgis \
+    --network=biospytial_network \
+    --replicas=1 \
+    --publish=5432:5432 \
+    --constraint="node.hostname==panthera" \
+    --mount='type=bind,src=/home/juan/DataVolumesBank/postgis,dst=/DataVolumes' \
+    molgor/postgis_biospytial \
+	/bin/sh -c "/root/startPostgres"
+    
+
+	         

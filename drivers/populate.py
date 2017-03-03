@@ -172,7 +172,7 @@ def CSVLoad(csvDictReader):
     """
     Loads a CSV file obtained by GBIF into biospytial Occurrence objects
     """
-    from gbif.models import Occurrence_CSV as Occurrence
+    from gbif.models import Occurrence_CSV_4insert as Occurrence
     l = []
     for i in range(100):
         t = csvDictReader.next()
@@ -249,7 +249,7 @@ WKT_lancanshire = "POLYGON((-2.80557791795337286 54.06638106541203825,-2.6534215
 
 #CSVPATH = "/home/juan/gbif/0024366-151016162008034.csv"
 
-from gbif.models import Occurrence_CSV
+from gbif.models import Occurrence_CSV_4insert as  Occurrence_CSV
 from multiprocessing import Pool
 
 
@@ -260,7 +260,7 @@ def instantiateOccurrence(keyvalues):
     occ.insertOccurrence()
     return occ
 
-def createOccurrenceFromCSVFile(list_csv_dic,numcores=2):
+def createOccurrenceFromCSVFile(list_csv_dic,numcores=1):
     #listoccs = []
     
 

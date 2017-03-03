@@ -126,8 +126,9 @@ docker run \
    --name=biospytial \
    --publish=8000:8000 \
    --rm \
-   --volume=/juan/RawDataCSV:/RawDataCSV \
+   --volume=/home/juan/RawDataCSV:/RawDataCSV \
    --volume=/home/juan/git-projects/biospytial:/apps \
+   --volume=/mnt/data1:/mnt/data1 \
    --net=biospytial_network \
    -ti molgor/biospytial bash
 
@@ -136,8 +137,11 @@ docker run \
    --name=biospytial \
    --publish=8000:8000 \
    --rm \
+   --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+   --env DISPLAY=unix$DISPLAY \
    --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
    --volume=/home/juan/git-projects/biospytial:/apps \
+   --volume=/mnt/data1:/mnt/data1 \
    --net=biospytial_network \
    -ti molgor/biospytial bash
 
@@ -181,5 +185,27 @@ docker run \
   --volume=/home/juan/DataVolumesBank/neo4j/logs:/logs \
   --net=biospytial_network \
   neo4j:3.1
+
+
+#####################################################
+##### SWARM EXAMPLES ################################
+#####################################################
+
+docker service create \
+    --name=postgis \
+    --publish=5432:5432 \
+    --replicas=1 \
+    --mount type=bind,source=/home/juan/DataVolumesBank/postgis,target=/DataVolumes \
+    -d \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+
+
+
+
+
+
+
+
 
     

@@ -1,0 +1,178 @@
+# Container initialisation commands
+
+## Create Network  
+This configuration has been used to use within a Docker instance (i.e. in one machine)  
+    
+    docker network create biospytial_network    
+
+###########################################################
+## Neo4J Graph-DataBase
+
+### For linux
+    docker run \
+    --name=neo4j \
+    --detach \
+    --env NEO4J_AUTH=none \
+    --publish=7474:7474 \
+    --publish=7687:7687 \
+    --volume=/home/juan/DataVolumesBank/neo4j/data:/data \
+    --volume=/home/juan/DataVolumesBank/neo4j/logs:/logs \
+    --net=biospytial_network \
+    neo4j:3.1
+    
+##########################################################
+### For linux server
+    docker run \
+    --name=neo4j \
+    --detach \
+    --env NEO4J_AUTH=none \
+    --publish=7474:7474 \
+    --publish=7687:7687 \
+    --volume=/home/juan/DataVolumesBank/neo4j/data:/data \
+    --volume=/home/juan/DataVolumesBank/neo4j/logs:/logs \
+    --net=biospytial_network \
+    neo4j:3.1
+########################################################### 
+### For Mac
+docker run \
+  --name=neo4j \
+  --detach \
+  --env NEO4J_AUTH=none \
+  --rm \
+  --publish=7474:7474 \
+  --publish=7687:7687 \
+  --volume=/Users/juan/Biospytial/gbif_data/neo4j/data:/data \
+  --volume=/Users/juan/Biospytial/gbif_data/neo4j/logs:/logs \
+  --net=biospytial_network \
+  neo4j:3.1
+    
+#############################################################
+
+
+
+
+######################################################################
+######################################################################
+## Postgis initialisation
+
+### Initialise database  (only for building the files structure)
+    docker run \
+    --name=postgis \
+    --net=biospytial_network \
+    -d \
+    --publish=5432:5432 \
+    --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/sh -c "bash INITIALISATION_NOTES"
+#######################################################################
+
+
+
+### Interactive administration (SHELL)
+
+#### For Linux
+    docker run \
+    --name=postgis \
+    --net=biospytial_network \
+    -it \
+    --publish=5432:5432 \
+    --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/bash
+#### For Mac
+    docker run \
+    --name=postgis \
+    --network=biospytial_network \
+    -it \
+    --publish=5432:5432 \
+    --volume=/Users/juan/Biospytial/gbif_data/postgisdata:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/bash
+#########################################################################
+
+
+#########################################################################
+#########################################################################
+#########################################################################
+### Run Postgis Daemon 
+
+    docker run \
+    --name=postgis \
+    --net=biospytial_network \
+    -d \
+    --publish=5432:5432 \
+    --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+
+##############################################
+## In my mac
+docker run \
+    --name=postgis \
+    --network=biospytial_network \
+    -d \
+    --rm \
+    --publish=5432:5432 \
+    --volume=/Users/juan/Biospytial/gbif_data/postgisdata:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+###########################################################################
+
+###########################################################################
+### Data Container Volume
+###########################################################################
+    docker create \
+    --name=mexico-database \
+    --net=biospytial_network \
+    --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/true
+###########################################################################
+
+    docker run \
+    --name=postgis \
+    --net=biospytial_network \
+    -d \
+    --publish=5432:5432 \
+    --volumes-from=mexico-database \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+
+
+
+
+
+############################################################################
+############################################################################
+############################################################################
+## Biospytial App!
+ 
+### Biospytial on Linux with shared repository and Xorg
+    docker run \
+    --name=biospytial \
+    --publish=8000:8000 \
+    --rm \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --env DISPLAY=unix$DISPLAY \
+    --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
+    --volume=/home/juan/git-projects/biospytial:/apps \
+    --volume=/mnt/data1:/mnt/data1 \
+    --net=biospytial_network \
+    -ti molgor/biospytial bash    
+    
+
+
+### Biospytial on My Mac with shared repository
+    docker run \
+    --name=biospytial \
+    --publish=8000:8000 \
+    --rm \
+    --volume=/Users/juan/Biospytial/gbif_data/RawDataCSV:/RawDataCSV \
+    --volume=/Users/juan/git/biospytial/:/apps \
+    --network=biospytial_network \
+    -ti molgor/biospytial bash
+
+
+
+
+

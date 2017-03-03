@@ -66,13 +66,10 @@ docker service create \
     /bin/sh -c "/root/startPostgres"
     
 
-docker service create \
-    --name=biospytial \
-    --publish=8000:8000 \
-    --network=biospytial_network \
-    -t \
-    molgor/biospytial 
 
+
+########################################################
+#### Postgis
 
 *****    
 docker service create \
@@ -84,6 +81,58 @@ docker service create \
     --mount='type=bind,src=/home/juan/DataVolumesBank/postgis,dst=/DataVolumes' \
     molgor/postgis_biospytial \
 	/bin/sh -c "/root/startPostgres"
+
+
+
     
+#####################################
+#### Biospytial
+
+******
+docker service create \
+    --name=biospytial \
+    --publish=8000:8000 \
+    --network=biospytial_network \
+    --mount='type=bind,src=/mnt/data1/RawDataCSV,dst=/RawDataCSV' \
+    --mount='type=bind,src=/home/juan/git-projects/biospytial,dst=/apps' \
+    --mount='type=bind,src=/mnt/data1,dst=/mnt/data1' \
+    --mount='type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix' \
+    --env DISPLAY=unix$DISPLAY \
+    --constraint="node.hostname==pyrocephalus" \
+    -t \
+    molgor/biospytial 
+  
+  
+######################################
+#### Neo4J
+
+******
+docker service create \
+    --name=neo4j \
+    --constraint="node.hostname==panthera" \
+    --env NEO4J_AUTH=none \
+    --publish=7474:7474 \
+    --publish=7687:7687 \
+    --mount='type=bind,src=/opt/DataVolumesFast/neo4j/data,dst=/data' \
+    --mount='type=bind,src=/opt/DataVolumesFast/neo4j/logs,dst=/logs' \
+    --network=biospytial_network \
+    neo4j:3.1
+
+############################################
+### RUN BIOSPYTIAL IN A CONTAINER
+
+docker run \
+    --name=biospytial \
+    --publish=8000:8000 \
+    --rm \
+    --net=biospytial_network \
+    --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
+    --volume=/home/juan/git-projects/biospytial:/apps \
+    --volume=/mnt/data1:/mnt/data1 \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --env DISPLAY=unix$DISPLAY \
+    -ti molgor/biospytial bash   
+
+
 
 	         

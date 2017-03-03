@@ -152,12 +152,12 @@ docker run \
     --name=biospytial \
     --publish=8000:8000 \
     --rm \
-    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
-    --env DISPLAY=unix$DISPLAY \
+    --net=biospytial_network \
     --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
     --volume=/home/juan/git-projects/biospytial:/apps \
     --volume=/mnt/data1:/mnt/data1 \
-    --net=biospytial_network \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --env DISPLAY=unix$DISPLAY \
     -ti molgor/biospytial bash    
     
 

@@ -181,9 +181,11 @@ class mesh(models.Model):
         """
         
         properties = self.describeWithDict()
-        properties['name'] = self.id
-        n0 = Node("Cell",**properties)
-        old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
+        scalename = self.getScaleLevel().split(".").pop().replace("\"","")
+        properties['name'] = str(self.id)
+        n0 = Node("Cell",scalename,**properties)
+        #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
+        old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
         if old_node:
             return old_node
         else:
@@ -383,7 +385,7 @@ class MexMesh(models.Model):
     
     class Meta:
         managed = False
-        db_table = "grid4km-mex"
+        db_table = 'mesh"."mex4km'
 
     def getScaleLevel(self):
         """
@@ -431,8 +433,10 @@ class MexMesh(models.Model):
         
         properties = self.describeWithDict()
         properties['name'] = str(self.id)
-        n0 = Node("Cell",**properties)
-        old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
+        scalename = self.getScaleLevel().split(".").pop().replace("\"","")
+        n0 = Node("Cell",scalename,**properties)
+        #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])        
+        old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
         if old_node:
             return old_node
         else:

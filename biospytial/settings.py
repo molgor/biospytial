@@ -72,9 +72,18 @@ DATABASES = {
         'NAME': 'biospytial',
         'USER': 'biospytial',
         'PASSWORD': 'biospytial.',
-        #'HOST': '148.88.197.8'
+        #'HOST':'panthera',
+        'HOST': '10.42.17.241',
+        #'NAME': 'gbif',
+        #'USER': 'juan',
+        #'PASSWORD': 'biospytial.',
+        #'HOST': '148.88.197.8',
+
         #'HOST' : '172.17.0.2'
-        'HOST':'postgis'
+        #'HOST':'postgis'
+        ## My server in ISS
+        
+       
     #local
         #'NAME' : 'masterthesis',                      
         #'USER' : 'juan',
@@ -187,16 +196,15 @@ LOGGING = {
 #             'level': 'DEBUG',                                   
 #         
 #         },
-#          'biospytial.gbif.taxonomy' :{
-#             'handlers': ['gbif.taxonomy'],
-#             'level' : 'DEBUG',
+          'biospytial.gbif.taxonomy' :{
+             'handlers': ['gbif.taxonomy'],
+             'level' : 'DEBUG',
 #             'propagate': False,
-#         },       
-#         'biospytial.raster_api.tools':{
-#             'handlers': ['file_raster'],
-#             'level' : 'DEBUG',
-#         
-#         },
+         },       
+        'biospytial.raster_api.tools':{
+             'handlers': ['console'],
+             'level' : 'DEBUG',         
+         },
 #         'biospytial.mesh.tools':{
 #             'level': 'DEBUG',
 #             'handlers': ['console'],    
@@ -292,13 +300,13 @@ MEX_SCALES = { 0 : 'mesh"."mexico_grid1',
         }
 
 
-MEX_SCALES = {0: 'mesh"."testnested1',
- 1: 'mesh"."testnested2',
- 2: 'mesh"."testnested4',
- 3: 'mesh"."testnested8',
- 4: 'mesh"."testnested16',
- 5: 'mesh"."testnested32',
- 6: 'mesh"."testnested64'}
+# MEX_SCALES = {0: 'mesh"."testnested1',
+#  1: 'mesh"."testnested2',
+#  2: 'mesh"."testnested4',
+#  3: 'mesh"."testnested8',
+#  4: 'mesh"."testnested16',
+#  5: 'mesh"."testnested32',
+#  6: 'mesh"."testnested64'}
 
 
 #ANALYSIS ON GRID SET: 

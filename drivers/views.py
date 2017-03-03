@@ -66,10 +66,11 @@ def ExtractDataFromCSVFile(request):
     get = request.GET
     
    
-
+    #ipdb.set_trace()
     try:
         filename = get['filename']
         delimiter = get['delimiter']
+        
     except:
         response.content='Bad request. Check GET variable definitions \n. Check filename value %s' %(filename)
         response.status_code = 400
@@ -95,6 +96,7 @@ def ExtractDataFromCSVFile(request):
         #map(lambda o : o.insertOccurrence(),list_objects)
     except:
         html = 'Can\'t insert data in database. Check connection and try again'
+        #ipdb.set_trace()
         response.status_code = 500
         response.content=(html)
         return response

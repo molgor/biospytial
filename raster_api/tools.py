@@ -2,7 +2,7 @@
 #-*- coding: utf-8 -*-
 """
 Raster Data Tool
-===========
+================
 ..  
 Tools for converting, analysing and migrate to Neo4J
 
@@ -193,29 +193,53 @@ class RasterData(object):
         
         file_ = path + filename +'.tif'
         try:
-            data = self.rasterdata.bands[0].data()
+            data = self.rasterdata.bands
         except AttributeError:
-            logger.error("No data defined. Run getRaster first.")
-            return None
+            logger.warning("No data defined. Loading data from the server this can take some time.")
+            try:
+                self.getRaster()
+            except:
+                logger.error("Unexpected Error. There was a problem with the server or this object's geographical extension")
+                return None
+            data = self.rasterdata.bands
+        
+
         NoData_value = self.rasterdata.bands[0].nodata_value
         proj_str = str(self.rasterdata.srs.wkt)
         driver = gdal.GetDriverByName('GTiff')
         geotransform = self.rasterdata.geotransform
-        ysize,xsize = data.shape 
         
-        output = driver.Create(file_,xsize,ysize,1,gdal.GDT_Int16)
-        outband = output.GetRasterBand(1)
+        ## converting data to numpy n-array    
+        data = map(lambda b : b.data(),data)
+        data = numpy.array(data)
         
-        #outband.SetRasterColorInterpretation(gdal.GCI_PaletteIndex)
+        ## Verifying structure 
+        dim = len(data.shape)
+        if dim == 3:
+            nbands, ysize, xsize = data.shape
+        else:
+            ysize,xsize = data.shape
+            nbands = 1 
+
+                
+        
+        output = driver.Create(file_,xsize,ysize,nbands,gdal.GDT_Int16)
+                
+        for i in range(nbands):
+            outband = output.GetRasterBand(i+1)
+            outband.WriteArray(data[i])
+        
+        output.SetProjection(proj_str)
+        outband.SetNoDataValue(NoData_value)
+        output.SetGeoTransform(geotransform)
+        output.FlushCache()
         
         
+        #outband.SetRasterColorInterpretation(gdal.GCI_PaletteIndex)  
         #ct = gdal.ColorTable()
-        # Some examples
-        
+        # Some examples 
         #ct.CreateColorRamp(0,(0,0,0),127,(255,0,0))
         #ct.CreateColorRamp(0,(0,0,255),255,(255,0,0))
-        
-        
         #import ipdb; ipdb.set_trace()
         #ct.SetColorEntry( 0, (0, 0, 0, 255) )
         #ct.SetColorEntry( 20, (0, 255, 0, 255) )
@@ -223,20 +247,7 @@ class RasterData(object):
         #ct.SetColorEntry( 60, (255, 0, 255, 255) )
         # Set the color table for your band
         #import ipdb; ipdb.set_trace()
-            
-
-
-
-        
-        outband.WriteArray(data)
-        #outband.SetColorTable(ct)
-        
-        
-        output.SetProjection(proj_str)
-        outband.SetNoDataValue(NoData_value)
-        output.SetGeoTransform(geotransform)
-        output.FlushCache()
-        
+        #outband.SetColorTable(ct)    
         return None
 
 

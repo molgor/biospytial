@@ -27,11 +27,11 @@ mexgrid = MexMesh.objects.filter(cell__intersects=mexico_border.geom)
 
 #migrateGridToNeo(MexMesh,intersect_with=mexico_border.geom)
 
-for i in range(1,7):
-    m =  initMesh(i)
-    c = m.objects.all()[0]
-    logger.info("INSERTING MESH %s IN THE GRAPH DATABASE"%c.getScaleLevel())
-    del(m)
-    
-    
+# for i in range(1,7):
+#     m =  initMesh(i)
+#     c = m.objects.all()[0]
+#     logger.info("INSERTING MESH %s IN THE GRAPH DATABASE"%c.getScaleLevel())
+#     del(m)
+#     
+#     
     

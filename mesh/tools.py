@@ -221,7 +221,7 @@ def create_square_from_two_points(a_point,b_point):
     return new_dic
     
 
-def migrateGridToNeo(mesh,create_unique_index=True,intersect_with=''):
+def migrateGridToNeo(mesh,create_unique_index=False,intersect_with=''):
     """
     Stores the mesh in the Neo4j database.
     Only the grid! Of course not the taxonomy
@@ -230,7 +230,9 @@ def migrateGridToNeo(mesh,create_unique_index=True,intersect_with=''):
     if create_unique_index:
         logger.info("Creating Unique Index")
         try:
-            graph.schema.create_uniqueness_constraint("Cell","id")
+            # give a clean name for layername
+            layername = mesh.objects.all()[0].getScaleLevel().split(".").pop().replace("\"","")
+            graph.schema.create_uniqueness_constraint(layername,"id")
         except: 
             logger.warning("Index presumably created already")
     if intersect_with:

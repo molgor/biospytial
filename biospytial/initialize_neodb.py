@@ -18,7 +18,6 @@ g.schema.create_uniqueness_constraint("Genus","keyword")
 g.schema.create_uniqueness_constraint("Specie","keyword")
 g.schema.create_uniqueness_constraint("Occurrence","pk")
 
-# For mesh
-g.schema.create_uniqueness_constraint("Cell","uniqueid")
+
 
 

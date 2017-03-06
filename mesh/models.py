@@ -28,19 +28,196 @@ from django.conf import settings
 import dateutil.parser
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 from py2neo import Node, Relationship, Graph
-
-
-logger = logging.getLogger('biospytial.mesh')
+from django.forms import ModelForm
 from biospytial import settings
+
+
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 graph = Graph(uri)
-
-
-
-from django.forms import ModelForm
-
 scales = settings.MESH_TABLENAMESPACE
+logger = logging.getLogger('biospytial.mesh')
+
+
+
+
+
+
+    
+
+# The abstract class
+class mesh(models.Model):
+    """
+    .. mesh:
+    A Mesh or Grid is a regular two dimensional geometric object
+    conformed by a regular tessellation of equal area square tiles.
+    
+    Let A be a connected and bounded set in a Surface E.
+    A tessellation T on A is a set of polygons Pi such that:
+    
+        * Pi is contained in A for all i
+        * Union(Pi) covers A
+        * Pi intersects Pj is empty for if i is not equal to j.
+    
+    This is the standard mesh model that defines a grid.
+    ..
+    
+    Attributes
+    ==========
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    id = models.AutoField(primary_key=True, db_column="gid")
+    #row = models.IntegerField()
+    #col = models.IntegerField()
+    cell = models.PolygonField()
+    objects = models.GeoManager()
+    
+    class Meta:
+        managed = False
+        # Experiment
+        abstract =  True
+        #db_table = 'mesh\".\"braz_grid2048a'
+
+    def getScaleLevel(self):
+        """
+        ..
+        Gives the current level name
+        ..
+        
+        Returns
+        =======
+        
+        tablename : string
+            The table name of the current grid. As stored in the database.
+            
+        """
+        #inv_map = {v: k for k, v in self.scales.items()}
+        sc = self._meta.db_table
+        self.tablename = sc
+        return sc
+      
+    def __repr__(self):
+        """
+        String representation of the object 
+        """
+        a = "<Cell id: %s --%s />" %(self.id,self.cell)
+        return a
+    
+    
+    def describeWithDict(self):
+        """
+        Returns a dictionary with the properties
+        """
+        latitude = self.cell.centroid.y
+        longitude = self.cell.centroid.x
+        id = int(self.id)
+        indexillo = "%s-%s:%s" %(str(id),str(longitude),str(latitude))
+        tablename = self.getScaleLevel()
+        indexillo = "%s:%s" %(str(tablename),str(id))
+        d = {"id":id , "cell":self.cell.wkt, "latitude":latitude, "longitude":longitude ,"uniqueid":indexillo}
+        return d
+    
+    
+    def getNode(self,writeDB=False):
+        """
+        Returns a Node data structure that can be put into Neo4j
+        """
+        
+        properties = self.describeWithDict()
+        scalename = self.getScaleLevel().split(".").pop().replace("\"","")
+        properties['name'] = str(self.id)
+        n0 = Node("Cell",scalename,**properties)
+        #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
+        old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
+        if old_node:
+            return old_node
+        else:
+            if writeDB:
+                graph.create(n0)
+            return n0
+
+
+# Experiment, using abstract tables
+    ## Use the settings.MESH_TABLENAMESPACE as reference.
+## If needed. Insert here new Class definitions for new meshes (different scales or geographical extend)
+
+## These are concrete classes / table for a certain scale.
+
+
+class Mesh1(mesh):  
+    class Meta:
+        managed = False
+        # Experiment
+        db_table = settings.MESH_TABLENAMESPACE[1]
+        
+
+class Mesh2(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[2]
+
+class Mesh3(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[3]
+       
+class Mesh4(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[4]
+
+class Mesh5(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[5]
+        
+class Mesh6(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[6]
+        
+class Mesh7(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[7]                
+
+class Mesh8(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[8]
+        
+class Mesh9(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[9]
+        
+class Mesh10(mesh):
+    class Meta:
+        managed = False
+        db_table = settings.MESH_TABLENAMESPACE[10]                 
+        
+        
+def getNeighboursOf(cell,mesh):
+    # old version ns = mesh.objects.filter(cell__touches=cell.cell)
+    vonNeuman = mesh.objects.filter(cell__touches=cell.cell).filter(cell__overlaps_above=cell.cell).filter(cell__overlaps_below=cell.cell) | mesh.objects.filter(cell__touches=cell.cell).filter(cell__overlaps_left=cell.cell).filter(cell__overlaps_right=cell.cell)
+    
+    
+    return vonNeuman
+
+
+def bindNeighboursOf(cell,mesh,writeDB=False):
+    node_c = cell.getNode(writeDB=writeDB)
+    ns = getNeighboursOf(cell, mesh)
+    
+    nodes = map(lambda n: n.getNode(writeDB=writeDB),ns)
+    rels = [Relationship(node_c,"IS_NEIGHBOUR_OF",n) for n in nodes]
+    if writeDB:
+        created = [graph.create(rel) for rel in rels]
+    return rels
+
+
 
 def initMesh(Intlevel,scales=scales):
     """
@@ -93,125 +270,43 @@ def initMesh(Intlevel,scales=scales):
         An instance of Mesh with the specified resolution (level)
     """
 
-    import copy
+#     import copy
+# 
+#     m = copy.deepcopy(mesh)
+#     try:
+#         m._meta.db_table = scales[Intlevel]
+#         logger.info('[biospytial.mesh] table name %s' %m._meta.db_table)
+#         return m
+#     except:
+#         logger.error("[biospytial.mesh] Selected zoom level not implemented yet")
+#         return False
 
-    m = copy.deepcopy(mesh)
-    try:
-        m._meta.db_table = scales[Intlevel]
-        logger.info('[biospytial.mesh] table name %s' %m._meta.db_table)
-        return m
-    except:
-        logger.error("[biospytial.mesh] Selected zoom level not implemented yet")
-        return False
+    i = Intlevel
+    if i == 1:
+        return Mesh1
+    elif (i == 2):
+        return Mesh2
+    elif (i == 3):
+        return Mesh3
+    elif (i == 4):
+        return Mesh4
+    elif (i == 5):
+        return Mesh5
+    elif (i == 6):
+        return Mesh6
+    elif (i == 7):
+        return Mesh7
+    elif (i == 8):
+        return Mesh8
+    elif (i == 9):
+        return Mesh9
+    elif (i == 10):
+        return MexMesh
 
-class mesh(models.Model):
-    """
-    .. mesh:
-    A Mesh or Grid is a regular two dimensional geometric object
-    conformed by a regular tessellation of equal area square tiles.
-    
-    Let A be a connected and bounded set in a Surface E.
-    A tessellation T on A is a set of polygons Pi such that:
-    
-        * Pi is contained in A for all i
-        * Union(Pi) covers A
-        * Pi intersects Pj is empty for if i is not equal to j.
-    
-    This is the standard mesh model that defines a grid.
-    ..
-    
-    Attributes
-    ==========
-    id : int Unique primary key
-        This is the identification number of each element in the mesh.
-    
-    """
-    id = models.AutoField(primary_key=True, db_column="gid")
-    #row = models.IntegerField()
-    #col = models.IntegerField()
-    cell = models.PolygonField()
-    objects = models.GeoManager()
-    
-    class Meta:
-        managed = False
-        db_table = 'mesh\".\"braz_grid2048a'
-
-    def getScaleLevel(self):
-        """
-        ..
-        Gives the current level name
-        ..
-        
-        Returns
-        =======
-        
-        tablename : string
-            The table name of the current grid. As stored in the database.
-            
-        """
-        #inv_map = {v: k for k, v in self.scales.items()}
-        sc = self._meta.db_table
-        self.tablename = sc
-        return sc
-      
-    def __repr__(self):
-        """
-        String representation of the object 
-        """
-        a = "<Cell id: %s --%s />" %(self.id,self.cell)
-        return a
     
     
-    def describeWithDict(self):
-        """
-        Returns a dictionary with the properties
-        """
-        latitude = self.cell.centroid.y
-        longitude = self.cell.centroid.x
-        id = int(self.id)
-        indexillo = "%s-%s:%s" %(str(id),str(longitude),str(latitude))
-        
-        d = {"id":id , "cell":self.cell.wkt, "latitude":latitude, "longitude":longitude ,"uniqueid":indexillo}
-        return d
     
     
-    def getNode(self,writeDB=False):
-        """
-        Returns a Node data structure that can be put into Neo4j
-        """
-        
-        properties = self.describeWithDict()
-        scalename = self.getScaleLevel().split(".").pop().replace("\"","")
-        properties['name'] = str(self.id)
-        n0 = Node("Cell",scalename,**properties)
-        #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
-        old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
-        if old_node:
-            return old_node
-        else:
-            if writeDB:
-                graph.create(n0)
-            return n0
-        
-        
-def getNeighboursOf(cell,mesh):
-    # old version ns = mesh.objects.filter(cell__touches=cell.cell)
-    vonNeuman = mesh.objects.filter(cell__touches=cell.cell).filter(cell__overlaps_above=cell.cell).filter(cell__overlaps_below=cell.cell) | mesh.objects.filter(cell__touches=cell.cell).filter(cell__overlaps_left=cell.cell).filter(cell__overlaps_right=cell.cell)
-    
-    
-    return vonNeuman
-
-
-def bindNeighboursOf(cell,mesh,writeDB=False):
-    node_c = cell.getNode(writeDB=writeDB)
-    ns = getNeighboursOf(cell, mesh)
-    
-    nodes = map(lambda n: n.getNode(writeDB=writeDB),ns)
-    rels = [Relationship(node_c,"IS_NEIGHBOUR_OF",n) for n in nodes]
-    if writeDB:
-        created = [graph.create(rel) for rel in rels]
-    return rels
-
 
 # def getNeighbours(cell_center,mesh):
 #     neighbours = mesh.objects.filter(cell__touches=cell_center.cell)
@@ -231,62 +326,7 @@ def bindNeighboursOf(cell,mesh,writeDB=False):
 #     return nn
 
 
-class grid(models.Model):
-    """
-    .. mesh:
-    A Mesh or Grid is a regular two dimensional geometric object
-    conformed by a regular tessellation of equal area square tiles.
-    
-    Let A be a connected and bounded set in a Surface E.
-    A tessellation T on A is a set of polygons Pi such that:
-    
-        * Pi is contained in A for all i
-        * Union(Pi) covers A
-        * Pi intersects Pj is empty for if i is not equal to j.
-    
-    This is the standard mesh model that defines a grid.
-    ..
-    
-    Attributes
-    ==========
-    id : int Unique primary key
-        This is the identification number of each element in the mesh.
-    
-    """
-    id = models.AutoField(primary_key=True, db_column="gid")
-    row = models.IntegerField()
-    col = models.IntegerField()
-    cell = models.PolygonField()
-    objects = models.GeoManager()
-    
-    class Meta:
-        managed = False
-        db_table = 'grid025mex'
 
-    def getScaleLevel(self):
-        """
-        ..
-        Gives the current level name
-        ..
-        
-        Returns
-        =======
-        
-        tablename : string
-            The table name of the current grid. As stored in the database.
-            
-        """
-        #inv_map = {v: k for k, v in self.scales.items()}
-        sc = self._meta.db_table
-        self.tablename = sc
-        return sc
-      
-    def __repr__(self):
-        """
-        String representation of the object 
-        """
-        a = "<Cell id: %s --%s />" %(self.id,self.cell)
-        return a
     
 
     
@@ -444,5 +484,60 @@ class MexMesh(models.Model):
                 graph.create(n0)
             return n0
         
-
+# class grid(models.Model):
+#     """
+#     .. mesh:
+#     A Mesh or Grid is a regular two dimensional geometric object
+#     conformed by a regular tessellation of equal area square tiles.
+#     
+#     Let A be a connected and bounded set in a Surface E.
+#     A tessellation T on A is a set of polygons Pi such that:
+#     
+#         * Pi is contained in A for all i
+#         * Union(Pi) covers A
+#         * Pi intersects Pj is empty for if i is not equal to j.
+#     
+#     This is the standard mesh model that defines a grid.
+#     ..
+#     
+#     Attributes
+#     ==========
+#     id : int Unique primary key
+#         This is the identification number of each element in the mesh.
+#     
+#     """
+#     id = models.AutoField(primary_key=True, db_column="gid")
+#     row = models.IntegerField()
+#     col = models.IntegerField()
+#     cell = models.PolygonField()
+#     objects = models.GeoManager()
+#     
+#     class Meta:
+#         managed = False
+#         db_table = 'grid025mex'
+# 
+#     def getScaleLevel(self):
+#         """
+#         ..
+#         Gives the current level name
+#         ..
+#         
+#         Returns
+#         =======
+#         
+#         tablename : string
+#             The table name of the current grid. As stored in the database.
+#             
+#         """
+#         #inv_map = {v: k for k, v in self.scales.items()}
+#         sc = self._meta.db_table
+#         self.tablename = sc
+#         return sc
+#       
+#     def __repr__(self):
+#         """
+#         String representation of the object 
+#         """
+#         a = "<Cell id: %s --%s />" %(self.id,self.cell)
+#         return a
         

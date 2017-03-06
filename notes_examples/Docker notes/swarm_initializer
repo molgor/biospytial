@@ -133,6 +133,18 @@ docker run \
     --env DISPLAY=unix$DISPLAY \
     -ti molgor/biospytial bash   
 
+##################
+## In my Mac
+    docker run \
+    --name=biospytial \
+    --publish=8000:8000 \
+    --rm \
+    --volume=/Users/juan/Biospytial/gbif_data/RawDataCSV:/RawDataCSV \
+    --volume=/Users/juan/git/biospytial/:/apps \
+    --network=biospytial_network \
+    -ti molgor/biospytial bash
+
+
 
 
 	         

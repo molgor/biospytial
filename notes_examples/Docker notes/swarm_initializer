@@ -98,7 +98,7 @@ docker service create \
     --mount='type=bind,src=/mnt/data1,dst=/mnt/data1' \
     --mount='type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix' \
     --env DISPLAY=unix$DISPLAY \
-    --constraint="node.hostname==pyrocephalus" \
+    --constraint="node.hostname==moby" \
     -t \
     molgor/biospytial 
   

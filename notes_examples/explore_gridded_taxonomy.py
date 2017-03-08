@@ -18,6 +18,14 @@ from sketches.models import Country
 mexico_border = Country.objects.filter(name__contains='exico').get()
 mexbiosphere = biosphere.filter(geom__intersects=mexico_border.geom)
 
+## Select one cell of one thing
+
+m7 = initMesh(7)
+center = m7.objects.get(id=8023)
+
+g = GriddedTaxonomy(biosphere,center)
+
+
 #m1mexico = m1.objects.filter(cell__intersects=mexico_border.geom)
 
 #mexgrid = MexMesh.objects.filter(cell__intersects=mexico_border.geom)
@@ -25,16 +33,3 @@ mexbiosphere = biosphere.filter(geom__intersects=mexico_border.geom)
 
 #gg = GriddedTaxonomy(biosphere=mexbiosphere,mesh=m1mexico)
 
-<<<<<<< HEAD
-=======
-#migrateGridToNeo(MexMesh,intersect_with=mexico_border.geom)
-
-# for i in range(1,7):
-#     m =  initMesh(i)
-#     c = m.objects.all()[0]
-#     logger.info("INSERTING MESH %s IN THE GRAPH DATABASE"%c.getScaleLevel())
-#     del(m)
-#     
-#     
->>>>>>> 289c71560bbf46824d420ca0325635a3b104c7eb
-    

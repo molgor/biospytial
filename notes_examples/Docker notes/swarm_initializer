@@ -94,7 +94,7 @@ docker service create \
     --publish=8000:8000 \
     --network=biospytial_network \
     --mount='type=bind,src=/mnt/data1/RawDataCSV,dst=/RawDataCSV' \
-    --mount='type=bind,src=/home/juan/git-projects/biospytial,dst=/apps' \
+    --mount='type=bind,src=/mnt/data1/git-projects/biospytial,dst=/apps' \
     --mount='type=bind,src=/mnt/data1,dst=/mnt/data1' \
     --mount='type=bind,src=/tmp/.X11-unix,dst=/tmp/.X11-unix' \
     --env DISPLAY=unix$DISPLAY \
@@ -127,7 +127,7 @@ docker run \
     --rm \
     --net=biospytial_network \
     --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
-    --volume=/home/juan/git-projects/biospytial:/apps \
+    --volume=/mnt/data1/git-projects/biospytial:/apps \
     --volume=/mnt/data1:/mnt/data1 \
     --volume=/tmp/.X11-unix:/tmp/.X11-unix \
     --env DISPLAY=unix$DISPLAY \

@@ -27,7 +27,7 @@ from django.test import TestCase
 from django.conf import settings
 import dateutil.parser
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
-from py2neo import Node, Relationship, Graph
+from py2neo import Node, Relationship, Graph, NodeSelector
 from django.forms import ModelForm
 from biospytial import settings
 
@@ -38,6 +38,7 @@ graph = Graph(uri)
 scales = settings.MESH_TABLENAMESPACE
 logger = logging.getLogger('biospytial.mesh')
 
+node_selector = NodeSelector(graph)
 
 
 
@@ -130,7 +131,8 @@ class mesh(models.Model):
         properties['name'] = str(self.id)
         n0 = Node("Cell",scalename,**properties)
         #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])
-        old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
+        #old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
+        old_node = node_selector.select(scalename,uniqueid=properties['uniqueid']).first()
         if old_node:
             return old_node
         else:
@@ -476,7 +478,8 @@ class MexMesh(models.Model):
         scalename = self.getScaleLevel().split(".").pop().replace("\"","")
         n0 = Node("Cell",scalename,**properties)
         #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])        
-        old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
+        #old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
+        old_node = node_selector.select(scalename,uniqueid=properties['uniqueid']).first()
         if old_node:
             return old_node
         else:

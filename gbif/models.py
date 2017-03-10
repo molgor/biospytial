@@ -31,21 +31,27 @@ import logging
 from django.test import TestCase
 from django.conf import settings
 import dateutil.parser
-from py2neo import Node, Relationship, Graph
+from py2neo import Node, Relationship, Graph,NodeSelector
 from django.conf import settings
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
-
-
+from django.forms import ModelForm
+# Model for GBIF as given by Raúl Jimenez
+from biospytial import settings
 import drivers.graph_models as graphmodel
 import ipdb;
 
 logger = logging.getLogger('biospytial.gbif')
-from biospytial import settings
+
+
+
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 graph = Graph(uri)
-from django.forms import ModelForm
-# Model for GBIF as given by Raúl Jimenez
+node_selector = NodeSelector(graph)
+
+
+
+
 
 
 class Occurrence_CSV_Verbatim(models.Model):
@@ -331,7 +337,10 @@ class Occurrence(models.Model):
         
         ## HERE INSERT CODE FOR CHECKING IF A NEW ATTRIBUTE IS ADDED.
         
-        node2 = graph.find_one("Occurrence",property_key='pk',property_value=self.pk)
+        #node2 = graph.find_one("Occurrence",property_key='pk',property_value=self.pk)
+        node2 = node_selector.select("Occurrence",pk=self.pk).first()
+        
+        
         if node2:
             logger.debug("node existss")
             return node2
@@ -882,7 +891,10 @@ class Level(object):
         
         node = Node(*labels,**dictio)
         
-        node2 = graph.find_one(self.levelname,property_key='keyword',property_value=keyword)
+        #node2 = graph.find_one(self.levelname,property_key='keyword',property_value=keyword)
+        node2 = node_selector.select(self.levelname,keyword=keyword).first()
+
+        
         if node2:
             logger.debug("Node exists. \n Aggregating abundance values.")
             #node2['abundance'] += 1

@@ -24,7 +24,7 @@ __email__ ="molgor@gmail.com"
 __status__ = "Prototype"
 
 
-from py2neo import Graph, Relationship 
+from py2neo import Graph, Relationship, NodeSelector 
 from django.test import TestCase
 from django.conf import settings
 import logging
@@ -52,9 +52,10 @@ from biospytial import settings
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 graph_driver = Graph(uri)
+node_selector = NodeSelector(graph_driver)
   
 
-def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,use_id_as_name=True):
+def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,use_id_as_name=True,grid_name='generic'):
     """
     .. embedTaxonomyInGrid:
     This function performs a spatial intersection and initializes Taxonomy objects with the geometry given by a mesh.
@@ -90,12 +91,14 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
     """
     taxs_list = []
     if isinstance(mesh,GeoQuerySet):
+        # modified to cast a list and load in memory
+        #cells = list(mesh.values('id','cell').all())
         cells = mesh.values('id','cell').all()
         try:
             biomes_mesh = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),cell['cell'],cell['id']),cells)
         except:
             logger.error("[biospytial.gbif.taxonomy.embedTaxonomyinGrid] biosphere is not a Geoquery instance model of GBIF")
-        taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2],build_tree_now=generate_tree_now), biomes_mesh )
+        taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2],build_tree_now=generate_tree_now,grid_label_name=grid_name), biomes_mesh )
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospytial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
@@ -104,7 +107,7 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         return taxs_list 
     else:
         cell = mesh.cell
-        taxs = Taxonomy(biosphere.filter(geom__intersects=cell),geometry=cell,id=upper_level_grid_id,build_tree_now=generate_tree_now)
+        taxs = Taxonomy(biosphere.filter(geom__intersects=cell),geometry=cell,id=upper_level_grid_id,build_tree_now=generate_tree_now,grid_label_name=grid_name)
         #logger.info(type(taxs_list))
         if generate_tree_now:
             logger.info("[biospytial.gbif.taxonomy.embedTaxonomyinGrid] generate_tree_now flag activated. Generating tree as well")
@@ -385,7 +388,7 @@ class Taxonomy:
     
     
     """
-    def __init__(self,biome,geometry='',id=-999,build_tree_now=True):
+    def __init__(self,biome,geometry='',id=-999,build_tree_now=True,grid_label_name='generic'):
         """
         Biome is a query set of the gbif occurrence instance modulus a geometry in Earth.
         Geometry is a geometric attribute that could be independent of biome.
@@ -445,6 +448,7 @@ class Taxonomy:
             }        
         
         ## New attributes added for the new version
+        self.grid_label_name = grid_label_name
         self.TREE = None
         self.associated_data = {}
         
@@ -549,7 +553,7 @@ class Taxonomy:
       
         
         if not self.richness:
-            richness = calculateRichness()
+            richness = self.calculateRichness()
         
         
         entropies = {}
@@ -822,6 +826,7 @@ class Taxonomy:
 
         
         """
+        logger.warn("This method has been deprecated and should not be used.\n Instead use: generateTREE()")
         if deep:
             self.obtainPartialTrees(only_id=only_id)
         else:
@@ -1200,7 +1205,9 @@ class Taxonomy:
         It will bind the cell to all the nodes in the tree.
         To make efficient the further querying
         """
-        nodecell = graph_driver.find_one("Cell","id",self.gid)
+        #nodecell = graph_driver.find_one(self.grid_label_name,"id",self.gid)
+        ## changed to nodeselector
+        nodecell = node_selector.select(self.grid_label_name,id=self.gid).first()
         coto = self.TREE.bindExternalNode(nodecell)
         return nodecell
 
@@ -1222,7 +1229,7 @@ class Taxonomy:
         
         if with_raster:
             for raster_model in list_raster_models:
-                logger.info("Characterizing Occurrences")
+                logger.info("Matching Environmental model: %s"%raster_model.neo_label_name)
                 self.bindRasterNodeOccurrence(raster_model,writeDB=True)
         
         # releae ram
@@ -1288,14 +1295,14 @@ class GriddedTaxonomy:
         Saves memory.        
     
     """
-    def __init__(self,biosphere,mesh,upper_level_grid_id=0,generate_tree_now=False,grid_name='N.A.',use_id_as_name=True):
+    def __init__(self,biosphere,mesh,grid_name,upper_level_grid_id=0,generate_tree_now=False,use_id_as_name=True):
         """
         Constructor.
         This function performs a spatial intersection and initialize Taxonomy objects with the geometry given by [mesh].
         [biosphere] is a Geoqueryset of gbif occurrences. [mesh] is a mesh type.
         Upper_level_grid is a parameter reserved for the id of the parent mesh cell.
         """
-        self.taxonomies = embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=upper_level_grid_id,generate_tree_now=generate_tree_now,use_id_as_name=use_id_as_name)
+        self.taxonomies = embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=upper_level_grid_id,generate_tree_now=generate_tree_now,use_id_as_name=use_id_as_name,grid_name=grid_name)
         self.extent = 'N.A.'
         self.area = 'N.A'
         self.biomeGeometry = 'N.A'
@@ -1870,7 +1877,10 @@ class GriddedTaxonomy:
         """
         l = []
         for t in self.taxonomies:
-            nodecell = graph_driver.find_one("Cell","id",t.gid)
+            
+            #nodecell = graph_driver.find_one("Cell","id",t.gid)
+            #nodecell = graph_driver.find_one(self.grid_name,"id",t.gid)
+            nodecell = node_selector.select(self.grid_name,id=self.gid).first()
             coto = t.TREE.bindExternalNode(nodecell)
             l.append(coto)
         return l

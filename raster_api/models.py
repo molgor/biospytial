@@ -328,3 +328,5 @@ raster_models_dic = {
 'SolarRadiation' : raster_models[2], 
 'Precipitation' : raster_models[1] 
 }
+
+raster_models.pop(0)

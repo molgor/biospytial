@@ -28,8 +28,8 @@ This configuration has been used to use within a Docker instance (i.e. in one ma
     --env NEO4J_AUTH=none \
     --publish=7474:7474 \
     --publish=7687:7687 \
-    --volume=/home/juan/DataVolumesBank/neo4j/data:/data \
-    --volume=/home/juan/DataVolumesBank/neo4j/logs:/logs \
+    --volume=/opt/DataVolumesFast/neo4j/data:/data \
+    --volume=/opt/DataVolumesFast/neo4j/logs:/logs \
     --net=biospytial_network \
     neo4j:3.1
 ########################################################### 
@@ -47,7 +47,20 @@ docker run \
   neo4j:3.1
     
 #############################################################
+##### FOR NEO$J MANTEINANCE #################################
 
+docker run \
+    --name=neo4j \
+    --detach \
+    --env NEO4J_AUTH=none \
+    --publish=7474:7474 \
+    --publish=7687:7687 \
+    --volume=/opt/DataVolumesFast/neo4j/data:/data \
+    --volume=/opt/DataVolumesFast/neo4j/logs:/logs \
+    --net=biospytial_network \
+    -i \
+    neo4j:3.1 \
+    /bin/bash
 
 
 
@@ -79,6 +92,8 @@ docker run \
     --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
     molgor/postgis_biospytial \
     /bin/bash
+    
+    
 #### For Mac
     docker run \
     --name=postgis \

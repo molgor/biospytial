@@ -26,15 +26,19 @@ from raster_api.aggregates import SummaryStats,aggregates_dict, Union
 from django.conf import settings
 from matplotlib import pyplot as plt
 import logging
-from py2neo import Node, Relationship, Graph
+from py2neo import Node, Relationship, Graph, NodeSelector
 from biospytial import settings
+from osgeo import gdal
+from numpy.ma import masked_where,masked_equal
+import numpy
+
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 graph = Graph(uri)
-from osgeo import gdal
+node_selector = NodeSelector(graph)
+
 logger = logging.getLogger('biospytial.raster_api.tools')
-from numpy.ma import masked_where,masked_equal
-import numpy
+
 
 
 class GDALRasterExtended(GDALRaster):
@@ -268,7 +272,9 @@ class RasterData(object):
                 logger.warn("Band number selected (%s) doesn't exist. Using band one instead."%month)
         
         n0 = Node(class_name,**properties)
-        old_node = graph.find_one(class_name,property_key="uniqueid",property_value=properties['uniqueid'])
+        #old_node = graph.find_one(class_name,property_key="uniqueid",property_value=properties['uniqueid'])
+        old_node = node_selector.select(class_name,uniqueid=properties['uniqueid']).first()
+
         if old_node:
             return old_node
         else:

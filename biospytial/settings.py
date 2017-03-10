@@ -173,14 +173,19 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'simple'
         },
-  
+        'file_insertion': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR+'/logs/insertion_in_neo.log',
+            'formatter': 'verbose'
+        },  
         
     },
     'loggers': {
         'django': {
-            'handlers':['gbif.taxonomy'],
+            'handlers':['console'],
             'propagate': False,
-            'level':'DEBUG',
+            'level':'INFO',
        },
 #         'biospytial.gbif.insertion': {
 #             'handlers': ['file'],
@@ -197,15 +202,20 @@ LOGGING = {
 #             'level': 'DEBUG',                                   
 #         
 #         },
-          'biospytial.gbif.taxonomy' :{
-             'handlers': ['gbif.taxonomy'],
+        'biospytial.gbif.taxonomy' :{
+             'handlers': ['console'],
              'level' : 'DEBUG',
-#             'propagate': False,
+             'propagate': True,
          },       
         'biospytial.raster_api.tools':{
              'handlers': ['console'],
              'level' : 'DEBUG',         
          },
+        'biospytial.insert_taxonomies' :{
+            'handlers' : ['file_insertion'],
+            'level' : 'DEBUG',
+        },
+    
 #         'biospytial.mesh.tools':{
 #             'level': 'DEBUG',
 #             'handlers': ['console'],    

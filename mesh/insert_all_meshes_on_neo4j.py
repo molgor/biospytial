@@ -42,6 +42,6 @@ for i in range(1,11):
     c = m.objects.all()[0]
     logger.info("INSERTING MESH %s IN THE GRAPH DATABASE"%c.getScaleLevel())
     # Ready... Migrate the Mesh
-    migrateGridToNeo(m,intersect_with=mexico_border.geom)
+    migrateGridToNeo(m,intersect_with=mexico_border.geom,create_unique_index=True)
      
     

@@ -31,6 +31,15 @@ from biospytial import settings
 from osgeo import gdal
 from numpy.ma import masked_where,masked_equal
 import numpy
+from django.contrib.gis.db.models.fields import RasterField
+from raster_api.models import intersectWith
+
+
+# register the new lookup
+RasterField.register_lookup(intersectWith)
+
+
+
 
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams

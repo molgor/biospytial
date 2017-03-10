@@ -5,6 +5,7 @@ from mesh.models import MexMesh
 from mesh.tools import migrateGridToNeo
 import logging
 import numpy
+from raster_api.models import raster_models
 
 logger = logging.getLogger('biospytial.insert_taxonomies')
 
@@ -48,17 +49,25 @@ mexmesh3 = mexmesh.filter(id__gt=second_indx).filter(id__lte=last_indx)
 #logger.info("Loading selected cells in memory. This can take some time")
 #cells = list(mexmesh)
 #logger.debug("%s cells loaded"%len(cells))
-#ggg = GriddedTaxonomy(biosphere,mexmesh)
+#ggg = GriddedTaxonomy(biosphere,mexmesh1,"mex4km")
 
 
 
 
 
+def insertFULLTaxonomiesInNeo4J(mesh_subset,biosphere,gridname,num_proc=1):
+    logger.info("Initialising mesh subset %s"%num_proc)
+    ggg = GriddedTaxonomy(biosphere,mesh_subset,gridname)
+    N =len(ggg.taxonomies)
+    for i,taxonomy in enumerate(ggg.taxonomies):
+        taxonomy.ingestAllDataInNeo(raster_models,with_raster=True)
+        perc = i / float(N) * 100
+        logger.info("[PROCESS: %s ] Taxonomy %s inserted. %s / N. Completed: %s"%(num_proc,taxonomy.gid,i,perc))
+    return ggg
 
 
-
-
-
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh1,biosphere,"mex4km",num_proc=1)
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh2,biosphere,"mex4km",num_proc=2)
 
 
 

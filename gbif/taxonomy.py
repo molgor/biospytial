@@ -1231,6 +1231,8 @@ class Taxonomy:
             for raster_model in list_raster_models:
                 logger.info("Matching Environmental model: %s"%raster_model.neo_label_name)
                 self.bindRasterNodeOccurrence(raster_model,writeDB=True)
+        logger.info("Deleting TREE to avoid memory overuse")
+        del(self.TREE)
         
         # releae ram
         """

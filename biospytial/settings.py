@@ -178,7 +178,19 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/insertion_in_neo.log',
             'formatter': 'verbose'
+        },
+        'file_insertion_w1': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR+'/logs/w1_insertion_in_neo.log',
+            'formatter': 'verbose'
         },  
+        'file_insertion_w2': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR+'/logs/w2_insertion_in_neo.log',
+            'formatter': 'verbose'
+        },                     
         
     },
     'loggers': {
@@ -215,7 +227,14 @@ LOGGING = {
             'handlers' : ['file_insertion'],
             'level' : 'DEBUG',
         },
-    
+        'biospytial.insert_taxonomies_worker1' :{
+            'handlers' : ['file_insertion_w1'],
+            'level' : 'DEBUG',
+        },
+        'biospytial.insert_taxonomies_worker2' :{
+            'handlers' : ['file_insertion_w2'],
+            'level' : 'DEBUG',
+        },                     
 #         'biospytial.mesh.tools':{
 #             'level': 'DEBUG',
 #             'handlers': ['console'],    

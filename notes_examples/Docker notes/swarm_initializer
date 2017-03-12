@@ -147,7 +147,7 @@ docker run \
 
 docker run \
     --name=biospytial_replica1 \
-    --publish=8000:8000 \
+    --publish=8001:8001 \
     --rm \
     --net=biospytial_network \
     --volume=/mnt/data1/RawDataCSV:/RawDataCSV \

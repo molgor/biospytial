@@ -1,0 +1,68 @@
+
+####################
+### Create local network
+docker network create biospytial_network_local
+
+####################
+### To leave the swarm
+docker swarm leave
+
+
+####################
+## Neo4J
+### For linux server
+    docker run \
+    --name=neo4j\
+    --detach \
+    --env NEO4J_AUTH=none \
+    --publish=7474:7474 \
+    --publish=7687:7687 \
+    --publish=1337:1337 \
+    --volume=/opt/DataVolumesFast/neo4j/data:/data \
+    --volume=/opt/DataVolumesFast/neo4j/logs:/logs \
+    --net=biospytial_network_local \
+    molgor/neo4j_biospytial
+    
+##### FOR NEO$J MANTEINANCE #################################
+
+docker run \
+    --name=neo4j \
+    --env NEO4J_AUTH=none \
+    --publish=7474:7474 \
+    --publish=7687:7687 \
+    --volume=/opt/DataVolumesFast/neo4j/data:/data \
+    --volume=/opt/DataVolumesFast/neo4j/logs:/logs \
+    --net=biospytial_network_local \
+    -it \
+     molgor/neo4j_biospytial \
+    /bin/bash    
+    
+    
+##############################################################
+### RESTORE DATABASE USING THE MAINTEINANCE MODE
+
+./neo4j-admin load --from=/data/databases/mesh_db.dump --database=graph.db --force    
+############################################################################
+
+### Postgis initialise
+docker run \
+--name=postgis \
+--net=biospytial_network_local \
+-it \
+--publish=5432:5432 \
+--volume=/home/juan/DataVolumesBank/my_postgis_database:/DataVolumes \
+--volume=/mnt/data1:/mnt/data1 \
+molgor/postgis_biospytial \
+/bin/bash
+
+
+docker run \
+    --name=postgis \
+    --net=biospytial_network_local \
+    -d \
+    --publish=5432:5432 \
+    --volume=/home/juan/DataVolumesBank/postgis:/DataVolumes \
+    --volume=/mnt/data1:/mnt/data1 \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres"
+

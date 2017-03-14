@@ -51,14 +51,13 @@ docker run \
 
 docker run \
     --name=neo4j \
-    --detach \
     --env NEO4J_AUTH=none \
     --publish=7474:7474 \
     --publish=7687:7687 \
     --volume=/opt/DataVolumesFast/neo4j/data:/data \
     --volume=/opt/DataVolumesFast/neo4j/logs:/logs \
     --net=biospytial_network \
-    -i \
+    -it \
     neo4j:3.1 \
     /bin/bash
 

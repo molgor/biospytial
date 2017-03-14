@@ -2,7 +2,7 @@
 #manage.py
 
 #Log files
-logs/
+#logs/
 
 *html
 *doctree

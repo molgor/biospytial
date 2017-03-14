@@ -74,7 +74,8 @@ DATABASES = {
         'PASSWORD': 'biospytial.',
         #'HOST':'panthera',
         #'HOST': '10.42.17.241',
-        'HOST':'postgis',
+        'HOST':'postgis_local',
+        #'HOST':'postgis',
         #'NAME': 'gbif',
         #'USER': 'juan',
         #'PASSWORD': 'biospytial.',
@@ -118,7 +119,8 @@ DATABASES = {
 NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
-        'HOST':'neo4j',
+        'HOST':'neo4j_local',
+        #'HOST':'neo4j',
         'PORT':7474,
         'ENDPOINT':'/db/data',
         'USERNAME':'neo4j',
@@ -194,7 +196,7 @@ LOGGING = {
         'file_insertion_w3': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': BASE_DIR+'/logs/w2_insertion_in_neo.log',
+            'filename': BASE_DIR+'/logs/w3_insertion_in_neo.log',
             'formatter': 'verbose'
         },                                      
         

@@ -12,7 +12,7 @@ docker swarm leave
 ## Neo4J
 ### For linux server
     docker run \
-    --name=neo4j\
+    --name=neo4j_local\
     --detach \
     --env NEO4J_AUTH=none \
     --publish=7474:7474 \
@@ -26,7 +26,7 @@ docker swarm leave
 ##### FOR NEO$J MANTEINANCE #################################
 
 docker run \
-    --name=neo4j \
+    --name=neo4j_local \
     --env NEO4J_AUTH=none \
     --publish=7474:7474 \
     --publish=7687:7687 \
@@ -46,7 +46,7 @@ docker run \
 
 ### Postgis initialise
 docker run \
---name=postgis \
+--name=postgis_local \
 --net=biospytial_network_local \
 -it \
 --publish=5432:5432 \
@@ -56,8 +56,11 @@ molgor/postgis_biospytial \
 /bin/bash
 
 
+##############
+#### Daemon
+
 docker run \
-    --name=postgis \
+    --name=postgis_local \
     --net=biospytial_network_local \
     -d \
     --publish=5432:5432 \
@@ -65,4 +68,21 @@ docker run \
     --volume=/mnt/data1:/mnt/data1 \
     molgor/postgis_biospytial \
     /bin/sh -c "/root/startPostgres"
+
+######################################################################
+## Biospytial Client
+docker run \
+    --name=biospytial_local \
+    --publish=8001:8001 \
+    --rm \
+    --net=biospytial_network_local \
+    --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
+    --volume=/mnt/data1/git-projects/biospytial:/apps \
+    --volume=/mnt/data1:/mnt/data1 \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --env DISPLAY=unix$DISPLAY \
+    -ti molgor/biospytial bash 
+
+
+
 

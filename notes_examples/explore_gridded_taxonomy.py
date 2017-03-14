@@ -1,4 +1,4 @@
-from gbif.taxonomy import GriddedTaxonomy
+from gbif.taxonomy import GriddedTaxonomy, NestedTaxonomy
 from gbif.models import Occurrence
 from mesh.models import initMesh
 from mesh.models import MexMesh
@@ -23,7 +23,10 @@ mexbiosphere = biosphere.filter(geom__intersects=mexico_border.geom)
 m7 = initMesh(7)
 center = m7.objects.get(id=8023)
 
-g = GriddedTaxonomy(biosphere,center)
+g = GriddedTaxonomy(biosphere,center,"mex4km")
+nt = NestedTaxonomy(15,biosphere,start_level=3,end_level=6,generate_tree_now=False)
+
+
 
 #continue_cells = m10.objects.filter(id__gt=125828)
 #continue_cells

@@ -246,11 +246,19 @@ LOGGING = {
         'biospytial.insert_taxonomies_worker3' :{
             'handlers' : ['file_insertion_w3'],
             'level' : 'DEBUG',
-        },                       
-#         'biospytial.mesh.tools':{
-#             'level': 'DEBUG',
-#             'handlers': ['console'],    
-#             },
+        },
+         'biospytial.mesh.tools':{
+             'level': 'DEBUG',
+             'handlers': ['console'],
+             'propagate': False    
+             },                 
+        'biospytial.mesh' :{
+            'handlers' : ['console'],
+            'level' : 'DEBUG',
+            'propagate': False
+            
+        },                      
+
 
 },
 }
@@ -328,17 +336,19 @@ BRAZ_SCALES = { 8 : 'mesh\".\"braz_grid8a',
 
 
 
-MEX_SCALES = { 0 : 'mesh"."mexico_grid1',
-        1: 'mesh"."mexico_grid2',
-        2: 'mesh"."mexico_grid4',
-        3: 'mesh"."mexico_grid8',
-        4: 'mesh"."mexico_grid16',
-        5: 'mesh"."mexico_grid32',
-        6: 'mesh"."mexico_grid64',
-        7: 'mesh"."mexico_grid128',
-        8: 'mesh"."mexico_grid256',
-        9: 'mesh"."mexico_grid512',
-        10: 'mesh"."mexico_grid1024'
+MEX_SCALES = { 0 : 'none', 
+        1 : 'mesh"."mexico_grid1',
+        2: 'mesh"."mexico_grid2',
+        3: 'mesh"."mexico_grid4',
+        4: 'mesh"."mexico_grid8',
+        5: 'mesh"."mexico_grid16',
+        6: 'mesh"."mexico_grid32',
+        7: 'mesh"."mexico_grid64',
+        8: 'mesh"."mexico_grid128',
+        9: 'mesh"."mexico_grid256',
+        10: 'mesh"."mexico_grid512',
+        #10: 'mesh"."mexico_grid1024'
+        11: 'mesh"."mex4km'
         }
 
 

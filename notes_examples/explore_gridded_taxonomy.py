@@ -18,13 +18,27 @@ from sketches.models import Country
 mexico_border = Country.objects.filter(name__contains='exico').get()
 mexbiosphere = biosphere.filter(geom__intersects=mexico_border.geom)
 
+
+meshes = map(lambda i : initMesh(i), range(1,12))
+
+
+
 ## Select one cell of one thing
+# m11 = initMesh(11)
+# m10 = initMesh(10)
+# m9 = initMesh(9)
+# m8 = initMesh(8)
+# m7 = initMesh(7)
+# m6 = initMesh(6)
+# m5 = initMesh(5)
+# m4 = initMesh(4)
+# m3 = initMesh(3)
+# m2 = initMesh(2)
+# m1 = initMesh(1)
+#center = m7.objects.get(id=8023)#
 
-m7 = initMesh(7)
-center = m7.objects.get(id=8023)
-
-g = GriddedTaxonomy(biosphere,center,"mex4km")
-nt = NestedTaxonomy(15,biosphere,start_level=3,end_level=6,generate_tree_now=False)
+#g = GriddedTaxonomy(biosphere,center,"mex4km")
+#nt = NestedTaxonomy(1,biosphere,start_level=1,end_level=10,generate_tree_now=False)
 
 
 

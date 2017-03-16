@@ -83,6 +83,16 @@ docker run \
     --env DISPLAY=unix$DISPLAY \
     -ti molgor/biospytial bash 
 
-
+docker run \
+    --name=biospytial_local_replica \
+    --publish=8004:8004 \
+    --rm \
+    --net=biospytial_network_local \
+    --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
+    --volume=/mnt/data1/git-projects/biospytial:/apps \
+    --volume=/mnt/data1:/mnt/data1 \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --env DISPLAY=unix$DISPLAY \
+    -ti molgor/biospytial bash 
 
 

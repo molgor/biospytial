@@ -8,6 +8,7 @@ This module defines the classes and functions of mesh (grid) objects.
 Models for mesh objects. 
 
 """
+import mesh
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2015, JEM"
@@ -74,12 +75,29 @@ class mesh(models.Model):
     #col = models.IntegerField()
     cell = models.PolygonField()
     objects = models.GeoManager()
+
+    #global spatiallevel
+    spatiallevel = 0
+    
     
     class Meta:
-        managed = False
+    #    managed = False
         # Experiment
         abstract =  True
         #db_table = 'mesh\".\"braz_grid2048a'
+
+    @property
+    def parentCell(self):
+        parent = initMesh((self.spatiallevel - 1), scales=scales)
+        try:
+            cells = list(parent.objects.filter(cell__contains=self.cell))
+            cell = cells[0]
+        except AttributeError:
+            logger.info("Root Cell has no parent")
+            cell = None
+        return cell  
+
+
 
     def getScaleLevel(self):
         """
@@ -103,7 +121,8 @@ class mesh(models.Model):
         """
         String representation of the object 
         """
-        a = "<Cell id: %s --%s />" %(self.id,self.cell)
+        scalename = self.getScaleLevel().split(".").pop().replace("\"","")
+        a = "<Cell type: %s  id: %s --%s />" %(scalename,self.id,self.cell)
         return a
     
     
@@ -148,58 +167,87 @@ class mesh(models.Model):
 ## These are concrete classes / table for a certain scale.
 
 
-class Mesh1(mesh):  
+class Mesh1(mesh):
+    spatiallevel = 1
     class Meta:
+        abstract = False
         managed = False
         # Experiment
+        #logger.error("Ok Im setting tablename : %s"%settings.MESH_TABLENAMESPACE[spatiallevel])
+
         db_table = settings.MESH_TABLENAMESPACE[1]
         
+    @property
+    def parentCells(self):
+        logger.info("This is the root of the Spatial Tree")
+        return None 
 
 class Mesh2(mesh):
+    spatiallevel = 2
+#    mesh._meta.abstract = False
+#    mesh._meta.db_table = settings.MESH_TABLENAMESPACE[mesh.spatiallevel]  
     class Meta:
         managed = False
         db_table = settings.MESH_TABLENAMESPACE[2]
-
+    
 class Mesh3(mesh):
+    spatiallevel = 3
+
     class Meta:
         managed = False
         db_table = settings.MESH_TABLENAMESPACE[3]
        
 class Mesh4(mesh):
+    
+    spatiallevel = 4
     class Meta:
         managed = False
         db_table = settings.MESH_TABLENAMESPACE[4]
 
 class Mesh5(mesh):
+    spatiallevel = 5
+
     class Meta:
         managed = False
         db_table = settings.MESH_TABLENAMESPACE[5]
         
 class Mesh6(mesh):
+    spatiallevel = 6
+   
     class Meta:
         managed = False
         db_table = settings.MESH_TABLENAMESPACE[6]
-        
+
 class Mesh7(mesh):
+    spatiallevel = 7
+
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[7]                
-
+        db_table = settings.MESH_TABLENAMESPACE[7]   
+    
 class Mesh8(mesh):
+    spatiallevel = 8
+
     class Meta:
         managed = False
         db_table = settings.MESH_TABLENAMESPACE[8]
         
 class Mesh9(mesh):
+    spatiallevel = 9
     class Meta:
         managed = False
         db_table = settings.MESH_TABLENAMESPACE[9]
         
 class Mesh10(mesh):
+    spatiallevel = 10
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[10]                 
+        db_table = settings.MESH_TABLENAMESPACE[10]               
         
+
+
+
+
         
 def getNeighboursOf(cell,mesh):
     # old version ns = mesh.objects.filter(cell__touches=cell.cell)
@@ -219,6 +267,199 @@ def bindNeighboursOf(cell,mesh,writeDB=False):
         created = [graph.create(rel) for rel in rels]
     return rels
 
+
+
+
+
+    
+    
+
+        
+
+     
+class MexMesh(mesh):
+    """
+    .. mesh:
+    A Mesh or Grid is a regular two dimensional geometric object
+    conformed by a regular tessellation of equal area square tiles.
+    THIS IS FOR THE 4 KM Mexican GRID
+    Let A be a connected and bounded set in a Surface E.
+    A tessellation T on A is a set of polygons Pi such that:
+    
+        * Pi is contained in A for all i
+        * Union(Pi) covers A
+        * Pi intersects Pj is empty for if i is not equal to j.
+    
+    This is the standard mesh model that defines a grid.
+    ..
+    
+    Attributes
+    ==========
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    
+    #id = models.AutoField(primary_key=True, db_column="gid")
+    gid = models.IntegerField(db_column="id")
+    xmin = models.FloatField(db_column="__xmin")
+    xmax = models.FloatField(db_column="__xmax")
+    ymin = models.FloatField()
+    ymax = models.FloatField()    
+    #row = models.IntegerField()
+    #col = models.IntegerField()
+    cell = models.MultiPolygonField(db_column = "geom")
+    #objects = models.GeoManager()
+    spatiallevel = 11
+    
+    @property
+    def parentCell(self):
+        """
+        This is just a proxy for getting the cell with the biggest intersection/
+        The name is the same to the other meshes.
+        """
+        candidate = self.rankIntersections().pop()
+        cell , polygon = candidate
+        return cell
+        
+    class Meta:
+        managed = False
+        #db_table = settings.MESH_TABLENAMESPACE[spatiallevel]      
+        db_table = 'mesh"."mex4km'
+
+    def getScaleLevel(self):
+        """
+        ..
+        Gives the current level name
+        ..
+        
+        Returns
+        =======
+        
+        tablename : string
+            The table name of the current grid. As stored in the database.
+            
+        """
+        #inv_map = {v: k for k, v in self.scales.items()}
+        sc = self._meta.db_table
+        self.tablename = sc
+        return sc
+      
+    def __repr__(self):
+        """
+        String representation of the object 
+        """
+        a = "<Cell id: %s --%s />" %(self.id,self.cell)
+        return a
+    
+    
+    def describeWithDict(self):
+        """
+        Returns a dictionary with the properties
+        """
+        latitude = self.cell.centroid.y
+        longitude = self.cell.centroid.x
+        id = int(self.id)
+        indexillo = "%s-%s:%s" %(str(id),str(longitude),str(latitude))
+        
+        d = {"id":id , "cell":self.cell.wkt, "latitude":latitude, "longitude":longitude ,"uniqueid":indexillo}
+        return d
+    
+    
+    def getNode(self,writeDB=False):
+        """
+        Returns a Node data structure that can be put into Neo4j
+        """
+        
+        properties = self.describeWithDict()
+        properties['name'] = str(self.id)
+        scalename = self.getScaleLevel().split(".").pop().replace("\"","")
+        n0 = Node("Cell",scalename,**properties)
+        #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])        
+        #old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
+        old_node = node_selector.select(scalename,uniqueid=properties['uniqueid']).first()
+        if old_node:
+            return old_node
+        else:
+            if writeDB:
+                graph.create(n0)
+            return n0
+
+    def getParentCells(self):
+        parent = initMesh((self.spatiallevel - 1), scales=scales)
+        cells = list(parent.objects.filter(cell__intersects=self.cell))
+        return cells     
+     
+    def rankIntersections(self):
+        """
+        This method performs an intersection geo-processing based on the geometric attribute (polygon) of the selected cells (the intersected at the hisger mesh)
+        The resulting polygons are then ranked according to their respective area.
+        The last element of the resulting list will be the polygon with the biggest area.
+        It can be easily accessed with the pop() function.
+        
+        """
+        cells = self.getParentCells()
+        #polygons = [ (c, c.cell) for c in cells ]
+        interpols = map(lambda cell : (cell, self.cell.intersection(cell.cell)), cells)
+        interpols.sort(key=lambda l : l[1].area)
+        return interpols     
+     
+     
+        
+class NestedMesh:
+    """
+    .. NestedMesh:
+    
+    A nested mesh is a hierarchical data structure composed of ordered levels.
+    Each level is an instance of a mesh such that for levels li, lj (i < j)
+    All levels are defined on the same geographical area.
+    The number of cells from level_j is 4**n times bigger than the number of cells in
+    level_i, (where n is j - i ).
+    
+    The resolution is inversely proportional to the size
+    
+    .. note:: 
+        For more information see the grid generation function under the SQL-functions
+    folder.
+    
+    This is the class that defines this geometric data type.
+    
+    Parameters
+    ==========
+    id : int
+        identification value for the nested grid object
+    start_level : int
+        The idkey of the parent mesh (top layer)
+        See: initMesh()
+    end_level : int
+        The idkey for the bottom mesh layer of the nested grid.
+    
+    
+    """
+    def __init__(self,id,start_level=10,end_level=11):
+        """
+        I'm the constructor: start_level = (Integer) level of aggregation.
+        end_level :: bottom of the nesting grid.
+        id = id value of the cell in the starting grid.
+        """
+        self.levels = {}
+        self.table_names = {}
+        m1 = initMesh(start_level)
+        #Filter with appropiate id
+        try:
+            cell1 = m1.objects.get(id=id)
+        except:
+            logger.error("[biospytial.mesh] Selected id does not exist in selected grid")
+            return None
+        self.levels[start_level] = cell1
+        self.table_names[start_level] = m1._meta.db_table
+        for level in range(start_level+1,end_level+1):
+            m_temp = initMesh(level)
+            #within functions perfectly in this situation
+            cells=m_temp.objects.filter(cell__within=cell1.cell)
+            self.levels[level]=cells
+            self.table_names[level] = m_temp._meta.db_table
+            del(m_temp)
 
 
 def initMesh(Intlevel,scales=scales):
@@ -303,244 +544,9 @@ def initMesh(Intlevel,scales=scales):
     elif (i == 9):
         return Mesh9
     elif (i == 10):
-        return MexMesh
-
-    
-    
-    
-    
-
-# def getNeighbours(cell_center,mesh):
-#     neighbours = mesh.objects.filter(cell__touches=cell_center.cell)
-#     
-#     return (cell_center,neighbours)
-# 
-# 
-# 
-# def createNetworkOnNode(duple_center_neighbour,writeInDB=False):
-#     center = duple_center_neighbour[0]
-#     neighbours = duple_center_neighbour[1]
-#     n0 = Node("Cell",**center.describeWithDict())
-#     nn = [ Relationship(n0,"IS_NEIGHBOUR_OF",Node("Cell", **n.describeWithDict())) for n in neighbours]
-#     if writeInDB:
-#         for relationship in nn:
-#             g.create(relationship)
-#     return nn
+        return Mesh10
+    elif (i == 11):
+        return MexMesh    
 
 
-
-    
-
-    
-    
-class NestedMesh:
-    """
-    .. NestedMesh:
-    
-    A nested mesh is a hierarchical data structure composed of ordered levels.
-    Each level is an instance of a mesh such that for levels li, lj (i < j)
-    All levels are defined on the same geographical area.
-    The number of cells from level_j is 4**n times bigger than the number of cells in
-    level_i, (where n is j - i ).
-    
-    The resolution is inversely proportional to the size
-    
-    .. note:: 
-        For more information see the grid generation function under the SQL-functions
-    folder.
-    
-    This is the class that defines this geometric data type.
-    
-    Parameters
-    ==========
-    id : int
-        identification value for the nested grid object
-    start_level : int
-        The idkey of the parent mesh (top layer)
-        See: initMesh()
-    end_level : int
-        The idkey for the bottom mesh layer of the nested grid.
-    
-    
-    """
-    def __init__(self,id,start_level=10,end_level=11):
-        """
-        I'm the constructor: start_level = (Integer) level of aggregation.
-        end_level :: bottom of the nesting grid.
-        id = id value of the cell in the starting grid.
-        """
-        self.levels = {}
-        self.table_names = {}
-        m1 = initMesh(start_level)
-        #Filter with appropiate id
-        try:
-            cell1 = m1.objects.get(id=id)
-        except:
-            logger.error("[biospytial.mesh] Selected id does not exist in selected grid")
-            return None
-        self.levels[start_level] = cell1
-        self.table_names[start_level] = m1._meta.db_table
-        for level in range(start_level+1,end_level+1):
-            m_temp = initMesh(level)
-            #within functions perfectly in this situation
-            cells=m_temp.objects.filter(cell__within=cell1.cell)
-            self.levels[level]=cells
-            self.table_names[level] = m_temp._meta.db_table
-            del(m_temp)
             
-        
-        
-
-class MexMesh(models.Model):
-    """
-    .. mesh:
-    A Mesh or Grid is a regular two dimensional geometric object
-    conformed by a regular tessellation of equal area square tiles.
-    THIS IS FOR THE 4 KM Mexican GRID
-    Let A be a connected and bounded set in a Surface E.
-    A tessellation T on A is a set of polygons Pi such that:
-    
-        * Pi is contained in A for all i
-        * Union(Pi) covers A
-        * Pi intersects Pj is empty for if i is not equal to j.
-    
-    This is the standard mesh model that defines a grid.
-    ..
-    
-    Attributes
-    ==========
-    id : int Unique primary key
-        This is the identification number of each element in the mesh.
-    
-    """
-    
-    id = models.AutoField(primary_key=True, db_column="gid")
-    gid = models.IntegerField(db_column="id")
-    xmin = models.FloatField(db_column="__xmin")
-    xmax = models.FloatField(db_column="__xmax")
-    ymin = models.FloatField()
-    ymax = models.FloatField()    
-    #row = models.IntegerField()
-    #col = models.IntegerField()
-    cell = models.MultiPolygonField(db_column = "geom")
-    objects = models.GeoManager()
-    
-    class Meta:
-        managed = False
-        db_table = 'mesh"."mex4km'
-
-    def getScaleLevel(self):
-        """
-        ..
-        Gives the current level name
-        ..
-        
-        Returns
-        =======
-        
-        tablename : string
-            The table name of the current grid. As stored in the database.
-            
-        """
-        #inv_map = {v: k for k, v in self.scales.items()}
-        sc = self._meta.db_table
-        self.tablename = sc
-        return sc
-      
-    def __repr__(self):
-        """
-        String representation of the object 
-        """
-        a = "<Cell id: %s --%s />" %(self.id,self.cell)
-        return a
-    
-    
-    def describeWithDict(self):
-        """
-        Returns a dictionary with the properties
-        """
-        latitude = self.cell.centroid.y
-        longitude = self.cell.centroid.x
-        id = int(self.id)
-        indexillo = "%s-%s:%s" %(str(id),str(longitude),str(latitude))
-        
-        d = {"id":id , "cell":self.cell.wkt, "latitude":latitude, "longitude":longitude ,"uniqueid":indexillo}
-        return d
-    
-    
-    def getNode(self,writeDB=False):
-        """
-        Returns a Node data structure that can be put into Neo4j
-        """
-        
-        properties = self.describeWithDict()
-        properties['name'] = str(self.id)
-        scalename = self.getScaleLevel().split(".").pop().replace("\"","")
-        n0 = Node("Cell",scalename,**properties)
-        #old_node = graph.find_one("Cell",property_key="uniqueid",property_value=properties['uniqueid'])        
-        #old_node = graph.find_one(scalename,property_key="uniqueid",property_value=properties['uniqueid'])
-        old_node = node_selector.select(scalename,uniqueid=properties['uniqueid']).first()
-        if old_node:
-            return old_node
-        else:
-            if writeDB:
-                graph.create(n0)
-            return n0
-        
-# class grid(models.Model):
-#     """
-#     .. mesh:
-#     A Mesh or Grid is a regular two dimensional geometric object
-#     conformed by a regular tessellation of equal area square tiles.
-#     
-#     Let A be a connected and bounded set in a Surface E.
-#     A tessellation T on A is a set of polygons Pi such that:
-#     
-#         * Pi is contained in A for all i
-#         * Union(Pi) covers A
-#         * Pi intersects Pj is empty for if i is not equal to j.
-#     
-#     This is the standard mesh model that defines a grid.
-#     ..
-#     
-#     Attributes
-#     ==========
-#     id : int Unique primary key
-#         This is the identification number of each element in the mesh.
-#     
-#     """
-#     id = models.AutoField(primary_key=True, db_column="gid")
-#     row = models.IntegerField()
-#     col = models.IntegerField()
-#     cell = models.PolygonField()
-#     objects = models.GeoManager()
-#     
-#     class Meta:
-#         managed = False
-#         db_table = 'grid025mex'
-# 
-#     def getScaleLevel(self):
-#         """
-#         ..
-#         Gives the current level name
-#         ..
-#         
-#         Returns
-#         =======
-#         
-#         tablename : string
-#             The table name of the current grid. As stored in the database.
-#             
-#         """
-#         #inv_map = {v: k for k, v in self.scales.items()}
-#         sc = self._meta.db_table
-#         self.tablename = sc
-#         return sc
-#       
-#     def __repr__(self):
-#         """
-#         String representation of the object 
-#         """
-#         a = "<Cell id: %s --%s />" %(self.id,self.cell)
-#         return a
-        

@@ -20,6 +20,7 @@ encoding//gbif/taxonomic_ratios_brazil.py=utf-8
 encoding//gbif/taxonomy.py=utf-8
 encoding//gbif/tests.py=utf-8
 encoding//gbif/views.py=utf-8
+encoding//ipython-notebooks/Demo1.py=utf-8
 encoding//mesh/bind_meshes_through_scale.py=utf-8
 encoding//mesh/examples/create_nested_grids.py=utf-8
 encoding//mesh/insert_all_meshes_on_neo4j.py=utf-8

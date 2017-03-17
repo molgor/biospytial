@@ -102,7 +102,7 @@ Insert_ALL_meshes = lambda list_meshes : map(main_for_single_mesh,list_meshes)
 upper = mexmeshes.pop(0)
 
 ## Just RUn this!
-Insert_ALL_meshes(mexmeshes)
+#Insert_ALL_meshes(mexmeshes)
 
 
 

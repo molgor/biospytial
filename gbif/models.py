@@ -1563,8 +1563,24 @@ class Root(Level):
         return head.encode('utf-8') + body + feet.encode('utf-8')    
 
 
-
-
+class Biome(object):
+    """
+    This class defines a Biome, that is a QuerySet of Occurrence model.
+    The Biome, therefore, is an abstraction of an arbitrary subset of the entire
+    Occurrences set (Table)
+    """
+    
+    def __init__(self,intersects_with='geometry'):
+        """
+        Only constructor
+        """
+        try:
+            self.selection = Occurrence.objects.filter(geom__intersects=intersects_with)
+        except:
+            logger.error("intersects_with parameter is not a valid geometric type.")
+    
+    
+        
 
 
     

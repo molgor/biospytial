@@ -39,8 +39,8 @@ HASEVENT = "HAS_EVENT"
 
 global RASTERDICT
 
-
-
+global ISCONTAINED
+ISCONTAINED = "IS_CONTAINED_IN"
 
 
 # Fixes an bug from the original library
@@ -392,7 +392,6 @@ class Cell(GraphObject):
     
     __primarykey__ = 'id'
     __primarylabel__ = 'Cell'
-    
     name = Property()
     longitude = Property()
     latitude = Property()
@@ -403,8 +402,7 @@ class Cell(GraphObject):
     
     connected_to = RelatedTo("Cell", ISNEIGHBOUR)
     
-    #connected_from = RelatedFrom("Cell", ISNEIGHBOUR)
-    #
+
     Occurrences = RelatedFrom(Occurrence, ISIN)
     
     #LocalTree  = RelatedFrom(TreeNode, ISIN)
@@ -439,7 +437,15 @@ class Cell(GraphObject):
 
 
 
-
+class Mex4km(Cell):
+    
+    __primarylabel__ = 'mex4km'
+    connected_to = RelatedTo("mex4km", ISNEIGHBOUR)
+    contained_in = RelatedTo("Cell", ISCONTAINED)
+########THIS IS NOT WORKING
+    @classmethod
+    def select(cls, graph, primary_value=None):
+        return super(Mex4km, cls).select(graph, primary_value=primary_value)
 
 
 

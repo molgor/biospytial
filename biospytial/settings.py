@@ -119,8 +119,9 @@ DATABASES = {
 NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
-        'HOST':'neo4j_local',
+        #'HOST':'neo4j_local',
         #'HOST':'neo4j',
+       'HOST': '10.42.17.241',
         'PORT':7474,
         'ENDPOINT':'/db/data',
         'USERNAME':'neo4j',

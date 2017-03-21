@@ -97,7 +97,7 @@ mextax = Taxonomy(mex,geometry=d['polygon'],build_tree_now=False)
 #m = map(createNetworkOnNode,vecinos)
 
 ## Create unique constraint with concatenated labels
-g = Graph(uri)
+g = Graph(uri,bolt=True)
 
 g.schema.create_uniqueness_constraint("Root","id")
 g.schema.create_uniqueness_constraint("Kingdom","keyword")

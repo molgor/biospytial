@@ -46,7 +46,8 @@ logger = logging.getLogger('biospytial.gbif')
 
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
-graph = Graph(uri)
+# Check how well it goes with the Bolt protocol.
+graph = Graph(uri,bolt=True)
 node_selector = NodeSelector(graph)
 
 

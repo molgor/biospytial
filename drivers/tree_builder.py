@@ -24,6 +24,8 @@ from compiler.ast import nodes
 import networkx as nx
 from py2neo import Graph
 from biospytial import settings
+
+
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
@@ -139,7 +141,7 @@ class LocalTree(object):
         """
         for occurrence in self.children:
             if not isinstance(occurrence, Occurrence):
-                logger.info("Children are not type occurrence")
+                logger.debug("Children are not type occurrence")
                 try:
                     occurrences_on_children = occurrence.setOccurrences()
                 except:

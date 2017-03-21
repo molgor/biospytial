@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'raster_api',
     'django_pdb',
     'django_extensions',
+    'drivers',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -119,10 +120,11 @@ DATABASES = {
 NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
-        #'HOST':'neo4j_local',
+        'HOST':'neo4j_local',
         #'HOST':'neo4j',
-       'HOST': '10.42.17.241',
+       #'HOST': '10.42.17.241',
         'PORT':7474,
+        #'PORT':7687,
         'ENDPOINT':'/db/data',
         'USERNAME':'neo4j',
         'PASSWORD':'perro'
@@ -259,7 +261,12 @@ LOGGING = {
             'propagate': False
             
         },                      
-
+        'biospytial.tree_builder' : {
+            'handlers' : ['console'],
+            'level' : 'INFO',
+            'propagate': False
+            
+        }, 
 
 },
 }
@@ -391,5 +398,12 @@ NOTEBOOK_ARGUMENTS = [
 ]
 
 
+IPYTHON_ARGUMENTS = [
+    '--ext', 'django_extensions.management.notebook_extension',
+    '--ext', 'biospytial',
+]
 
+NOTEBOOK_ARGUMENTS = [
+    '--config=ipython_config.py',
+]
 

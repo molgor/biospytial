@@ -43,7 +43,7 @@ RasterField.register_lookup(intersectWith)
 
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
-graph = Graph(uri)
+graph = Graph(uri,bolt=True)
 node_selector = NodeSelector(graph)
 
 logger = logging.getLogger('biospytial.raster_api.tools')

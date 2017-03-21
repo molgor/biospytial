@@ -32,16 +32,23 @@ docker run \
     --publish=7687:7687 \
     --volume=/opt/DataVolumesFast/neo4j/data:/data \
     --volume=/opt/DataVolumesFast/neo4j/logs:/logs \
-    --net=biospytial_network_local \
+    --volume=/mnt/data1:/mnt/data1 \
+    --net=biospytial_network \
     -it \
      molgor/neo4j_biospytial \
     /bin/bash    
     
+
+
+###########################################################
+## DUMP database
+/var/lib/neo4j/bin/neo4j-admin dump --database=graph.db --to=/mnt/data1/exports/semicomplete.21032017.neo.dump
+
     
 ##############################################################
 ### RESTORE DATABASE USING THE MAINTEINANCE MODE
 
-./neo4j-admin load --from=/data/databases/mesh_db.dump --database=graph.db --force    
+#./neo4j-admin load --from=/data/databases/mesh_db.dump --database=graph.db --force    
 ############################################################################
 
 ### Postgis initialise
@@ -84,9 +91,8 @@ docker run \
     -ti molgor/biospytial bash 
 
 docker run \
-    --name=biospytial_local_replica \
-    --publish=8004:8004 \
-    --rm \
+    --name=biospytial_local_replica2 \
+    --publish=8888:8888 \
     --net=biospytial_network_local \
     --volume=/mnt/data1/RawDataCSV:/RawDataCSV \
     --volume=/mnt/data1/git-projects/biospytial:/apps \

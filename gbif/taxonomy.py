@@ -13,6 +13,7 @@ for data aggregation, hierarchication and processing.
  
 """
 from django.db.models.aggregates import Aggregate
+from drivers.tree_builder import TreeNeo
 
 
 __author__ = "Juan Escamilla Mólgora"
@@ -43,7 +44,7 @@ logger = logging.getLogger('biospytial.gbif.taxonomy')
 from raster_api.tools import RasterData
 from gbif.buildtree import getTOL
 import biospytial.settings as settings
-
+from drivers.tree_builder import extractOccurrencesFromTaxonomies
 import pickle
 
 #import matplotlib.pyplot as plt
@@ -51,7 +52,7 @@ import numpy as np
 from biospytial import settings
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
-graph_driver = Graph(uri)
+graph_driver = Graph(uri,bolt=True)
 node_selector = NodeSelector(graph_driver)
   
 
@@ -1246,6 +1247,20 @@ class Taxonomy:
         self.phyla = []
         self.kingdoms = []
         """
+
+
+    def loadFromGraphDB(self):
+        """
+            Loads a TreeNeo Object derived from the occurrences list (QuerySEt)
+        """
+        occurrences, cells = extractOccurrencesFromTaxonomies([self])
+        # Cells, by definition has only one element.    
+        cell = cells.pop()
+        tree = TreeNeo(list_occurrences=occurrences,cell_object=cell)
+        self.TREE = tree
+        return tree
+
+
 
 class GriddedTaxonomy:
     """

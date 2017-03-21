@@ -22,7 +22,7 @@ neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
 import py2neo
-graph = py2neo.Graph(uri)
+graph = py2neo.Graph(uri,bolt=True)
 
 global TAXDESCEND
 TAXDESCEND = "IS_A_MEMBER_OF"
@@ -434,6 +434,54 @@ class Cell(GraphObject):
         """
         occs = filter(lambda l : l.pk,self.Occurrences)
         return occs        
+
+
+class Mex4km_(GraphObject):
+    
+    __primarykey__ = 'id'
+    __primarylabel__ = 'mex4km'
+    name = Property()
+    longitude = Property()
+    latitude = Property()
+    cell = Property()
+    id = Property()
+       
+    
+    
+    connected_to = RelatedTo("Cell", ISNEIGHBOUR)
+    
+
+    Occurrences = RelatedFrom(Occurrence, ISIN)
+    
+    #LocalTree  = RelatedFrom(TreeNode, ISIN)
+    #families = RelatedFrom("Family",ISIN)
+    #families = RelatedFrom("Family", "HAS_EVENT")    
+
+    @property
+    def centroid(self):
+        pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
+        point = GEOSGeometry(pointstr)
+        return point
+    
+    @property
+    def polygon(self):
+        polygon = GEOSGeometry(self.cell)
+        return polygon
+
+
+    def getNeighbours(self):
+        #ln = [n for n in self.connected_from]
+        rn = [n for n in self.connected_to]
+        # testing thingy
+        rn.append(self)
+        return rn
+        
+    def occurrencesHere(self):
+        """
+        Filter the list of occurrences.
+        """
+        occs = filter(lambda l : l.pk,self.Occurrences)
+        return occs   
 
 
 

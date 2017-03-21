@@ -35,7 +35,7 @@ from biospytial import settings
 
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
-graph = Graph(uri)
+graph = Graph(uri,bolt=True)
 scales = settings.MESH_TABLENAMESPACE
 logger = logging.getLogger('biospytial.mesh')
 

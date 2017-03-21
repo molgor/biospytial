@@ -45,7 +45,7 @@ tax0 = Taxonomy(biome=biome,geometry=border,build_tree_now=False)
 ## Note the build_tree_now flag on
 
 ## We can build the tree from the Rel. DB
-%time tax0.generateTREE()
+#%time tax0.generateTREE()
 #CPU times: user 12.2 s, sys: 388 ms, total: 12.6 s
 #Wall time: 32.7 s
 

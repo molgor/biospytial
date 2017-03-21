@@ -2,6 +2,11 @@
 #-*- coding: utf-8 -*-
 # ipython_config.py
 
+import sys
+
+sys.path.append('/apps')
+
+
 c = get_config()
 
 # Allow all IP addresses to use the service and run it on port 80.
@@ -12,6 +17,7 @@ c.NotebookApp.port = 8888
 c.NotebookApp.open_browser = False
 
 #c.TerminalIPythonApp.display_banner = False 
+
 
 
 c.TerminalInteractiveShell.banner1 = u"""

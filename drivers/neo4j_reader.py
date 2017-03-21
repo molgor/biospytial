@@ -26,7 +26,7 @@ uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 logger = logging.getLogger('biospytial.neo4j_reader')
 
 import py2neo
-graph = py2neo.Graph(uri)
+graph = py2neo.Graph(uri,bolt=True)
 
 global TAXDESCEND
 TAXDESCEND = "IS_A_MEMBER_OF"

@@ -24,7 +24,7 @@ mexbiosphere = biosphere.filter(geom__intersects=mexico_border.geom)
 ## Select one cell of one thing
 
 
-m10 = initMesh(10)
+m10 = initMesh(11)
 #g = GriddedTaxonomy(biosphere,center)
 
 mexmesh = m10.objects.filter(cell__intersects=mexico_border.geom)
@@ -74,10 +74,14 @@ def insertFULLTaxonomiesInNeo4J(mesh_subset,biosphere,gridname,num_proc=1):
     return ggg
 
 
-ggg = insertFULLTaxonomiesInNeo4J(mexmesh3,biosphere,"mex4km",num_proc=3)
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh3,biosphere,"mex4km",num_proc=3)
 #
 
+### I've interrupted the process in the step:
+##5725 -- > tax.id = 240431
 
+
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh3[5725:],biosphere,"mex4km",num_proc=3)
 
 
 

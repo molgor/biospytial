@@ -565,7 +565,7 @@ class TreeNeo(LocalTree):
             self.involvedCells = cell_object
             self.windUpLevels()
         else:
-            logger.warning('No occurrence found. Returning empty')
+            logger.debug('No occurrences found. Returning empty')
             self.occurrences = []
             self.parent = 'No Data found'
             self.children = []
@@ -655,6 +655,10 @@ class Neighbourhood(object):
         self.center = central_node
         self.size = size
         self.neighbours = self.getNeighboringTrees(filter_central_cell=filter_central_cell)
+
+    def __iter__(self):
+        return iter(self.neighbours)
+
 
     @property
     def extendedTree(self):

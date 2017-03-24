@@ -100,5 +100,84 @@ docker run \
     --volume=/tmp/.X11-unix:/tmp/.X11-unix \
     --env DISPLAY=unix$DISPLAY \
     -ti molgor/biospytial bash 
+    
+##############################
+OSX 
+
+#############################
+Biospytial
+client    
+#############################
+docker run \
+    --name=biospytial_local \
+    --publish=8888:8888 \
+    --net=biospytial_network_local \
+    --volume=/Users/juan/Biospytial/gbif_data/RawDataCSV/:/RawDataCSV \
+    --volume=/Users/juan/git/biospytial:/apps \
+    --volume=/tmp/.X11-unix:/tmp/.X11-unix \
+    --env DISPLAY=unix$DISPLAY \
+    -ti molgor/biospytial bash     
+    
+#############################
+POSTGIS OSX
+#############################
+    
+docker run \
+    --name=postgis \
+    --network=biospytial_network_local \
+    -d \
+    --rm \
+    --publish=5432:5432 \
+    --volume=/Users/juan/Biospytial/gbif_data/postgisdata:/DataVolumes \
+    molgor/postgis_biospytial \
+    /bin/sh -c "/root/startPostgres" 
+    
+###############################
+## Maintenance
+###############################    
+docker run \
+--name=postgis \
+--net=biospytial_network_local \
+-it \
+--publish=5432:5432 \
+--volume=/Users/juan/Biospytial/gbif_data/postgisdata:/DataVolumes \
+--volume=/Users/juan/Biospytial/gbif_data/postgisdata/dumps:/dumps \
+molgor/postgis_biospytial \
+/bin/bash    
+    
+       
+###############################
+NEO4J OSX
+###############################
+docker run \
+  --name=neo4j \
+  --detach \
+  --env NEO4J_AUTH=none \
+  --rm \
+  --publish=7474:7474 \
+  --publish=7687:7687 \
+  --volume=/Users/juan/Biospytial/gbif_data/neo4j/data:/data \
+  --volume=/Users/juan/Biospytial/gbif_data/neo4j/logs:/logs \
+  --net=biospytial_network_local \
+  neo4j:3.1
+  
+###################################
+## Mainteinance
+###################################  
+  docker run \
+    --name=neo4j \
+    --env NEO4J_AUTH=none \
+    --publish=7474:7474 \
+    --publish=7687:7687 \
+    --volume=/Users/juan/Biospytial/gbif_data/neo4j/data:/data \
+    --volume=/Users/juan/Biospytial/gbif_data/neo4j/dumps:/dumps \
+    --volume=/Users/juan/Biospytial/gbif_data/neo4j/logs:/logs \
+    --net=biospytial_network_local \
+    -it \
+    neo4j:3.1 \
+    /bin/bash
+
+
+
 
 

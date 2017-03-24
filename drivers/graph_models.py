@@ -299,8 +299,12 @@ class TreeNode(GraphObject):
         c = "<TreeNode type: %s id = %s name: %s>"%(str(self.levelname),str(self.__primaryvalue__),str(self.name.encode('utf-8')))
         return c
 
-    
-
+    def setLabel(self,labelname):
+        """
+        Usefull when selecting arbitrary nodes of certain taxonomy.
+        """
+        self.__primarylabel__ = labelname
+        
 
     def getParent(self):
         parent = list(self.parent_link)
@@ -376,10 +380,28 @@ class TreeNode(GraphObject):
         else:
             return False
 
+class Kingdom(TreeNode):
+   __property_label__ ='Kingdom'
 
+class Phylum(TreeNode):
+   __property_label__ ='Phylum'
+   
+class Class(TreeNode):
+   __property_label__ ='Class'
 
+class Order(TreeNode):
+   __property_label__ ='Order'
+   
+class Family(TreeNode):
+    __property_label__ ='Family'
 
+class Genus(TreeNode):
+   __property_label__ ='Genus' 
 
+class Specie(TreeNode):
+   __property_label__ ='Specie'
+   
+   
 
 
 

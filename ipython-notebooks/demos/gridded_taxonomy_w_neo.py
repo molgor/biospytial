@@ -5,11 +5,11 @@
 
 # In[93]:
 
-get_ipython().magic(u'matplotlib inline')
-import sys
-sys.path.append('/apps')
-import django
-django.setup()
+#get_ipython().magic(u'matplotlib inline')
+#import sys
+#sys.path.append('/apps')
+#import django
+#django.setup()
 
 
 # ## Import biospytial modules
@@ -73,133 +73,133 @@ taxonomies = ggg.taxonomies[0:200]
 
 # In[101]:
 
-trees = map(lambda t : t.loadFromGraphDB(),taxonomies)
-
-
-# ### Sort it, ... ;)
-
-# In[102]:
-
-trees.sort(key=lambda l : l.richness, reverse=True)
-
-
-# In[103]:
-
-trees[0].richness
-
-
-# ### Ok, let's explore this *super* node
-
-# In[104]:
-
-st = trees[0]
-
-
-# ### mmhh... vertebrates ? 
-
-# In[105]:
-
-st.to_Animalia.to_Chordata
-
-
-# ### Let birds be :
-
-# In[106]:
-
-birds = st.to_Animalia.to_Chordata.to_Aves
-
-
-# In[107]:
-
-birds.richness
-
-
-# ### Give me environmental conditions
-
-# In[108]:
-
-environment = birds.associatedData.getEnvironmentalVariablesPoints()
-
-
-# In[109]:
-
-environment
-
-
-# ## Explore the neighbours
-
-# In[110]:
-
-ns = birds.getNeighboringTrees()
-
-
-# In[111]:
-
-ns
-
-
-# In[112]:
-
-ns.getCooccurrenceMatrix(taxonomic_level=3)
-
-
-# ### Expand the neighbourhood to size 3
-
-# In[113]:
-
-ns.expandNeighbourhood(4)
-
-
-# In[114]:
-
-big_tree = ns.extendedTree
-
-
-# In[115]:
-
-big_tree
-
-
-# In[116]:
-
-ns.getCooccurrenceMatrix(taxonomic_level=3)
-
-
-# In[117]:
-
-big_tree.getExactCells()
-
-raster = big_tree.associatedData.getAssociatedRasterAreaData?
-# In[118]:
-
-raster = big_tree.associatedData.getAssociatedRasterAreaData('SolarRadiation')
-
-
-# In[119]:
-
-raster.display_field(band=6)
-
-
-# In[120]:
-
-neighbours = ns.neighbours
-
-
-# ### Which neighbours have birds ?
-
-# In[138]:
-
-map(lambda neighbour : neighbour.hasNode(birds) , neighbours)
-
-
-# ### Filter the neighbours that have birds! 
-
-# In[139]:
-
-birds
-
-
-# In[136]:
-
-filter(lambda neighbour : neighbour.hasNode(birds), neighbours)
+# trees = map(lambda t : t.loadFromGraphDB(),taxonomies)
+# 
+# 
+# # ### Sort it, ... ;)
+# 
+# # In[102]:
+# 
+# trees.sort(key=lambda l : l.richness, reverse=True)
+# 
+# 
+# # In[103]:
+# 
+# trees[0].richness
+# 
+# 
+# # ### Ok, let's explore this *super* node
+# 
+# # In[104]:
+# 
+# st = trees[0]
+# 
+# 
+# # ### mmhh... vertebrates ? 
+# 
+# # In[105]:
+# 
+# st.to_Animalia.to_Chordata
+# 
+# 
+# # ### Let birds be :
+# 
+# # In[106]:
+# 
+# birds = st.to_Animalia.to_Chordata.to_Aves
+# 
+# 
+# # In[107]:
+# 
+# birds.richness
+# 
+# 
+# # ### Give me environmental conditions
+# 
+# # In[108]:
+# 
+# environment = birds.associatedData.getEnvironmentalVariablesPoints()
+# 
+# 
+# # In[109]:
+# 
+# environment
+# 
+# 
+# # ## Explore the neighbours
+# 
+# # In[110]:
+# 
+# ns = birds.getNeighboringTrees()
+# 
+# 
+# # In[111]:
+# 
+# ns
+# 
+# 
+# # In[112]:
+# 
+# ns.getCooccurrenceMatrix(taxonomic_level=3)
+# 
+# 
+# # ### Expand the neighbourhood to size 3
+# 
+# # In[113]:
+# 
+# ns.expandNeighbourhood(4)
+# 
+# 
+# # In[114]:
+# 
+# big_tree = ns.extendedTree
+# 
+# 
+# # In[115]:
+# 
+# big_tree
+# 
+# 
+# # In[116]:
+# 
+# ns.getCooccurrenceMatrix(taxonomic_level=3)
+# 
+# 
+# # In[117]:
+# 
+# big_tree.getExactCells()
+# 
+# raster = big_tree.associatedData.getAssociatedRasterAreaData?
+# # In[118]:
+# 
+# raster = big_tree.associatedData.getAssociatedRasterAreaData('SolarRadiation')
+# 
+# 
+# # In[119]:
+# 
+# raster.display_field(band=6)
+# 
+# 
+# # In[120]:
+# 
+# neighbours = ns.neighbours
+# 
+# 
+# # ### Which neighbours have birds ?
+# 
+# # In[138]:
+# 
+# map(lambda neighbour : neighbour.hasNode(birds) , neighbours)
+# 
+# 
+# # ### Filter the neighbours that have birds! 
+# 
+# # In[139]:
+# 
+# birds
+# 
+# 
+# # In[136]:
+# 
+# filter(lambda neighbour : neighbour.hasNode(birds), neighbours)
 

@@ -75,15 +75,16 @@ DATABASES = {
         'PASSWORD': 'biospytial.',
         #'HOST':'panthera',
         #'HOST': '10.42.17.241',
-        'HOST':'postgis_local',
-        #'HOST':'postgis',
+        #'HOST':'postgis_local',
+        #'HOST':'148.88.197.8',
+        #'HOST':'panthera',
         #'NAME': 'gbif',
         #'USER': 'juan',
         #'PASSWORD': 'biospytial.',
         #'HOST': '148.88.197.8',
 
         #'HOST' : '172.17.0.2'
-        #'HOST':'postgis'
+        'HOST':'postgis',
         ## My server in ISS
         
        
@@ -120,8 +121,9 @@ DATABASES = {
 NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
-        'HOST':'neo4j_local',
-        #'HOST':'neo4j',
+        'HOST':'neo4j',
+        #'HOST':'148.88.197.8',
+       #'HOST':'panthera',
        #'HOST': '10.42.17.241',
         'PORT':7474,
         #'PORT':7687,
@@ -263,7 +265,7 @@ LOGGING = {
         },                      
         'biospytial.tree_builder' : {
             'handlers' : ['console'],
-            'level' : 'INFO',
+            'level' : 'DEBUG',
             'propagate': False
             
         }, 

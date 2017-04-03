@@ -139,9 +139,10 @@ class LocalTree(object):
         
         
         """
+        logger.debug("Retrieving the subtrees")
         for occurrence in self.children:
             if not isinstance(occurrence, Occurrence):
-                logger.debug("Children are not type occurrence")
+                #logger.debug("Children are not type occurrence")
                 try:
                     occurrences_on_children = occurrence.setOccurrences()
                 except:

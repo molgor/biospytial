@@ -178,9 +178,14 @@ class LocalTree(object):
         nodes_iters = map(lambda oc : (oc.pullbackRasterNodes(raster_name),oc),self.occurrences)
         #nodes_iters = map(lambda oc : oc.pullbackRasterNodes(raster_name),self.occurrences)
         #nodes = reduce(lambda n1,n2 : list(n1) + list(n2) , nodes_iters)
-        nodes = map(lambda node_occ : (list(node_occ[0])[0],node_occ[1]),nodes_iters) 
-
-        return nodes
+        
+        ## First extract the list, it could be empty and therefore will throw an exception
+        nodes = map(lambda node_occ : (list(node_occ[0]),node_occ[1]),nodes_iters) 
+        ## Filter the nodes that have a list different from empty
+        new_nodes = filter(lambda (list_node, occurrence) : list_node,nodes)
+        ## Extract the element
+        new_nodes = map(lambda ( list_node,occurrence ) : (list_node.pop(),occurrence), new_nodes)
+        return new_nodes
     
 
     def getExactCells(self):

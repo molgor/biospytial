@@ -205,7 +205,13 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/w3_insertion_in_neo.log',
             'formatter': 'verbose'
-        },                                      
+        },
+        'file_insertion_w32': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR+'/logs/w32_insertion_in_neo.log',
+            'formatter': 'verbose'
+        },  
         
     },
     'loggers': {
@@ -254,6 +260,10 @@ LOGGING = {
             'handlers' : ['file_insertion_w3'],
             'level' : 'DEBUG',
         },
+        'biospytial.insert_taxonomies_worker3.2' :{
+            'handlers' : ['file_insertion_w32'],
+            'level' : 'DEBUG',
+        },            
          'biospytial.mesh.tools':{
              'level': 'DEBUG',
              'handlers': ['console'],
@@ -267,7 +277,7 @@ LOGGING = {
         },                      
         'biospytial.tree_builder' : {
             'handlers' : ['console'],
-            'level' : 'DEBUG',
+            'level' : 'INFO',
             'propagate': False
             
         }, 

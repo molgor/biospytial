@@ -9,7 +9,7 @@ from raster_api.models import raster_models
 import django.db as db
 
 
-logger = logging.getLogger('biospytial.insert_taxonomies_worker2')
+logger = logging.getLogger('biospytial.insert_taxonomies_worker3.2')
 
 #m1 = initMesh(7)
 #m1

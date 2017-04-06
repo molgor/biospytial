@@ -82,6 +82,8 @@ class LocalTree(object):
         self.occurrences = []
         self.involvedCells = []
         self.neighbouringtrees = []
+        self.count_presence_in_given_list = 'N.A.'
+
 
     
     #self.graph = self.setGraph()
@@ -223,33 +225,6 @@ class LocalTree(object):
         """
         neighbourhood = Neighbourhood(self,1,filter_central_cell=filter_central_cell)
         return neighbourhood
-#         cells = self.getExactCells()
-#         cell_neighbours = map(lambda c: c.getNeighbours(),cells)
-#         # A reduce in case we are using more than one cell within the tree
-#         cells = reduce(lambda l1 , l2  : l1 + l2, cell_neighbours)
-#         occurrences = map(lambda oc : oc.occurrencesHere(),cells)
-#         ## prototyping
-#         duples = zip(occurrences,cells)
-#         trees = []
-#         for list_, cell in duples:
-#             ## prot
-#             trees.append(TreeNeo(list_,[cell]))
-#             #trees.append(TreeNeo(list_))
-#             #if list_:
-#             #    trees.append(TreeNeo(list_))
-#             #else:
-#             #    continue
-#         
-#         # This if the filter central cell parameter is chosen.
-#         if filter_central_cell:    
-#             trees = filter(lambda t : t!= self, trees)    
-# 
-#         if not reduce_trees:
-#             return trees
-#         else:
-#             tree = reduce(lambda t1,t2 : t1 + t2, trees)
-#             return tree
-
 
 
 
@@ -547,6 +522,34 @@ class LocalTree(object):
                 output[id] = 0
         return pandas.DataFrame.from_dict(output,orient='index')
                 
+
+    def countNodesFrequenciesOnList(self,list_of_trees):
+        """
+        Checks if every node in the tree is in how many members of the list.
+        This is used for checking how many nodes of a tree are contained in an arbitrary list of trees.
+        Returns:
+            list of nodes
+            
+        note : 
+            This method is recursive
+        """
+        hasNode = lambda node : lambda tree : tree.hasNode(node)
+        # filter the trees that have the node in children
+         
+
+        for child in self.children:
+            try:
+                subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
+                child.count_presence_in_given_list = len(subtrees_with_node)
+                n = child.countNodesFrequenciesOnList(list_of_trees) 
+                logger.info("Going deep %s"%n)
+            except:
+                subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
+                child.count_presence_in_given_list = len(subtrees_with_node)
+                continue
+        return self.count_presence_in_given_list
+  
+
             
 
 
@@ -579,10 +582,17 @@ class TreeNeo(LocalTree):
             self.involvedCells = cell_object
             self.associatedData = RasterCollection(self)
             self.levels = [self]
+        
             #return None
             #super(TreeNeo,self).__init__(root,children)
             
-
+    def __repr__(self):
+        try:
+            cad = "<LocalTree Of Life | %s: %s - n.count : %s- >"%(self.levelname,self.name,self.richness)
+        except:
+            cad = "<LocalTree Of Life | %s: - n.count : %s- >"%('No record available',self.richness)        
+    
+        return cad.encode('utf-8')
    
     def setOccurrencesFromTaxonomies(self,list_of_taxonomies):
         """
@@ -619,20 +629,22 @@ class TreeNeo(LocalTree):
         if self.richness != 0:
             levels = self.levels
             t_l = TreeNode.level
-            ids_for_level = map(lambda l : l.id, levels[t_l])
-            truth = TreeNode.id in ids_for_level
-            return truth
+            if t_l != 0 :
+                ids_for_level = map(lambda l : l.id, levels[t_l])
+                truth = TreeNode.id in ids_for_level
+                return truth
+            else:
+                ids_for_level = [ levels[t_l].id ]
+                truth = TreeNode.id in ids_for_level
+                return truth
         else:
             # Case the tree is empty
             return False
 
-    def __repr__(self):
-        try:
-            cad = "<LocalTree Of Life | %s: %s - n.count : %s- >"%(self.levelname,self.name,self.richness)
-        except:
-            cad = "<LocalTree Of Life | %s: - n.count : %s- >"%('No record available',self.richness)        
-    
-        return cad.encode('utf-8')
+
+
+
+
 
 
     def __add__(self, tree_neo):

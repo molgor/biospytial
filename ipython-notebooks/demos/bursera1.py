@@ -73,7 +73,7 @@ import numpy.random as rnd
 
 # In[45]:
 
-n = 10
+n = 100
 
 
 # In[46]:

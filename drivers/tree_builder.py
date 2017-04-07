@@ -82,7 +82,7 @@ class LocalTree(object):
         self.occurrences = []
         self.involvedCells = []
         self.neighbouringtrees = []
-        self.count_presence_in_given_list = 'N.A.'
+        self.n_presences_in_list = 'N.A.'
 
 
     
@@ -123,7 +123,7 @@ class LocalTree(object):
 
     def __repr__(self):
         try:
-            cad = "<TreeNode | %s: %s - n.count : %s- >"%(self.levelname,self.name,self.richness)
+            cad = "<TreeNode | %s: %s - n.count : %s- | AF: %s >"%(self.levelname,self.name,self.richness,self.n_presences_in_list)
         except:
             cad = "<TreeNode | %s: - n.count : %s- >"%('No record available',self.richness)
         return cad.encode('utf-8')
@@ -540,14 +540,14 @@ class LocalTree(object):
         for child in self.children:
             try:
                 subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
-                child.count_presence_in_given_list = len(subtrees_with_node)
+                child.n_presences_in_list = len(subtrees_with_node)
                 n = child.countNodesFrequenciesOnList(list_of_trees) 
                 logger.info("Going deep %s"%n)
             except:
                 subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
-                child.count_presence_in_given_list = len(subtrees_with_node)
+                child.n_presences_in_list = len(subtrees_with_node)
                 continue
-        return self.count_presence_in_given_list
+        return self.n_presences_in_list
   
 
             

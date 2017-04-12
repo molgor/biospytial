@@ -190,6 +190,13 @@ class LocalTree(object):
         return new_nodes
     
 
+    def getPointCoordinates(self):
+        """
+        Returns a list of coordinates x, y  (long,lat)
+        """
+        points = map(lambda o : (o.longitude,o.latitude),self.occurrences)
+        return points
+
     def getExactCells(self):
         """
         Returns the exact regions (cells) where the occurrences (leaf nodes)
@@ -234,12 +241,12 @@ class LocalTree(object):
         """
         Expand the neighbourhood of influence
         """
-        list_trees = self.getNeighboringTrees()
+        list_trees = self.getNeighboringTrees(filter_central_cell=filter_central_cell)
         ns = list_trees
         neighbours = [ns]
         if n_order > 1:
             for i in range(n_order - 1):
-                ns = map(lambda n : n.getNeighboringTrees(),ns)
+                ns = map(lambda n : n.getNeighboringTrees(filter_central_cell=filter_central_cell),ns)
                 ns = reduce(lambda a,b : a + b , ns)
                 neighbours.append(ns)
         

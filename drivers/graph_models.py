@@ -458,7 +458,7 @@ class Cell(GraphObject):
         return occs        
 
 
-class Mex4km_(GraphObject):
+class Mex4km(GraphObject):
     
     __primarykey__ = 'id'
     __primarylabel__ = 'mex4km'
@@ -470,8 +470,8 @@ class Mex4km_(GraphObject):
        
     
     
-    connected_to = RelatedTo("Cell", ISNEIGHBOUR)
-    
+    connected_to = RelatedTo("Mex4km", ISNEIGHBOUR)
+    contained_in = RelatedTo("Cell",ISCONTAINED)
 
     Occurrences = RelatedFrom(Occurrence, ISIN)
     
@@ -507,15 +507,6 @@ class Mex4km_(GraphObject):
 
 
 
-class Mex4km(Cell):
-    
-    __primarylabel__ = 'mex4km'
-    connected_to = RelatedTo("mex4km", ISNEIGHBOUR)
-    contained_in = RelatedTo("Cell", ISCONTAINED)
-########THIS IS NOT WORKING
-    @classmethod
-    def select(cls, graph, primary_value=None):
-        return super(Mex4km, cls).select(graph, primary_value=primary_value)
 
 
 

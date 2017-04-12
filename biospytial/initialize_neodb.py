@@ -55,4 +55,12 @@ g = Graph(uri)
 # CREATE INDEX ON : Species(id);
 # CREATE INDEX ON : Occurrence(pk);
 
+#### Indexes for Raster Data
+#CREATE INDEX ON :`WindSpeed-30s`(uniqueid)
+#CREATE INDEX ON :`Vapor-30s`(uniqueid)
+#CREATE INDEX ON :`MinTemp-30s`(uniqueid)
+#CREATE INDEX ON :`MeanTemp-30s`(uniqueid)
+#CREATE INDEX ON :`SlrRad-30s`(uniqueid)
+#CREATE INDEX ON :`Prec-30s`(uniqueid)
+#CREATE INDEX ON :`MaxTemp-30s`(uniqueid)
 

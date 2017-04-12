@@ -37,7 +37,13 @@ class RasterCollection(object):
         prefix = 'points_'
         setattr(self,prefix + string_selection, struct)
         return struct
-    
+
+    def getPointCoordinates(self):
+        """
+        Returns the coordinates corresponding to the occurrences locations filter  by the selected node
+        """
+        coords = self.tree.getPointCoordinates()
+        return coords
     
     def getAssociatedRasterAreaData(self,string_selection,aggregated=True):
         """
@@ -67,7 +73,7 @@ class RasterCollection(object):
 
     
 
-    def getEnvironmentalVariablesPoints(self,vars=['MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
+    def getEnvironmentalVariablesPoints(self,vars=['MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_coordinates=True):
         """
         
         """
@@ -78,6 +84,11 @@ class RasterCollection(object):
             environment_std = raster.table.std_yr_val
             df[variable + '_mean'] = environment_mean
             df[variable + '_std' ] = environment_std
+        if with_coordinates :
+            xy = self.getPointCoordinates()
+            xy = pandas.DataFrame(xy,columns=('x','y'))
+            df['x'] = xy.x
+            df['y'] = xy.y
         return df
 
 

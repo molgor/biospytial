@@ -77,9 +77,13 @@ def insertFULLTaxonomiesInNeo4J(mesh_subset,biosphere,gridname,num_proc=1):
 #ggg = insertFULLTaxonomiesInNeo4J(mexmesh1,biosphere,"mex4km",num_proc=1)
 #
 
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh3[5725:],biosphere,"mex4km",num_proc=3)
 
+#mexmesh31 = mexmesh3[5725:12226]
 
-
+mexmesh32 = mexmesh3[12226:18727]
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh32,biosphere,"mex4km",num_proc=1)
+#mexmesh33 = mexmesh3[18727:]
 
 
 

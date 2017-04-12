@@ -9,7 +9,7 @@ from raster_api.models import raster_models
 import django.db as db
 
 
-logger = logging.getLogger('biospytial.insert_taxonomies_worker3')
+logger = logging.getLogger('biospytial.insert_taxonomies_worker2')
 
 #m1 = initMesh(7)
 #m1
@@ -83,8 +83,14 @@ def insertFULLTaxonomiesInNeo4J(mesh_subset,biosphere,gridname,num_proc=1):
 
 #ggg = insertFULLTaxonomiesInNeo4J(mexmesh3[5725:],biosphere,"mex4km",num_proc=3)
 
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh3[5725:],biosphere,"mex4km",num_proc=3)
 
+#mexmesh31 = mexmesh3[5725:12226]
 
+#mexmesh32 = mexmesh3[12226:18727]
+
+mexmesh33 = mexmesh3[18727 + 319:]
+ggg = insertFULLTaxonomiesInNeo4J(mexmesh33,biosphere,"mex4km",num_proc=2)
 
 
 

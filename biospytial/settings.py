@@ -84,8 +84,8 @@ DATABASES = {
         #'HOST': '148.88.197.8',
 
         #'HOST' : '172.17.0.2'
-        #'HOST':'postgis',
-        'HOST':'postgis_local',
+        'HOST':'postgis',
+        #'HOST':'postgis_local',
         ## My server in ISS
         
        
@@ -122,8 +122,8 @@ DATABASES = {
 NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
-        #'HOST':'neo4j',
-        'HOST':'neo4j_local',
+        'HOST':'neo4j',
+        #'HOST':'neo4j_local',
         #'HOST':'148.88.197.8',
        #'HOST':'panthera',
        #'HOST': '10.42.17.241',

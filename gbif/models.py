@@ -317,24 +317,7 @@ class Occurrence(models.Model):
         This method returns a Node Object based on all the attributes of the Class Level
         """
         
-        #Node(Tree.level,name=Tree.name,id=Tree.id,parent_id=Tree.parent_id,abundance=Tree.abundance)    
-        keys = settings.OCCURRENCE_KEYS_4NEO
-        #keys = ['species_id','scientific_name','year','month','day','latitude','longitude','geom','event_date','basis_of_record']
- #       import ipdb; ipdb.set_trace()
-        cd = self.__dict__
-        dictio = dict([(k,cd[k]) for k in keys])
-        dictio['levelname'] = "Occurrence"
-        dictio['level'] = 999
-        dictio['pk'] = self.pk
-        dictio['geom'] = dictio['geom'].ewkt
-        dictio['name'] = reduce(lambda a,b : a + ' ' +b ,self.scientific_name.split(" ")[0:2])
-        dictio['event_date'] = self.event_date.isoformat()
-        #labels = [str(type(self))]
-        labels = ["Occurrence"]
-        
-        #dictio['keyword':keyword]
-        
-        node = Node(*labels,**dictio)
+
         
         ## HERE INSERT CODE FOR CHECKING IF A NEW ATTRIBUTE IS ADDED.
         
@@ -346,8 +329,26 @@ class Occurrence(models.Model):
             logger.debug("node existss")
             return node2
         else:
+            keys = settings.OCCURRENCE_KEYS_4NEO
+            #       import ipdb; ipdb.set_trace()
+            cd = self.__dict__
+            dictio = dict([(k,cd[k]) for k in keys])
+            dictio['levelname'] = "Occurrence"
+            dictio['level'] = 999
+            dictio['pk'] = self.pk
+            dictio['geom'] = dictio['geom'].ewkt
+            dictio['name'] = reduce(lambda a,b : a + ' ' +b ,self.scientific_name.split(" ")[0:2])
+            dictio['event_date'] = self.event_date.isoformat()
+            #labels = [str(type(self))]
+            labels = ["Occurrence"]
+        
+            #dictio['keyword':keyword]
+        
+            node = Node(*labels,**dictio)            
+             
             if writeDB:
                 graph.create(node)
+        
             return node
 
 

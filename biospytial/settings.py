@@ -211,7 +211,13 @@ LOGGING = {
             'class': 'logging.FileHandler',
             'filename': BASE_DIR+'/logs/w32_insertion_in_neo.log',
             'formatter': 'verbose'
-        },  
+        },
+        'file_insertion_errors': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': BASE_DIR+'/logs/errors_insertion_in_neo.log',
+            'formatter': 'verbose'
+        },    
         
     },
     'loggers': {
@@ -263,7 +269,11 @@ LOGGING = {
         'biospytial.insert_taxonomies_worker3.2' :{
             'handlers' : ['file_insertion_w32'],
             'level' : 'DEBUG',
-        },            
+        },
+        'biospytial.insert_taxonomies_worker_errors' :{
+            'handlers' : ['file_insertion_errors'],
+            'level' : 'DEBUG',
+        },             
          'biospytial.mesh.tools':{
              'level': 'DEBUG',
              'handlers': ['console'],
@@ -373,6 +383,19 @@ MEX_SCALES = { 0 : 'none',
         11: 'mesh"."mex4km'
         }
 
+
+CARNFORTH_SCALES = { 0 : 'none', 
+        1 : 'mesh"."carnforth1',
+        2: 'mesh"."carnforth2',
+        3: 'mesh"."carnforth4',
+        4: 'mesh"."carnforth8',
+        5: 'mesh"."carnforth16',
+        6: 'mesh"."carnforth32',
+        7: 'mesh"."carnforth64',
+        8: 'mesh"."carnforth128',
+        9: 'mesh"."carnforth256',
+        10: 'mesh"."carnforth512',
+        }
 
 # MEX_SCALES = {0: 'mesh"."testnested1',
 #  1: 'mesh"."testnested2',

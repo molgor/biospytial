@@ -65,7 +65,7 @@ def insertFULLTaxonomiesInNeo4J(mesh_subset,biosphere,gridname,num_proc=1):
         try :
             taxonomy.ingestAllDataInNeo(raster_models,with_raster=True)
         except db.OperationalError:
-            logger.error("Disconnected worker %s from database! Attempting to reconnect... engage!" %num_proc)
+            logger.error("Disconnected worker %s from database! Taxonomy %s problem %s Attempting to reconnect... engage!" %(num_proc,taxonomy.gid,i))
             db.connections.close_all()
             continue
         perc = i / float(N) * 100    

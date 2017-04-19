@@ -22,7 +22,7 @@ from shapely.geometry import Point,Polygon
 from numpy.linalg.linalg import norm
 from numpy import asarray
 from  mesh.models import bindNeighboursOf, graph
-
+from shapely import affinity
 
 
 logger = logging.getLogger('biospytial.mesh.tools')
@@ -131,7 +131,7 @@ def createRegionalNestedGrid(parent_square,store_prefix,n_levels):
 
 
 
-def create_rectangle_from_two_points(a_point,b_point):
+def create_rectangle_from_two_points(a_point,b_point,with_center=''):
     """
     Let a and b two points, this function will return a rectangle (polygon)
     in which these points are the corners.
@@ -164,10 +164,21 @@ def create_rectangle_from_two_points(a_point,b_point):
     b_prime = Point(xa,yb)
     a_prime = Point(xb,ya)
     rectangle = Polygon(((a_point.x,a_point.y),(b_prime.x,b_prime.y),(b_point.x,b_point.y),(a_prime.x,a_prime.y)))
-    return {'polygon':rectangle,'a' : a_point, 'b_p' : b_prime,'b' : b_point,'a_p':a_prime}
+    new_dic = {'polygon':rectangle,'a' : a_point, 'b_p' : b_prime,'b' : b_point,'a_p':a_prime}
+    if with_center:
+        try:
+            x,y = with_center
+        except:
+            logger.error("with_center parameter is not a 2d coordinate point")
+            return
+        pol = new_dic['polygon']
+        center = pol.centroid
+        npol = affinity.translate(pol,xoff=x - center.x,yoff=y - center.y)
+        new_dic['polygon'] = npol    
+    return new_dic
 
 
-def create_square_from_two_points(a_point,b_point):
+def create_square_from_two_points(a_point,b_point,with_center=''):
     """   
     Let a and b two points, this function will return a square (polygon)
     in which the a_point is at one corner and in the other extreme corner a point in the direction of b.
@@ -218,7 +229,24 @@ def create_square_from_two_points(a_point,b_point):
     pp_pt = Point(pp)
     a_point = Point(a_point)
     new_dic = create_rectangle_from_two_points(a_point, pp_pt)
+    
+    if with_center:
+        try:
+            x,y = with_center
+        except:
+            logger.error("with_center parameter is not a 2d coordinate point")
+            return new_dic
+        pol = new_dic['polygon']
+        npol = affinity.translate(pol,xoff=x,yoff=y)
+        new_dic['polygon'] = npol
     return new_dic
+
+
+
+
+
+
+
     
 
 def migrateGridToNeo(mesh,create_unique_index=False,intersect_with=''):

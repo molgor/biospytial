@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
+encoding//biospytial/error_index_extractor.py=utf-8
 encoding//biospytial/ingest-taxonomies-in-neo4j.py=utf-8
 encoding//biospytial/log_analyser_ingestion_performance.py=utf-8
 encoding//biospytial/settings.py=utf-8

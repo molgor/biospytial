@@ -249,7 +249,7 @@ def create_square_from_two_points(a_point,b_point,with_center=''):
 
     
 
-def migrateGridToNeo(mesh,create_unique_index=False,intersect_with=''):
+def migrateGridToNeo(mesh,create_unique_index=True,intersect_with=''):
     """
     Stores the mesh in the Neo4j database.
     Only the grid! Of course not the taxonomy

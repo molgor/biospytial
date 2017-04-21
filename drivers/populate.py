@@ -87,14 +87,16 @@ def curateOccurrences(response_from_getOccurence):
 def webGBIFtoOccurence(json_gbif):
     from gbif.models import Occurrence
     # Create the dictionary
+    ## Uncoment here if you need more records
+    
     try:
         occ = Occurrence(
         id = json_gbif['gbifID'],
-        dataset_id = json_gbif['datasetKey'],
-        institution_code = json_gbif['institutionCode'],
-        collection_code = json_gbif['collectionCode'],
-        catalog_number = json_gbif['catalogNumber'],
-        basis_of_record = json_gbif['basisOfRecord'],
+        #dataset_id = json_gbif['datasetKey'],
+        #institution_code = json_gbif['institutionCode'],
+        #collection_code = json_gbif['collectionCode'],
+        #catalog_number = json_gbif['catalogNumber'],
+        #basis_of_record = json_gbif['basisOfRecord'],
         
         
         kingdom = json_gbif['kingdom'],
@@ -114,7 +116,7 @@ def webGBIFtoOccurence(json_gbif):
         genus_id = json_gbif['genusKey'],
         species_id = json_gbif['speciesKey'],
         
-        country_code = json_gbif['countryCode'],
+        #country_code = json_gbif['countryCode'],
         latitude = json_gbif['decimalLatitude'],
         longitude = json_gbif['decimalLongitude'],
         
@@ -125,7 +127,7 @@ def webGBIFtoOccurence(json_gbif):
         #taxon_rank = json_gbif['taxonRank'],
         #modified = json_gbif['modified'],
         #recorded_by  = json_gbif['recordedBy'],
-        country = json_gbif['country'],
+        #country = json_gbif['country'],
         
         #locality  = json_gbif['verbatimLocality'],
         
@@ -141,14 +143,16 @@ def webGBIFtoOccurence(json_gbif):
         logger.warn("Missing data in field %s:"%e)
 
 
-def getAllOccurrences(WKT,url=URLOCCURRENCE,offset=0,safeinDB=False):
+def getAllOccurrences(WKT,url=URLOCCURRENCE,offset=0,safeinDB=False,maxdepth=0):
     """
     Get all Occurrences from the occurrence/search API
+    If maxdepth == 0 it will continue until the server throws the 'endOfRecords'
     """
     list_occurrences = []
     r = getOccurrenceN(WKT, url=url, offset=offset)
     j = r.json()
-    while not j['endOfRecords']:
+    #while (not j['endOfRecords']) or ((offset < maxdepth) and (maxdepth > 0)) :
+    while (not j['endOfRecords']) and ((offset <= maxdepth) or (maxdepth == 0)):    
         t = curateOccurrences(r)
         objs = map(lambda j : webGBIFtoOccurence(j),t)
         if safeinDB:

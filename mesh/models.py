@@ -9,6 +9,7 @@ Models for mesh objects.
 
 """
 import mesh
+from biospytial.settings import MESH_TABLENAMESPACE
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2015, JEM"
@@ -42,7 +43,8 @@ logger = logging.getLogger('biospytial.mesh')
 node_selector = NodeSelector(graph)
 
 
-
+global MESH_TABLENAMESPACE 
+MESH_TABLENAMESPACE = settings.MESH_TABLENAMESPACE
 
 
     
@@ -175,12 +177,19 @@ class Mesh1(mesh):
         # Experiment
         #logger.error("Ok Im setting tablename : %s"%settings.MESH_TABLENAMESPACE[spatiallevel])
 
-        db_table = settings.MESH_TABLENAMESPACE[1]
+        db_table = MESH_TABLENAMESPACE[1]
+    
         
     @property
     def parentCells(self):
         logger.info("This is the root of the Spatial Tree")
         return None 
+
+    @classmethod
+    def changeMeshTable(cls,scales):
+        #import ipdb; ipdb.set_trace()
+        cls.Meta.db_table = scales[1]
+        cls._meta.db_table = scales[1]
 
 class Mesh2(mesh):
     spatiallevel = 2
@@ -188,63 +197,62 @@ class Mesh2(mesh):
 #    mesh._meta.db_table = settings.MESH_TABLENAMESPACE[mesh.spatiallevel]  
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[2]
+        db_table = MESH_TABLENAMESPACE[2]
     
 class Mesh3(mesh):
     spatiallevel = 3
 
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[3]
+        db_table = MESH_TABLENAMESPACE[3]
        
 class Mesh4(mesh):
     
     spatiallevel = 4
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[4]
+        db_table = MESH_TABLENAMESPACE[4]
 
 class Mesh5(mesh):
     spatiallevel = 5
 
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[5]
+        db_table = MESH_TABLENAMESPACE[5]
         
 class Mesh6(mesh):
     spatiallevel = 6
    
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[6]
+        db_table = MESH_TABLENAMESPACE[6]
 
 class Mesh7(mesh):
     spatiallevel = 7
 
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[7]   
+        db_table = MESH_TABLENAMESPACE[7]   
     
 class Mesh8(mesh):
     spatiallevel = 8
 
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[8]
+        db_table = MESH_TABLENAMESPACE[8]
         
 class Mesh9(mesh):
     spatiallevel = 9
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[9]
+        db_table = MESH_TABLENAMESPACE[9]
         
 class Mesh10(mesh):
     spatiallevel = 10
     class Meta:
         managed = False
-        db_table = settings.MESH_TABLENAMESPACE[10]               
+        db_table = MESH_TABLENAMESPACE[10]               
         
-
 
 
 
@@ -523,6 +531,12 @@ def initMesh(Intlevel,scales=scales):
 #     except:
 #         logger.error("[biospytial.mesh] Selected zoom level not implemented yet")
 #         return False
+    
+    # Change the scales
+    if scales:
+        logger.debug("Changed MESH TABLE SPACE")
+        MESH_TABLENAMESPACE = scales
+
 
     i = Intlevel
     if i == 1:

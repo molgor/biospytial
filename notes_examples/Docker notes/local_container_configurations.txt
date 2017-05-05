@@ -13,15 +13,14 @@ docker swarm leave
 ### For linux server
     docker run \
     --name=neo4j_local\
-    --detach \
     --env NEO4J_AUTH=none \
     --publish=7474:7474 \
     --publish=7687:7687 \
     --publish=1337:1337 \
     --volume=/opt/DataVolumesFast/neo4j/data:/data \
     --volume=/opt/DataVolumesFast/neo4j/logs:/logs \
-    --net=biospytial_network_local \
-    molgor/neo4j_biospytial
+    --net=biospytial_network \
+    molgor/neo4j_biospytial:3.1.3 
     
 ##### FOR NEO$J MANTEINANCE #################################
 
@@ -177,7 +176,14 @@ docker run \
     neo4j:3.1 \
     /bin/bash
 
-
-
-
+####################################
+## Redis ###########################
+####################################
+docker run \
+    --name=redis \
+      --detach \
+    --publish=6379:6379 \
+    --volume=/mnt/data1/DataVolumesBank/redis:/data \
+    --net=biospytial_network_local \
+    redis
 

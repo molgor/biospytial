@@ -116,6 +116,11 @@ docker service create \
     --mount='type=bind,src=/opt/DataVolumesFast/neo4j/data,dst=/data' \
     --mount='type=bind,src=/opt/DataVolumesFast/neo4j/logs,dst=/logs' \
     --network=biospytial_network \
+    molgor/neo4j_biospytial
+    
+    
+    
+    
     neo4j:3.1
 
 ############################################

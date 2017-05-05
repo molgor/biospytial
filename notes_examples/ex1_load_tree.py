@@ -9,7 +9,7 @@ Scripts for testing and playing around with the Taxonomy tree read from neo.
 
 
 from drivers.tree_builder import TreeNeo
-from drivers.graph_models import graph, Mex4km_
+from drivers.graph_models import graph, Mex4km
 
 
 from mesh.models import MexMesh

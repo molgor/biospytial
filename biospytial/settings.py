@@ -122,8 +122,8 @@ DATABASES = {
 NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
-        'HOST':'neo4j',
         #'HOST':'neo4j_local',
+        'HOST':'neo4j',
         #'HOST':'148.88.197.8',
        #'HOST':'panthera',
        #'HOST': '10.42.17.241',
@@ -408,7 +408,7 @@ CARNFORTH_SCALES = { 0 : 'none',
 
 #ANALYSIS ON GRID SET: 
 MESH_TABLENAMESPACE = MEX_SCALES
-MESH_TABLENAMESPACE = CARNFORTH_SCALES
+#MESH_TABLENAMESPACE = CARNFORTH_SCALES
 
 #MESH_TABLENAMESPACE = BRAZ_SCALES
 

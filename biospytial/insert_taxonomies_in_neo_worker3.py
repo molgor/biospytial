@@ -90,7 +90,10 @@ def insertFULLTaxonomiesInNeo4J(mesh_subset,biosphere,gridname,num_proc=1):
 #mexmesh32 = mexmesh3[12226:18727]
 
 mexmesh33 = mexmesh3[18727 + 319:]
-ggg = insertFULLTaxonomiesInNeo4J(mexmesh33,biosphere,"mex4km",num_proc=2)
+## I cut here and I continue with improved code (insertion of taxonomies per transaction and not per individual nodes
+mexmesh331 = mexmesh33[4963:]
+mexmesh331 = mexmesh331[100:] 
+#ggg = insertFULLTaxonomiesInNeo4J(mexmesh331,biosphere,"mex4km",num_proc=2)
 
 
 

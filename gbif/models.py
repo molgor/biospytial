@@ -455,6 +455,8 @@ class Occurrence(models.Model):
             graph.create(rel)
         #relations = graph.match(start_node=node,rel_type=relation_name,end_node=dem_node)
         return rel
+    
+
 
     def getDescendingChain(self,depth,relation_type='IS_A_MEMBER_OF'):
         """

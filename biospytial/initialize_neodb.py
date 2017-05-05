@@ -24,7 +24,16 @@ g = Graph(uri)
 #g.schema.create_index("Order","name")
 #g.schema.create_index("Family","name")
 #g.schema.create_index("Genus","name")
-#g.schema.create_index("Species","name")
+#g.schema.create_index("Specie","name")
+
+#g.schema.create_uniqueness_constraint("Kingdom","id")
+#g.schema.create_uniqueness_constraint("Phylum","id")
+#g.schema.create_uniqueness_constraint("Class","id")
+#g.schema.create_uniqueness_constraint("Order","id")
+#g.schema.create_uniqueness_constraint("Family","id")
+#g.schema.create_uniqueness_constraint("Genus","id")
+#g.schema.create_uniqueness_constraint("Specie","id")
+
 
 #g.schema.create_index("Kingdom","id")
 #g.schema.create_index("Phylum","id")
@@ -32,7 +41,7 @@ g = Graph(uri)
 #g.schema.create_index("Order","id")
 #g.schema.create_index("Family","id")
 #g.schema.create_index("Genus","id")
-#g.schema.create_index("Species","id")
+#g.schema.create_index("Specie","id")
 
 
 # 
@@ -44,7 +53,7 @@ g = Graph(uri)
 # CREATE INDEX ON : Order(name);
 # CREATE INDEX ON :Family(name);
 # CREATE INDEX ON : Genus(name);
-# CREATE INDEX ON : Species(name);
+# CREATE INDEX ON : Specie(name);
 # 
 # CREATE INDEX ON : Kingdom(id);
 # CREATE INDEX ON : Phylum(id);
@@ -52,7 +61,7 @@ g = Graph(uri)
 # CREATE INDEX ON : Order(id);
 # CREATE INDEX ON :Family(id);
 # CREATE INDEX ON : Genus(id);
-# CREATE INDEX ON : Species(id);
+# CREATE INDEX ON : Specie(id);
 # CREATE INDEX ON : Occurrence(pk);
 
 #### Indexes for Raster Data

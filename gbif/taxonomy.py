@@ -1168,34 +1168,67 @@ class Taxonomy:
             o.bind_withNodeDEM(RasterData,writeDB=writeDB)
         return None
 
-    def bindRasterNodeOccurrence(self,RasterModel,writeDB=False):
+    def bindRasterNodeOccurrence(self,RasterModel,writeDB=False,insert_batch_transaction=True):
         """
         Binds the Occurrence (leaves in the tree) with a geospatial match of a RasterData model.
         
         Parameters :
             RasterData : The Raster_api model
         """
-        for o in self.occurrences:
-            o.bind_withNodeRaster(RasterModel,writeDB=writeDB)
+        #for o in self.occurrences:
+        #    o.bind_withNodeRaster(RasterModel,writeDB=writeDB)
+        if insert_batch_transaction :
+            rels = map(lambda oc : oc.bind_withNodeRaster(RasterModel),self.occurrences)
+            ## Prepare transaction.
+            tx = graph_driver.begin()
+            stata = map(lambda rel : tx.create(rel),rels)
+            if writeDB:
+                tx.commit()
+            
+            return stata
+        
+        ## Experimental test for inserting transacction
         return None    
 
-    def bootstrapTreeToLeaves(self,depth=6,relationship_type="HAS_EVENT"):
+    def bootstrapTreeToLeaves(self,depth=6,relationship_type="HAS_EVENT",writedb=True):
         """
         Binds every inter node to each Occurrences.
         This is done to make a direct connection to the matching data based on the occurrence (point/time).
         Remember this is done in each single tree bounded by a cell or polygon.
         """
+        ## NEW METHOD FOR THIS< WITH NEW PARAMETER
+        
         if self.occurrences:
-            for occurrence in self.occurrences:
-                try:
-                    node_occurrence = occurrence.getNode()
-                    chain = occurrence.getDescendingChain(depth)
-                    for node in chain:
-                        R = Relationship(node,relationship_type,node_occurrence)
-                        graph_driver.create(R)
-                except:
-                    continue
-            return None
+            nodes = map(lambda o : o.getNode(),self.occurrences)
+            chain = map(lambda o : o.getDescendingChain(depth),self.occurrences)
+            build_rel = lambda (node,chain) : map(lambda node_in_chain : Relationship(node_in_chain,relationship_type,node),chain)
+            n_c = zip(nodes,chain)
+            rels = map(build_rel,n_c)
+            rr = reduce(lambda l1,l2 : l1+l2, rels)
+            
+            if writedb:
+                tx = graph_driver.begin()
+                stata = map(lambda rel : tx.create(rel),rr)
+                tx.commit()
+            return rr
+#            lo = []                     
+#            for occurrence in self.occurrences:
+#                 try:
+#                     node_occurrence = occurrence.getNode()
+#                     chain = occurrence.getDescendingChain(depth)
+#                     for node in chain:
+#                         R = Relationship(node,relationship_type,node_occurrence)
+#                         ## Need to Store relations in list and append them in batch mode!
+#                         ## It's taking to much time for each relation to request, answer ,etc
+#                         lo.append(R)
+#                         #graph_driver.create(R)
+#                 except:
+#                     continue
+#             ## Prepare transaction.
+#             tx = graph_driver.begin()
+#             stata = map(lambda rel : tx.create(rel),lo)
+#             tx.commit()
+#             return stata
         else:
             return None
 
@@ -1225,7 +1258,7 @@ class Taxonomy:
         logger.info("Migrated to Neo")
         self.bindToMesh()
         logger.info("Binded to Mesh")
-        self.bootstrapTreeToLeaves()
+        self.bootstrapTreeToLeaves(writedb=True)
         logger.info("Bootstrapped InnerNodes to Leaves ")
         
         if with_raster:

@@ -10,6 +10,8 @@
 
 
 import logging
+#from drivers.tree_builder import TreeNeo
+
 logger = logging.getLogger('biospytial.graph_models')
 
 from py2neo.ogm import GraphObject, Property, RelatedTo, RelatedFrom
@@ -456,6 +458,8 @@ class Cell(GraphObject):
         """
         occs = filter(lambda l : l.pk,self.Occurrences)
         return occs        
+
+
 
 
 class Mex4km(GraphObject):

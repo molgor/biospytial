@@ -40,3 +40,36 @@ class Ecoregion(models.Model):
     def __str__(self):
         c = '<Ecoregion: instance %s :: %s >' %(self.id,self.nomzonecol.encode('latin-1'))
         return c
+    
+    
+    
+class InegiIV(models.Model):
+    id = models.AutoField(primary_key=True, db_column="gid")
+    cov_id = models.IntegerField(db_column="cov_id")
+    cov_ = models.IntegerField()
+    code = models.IntegerField(db_column="codigo")
+    name = models.CharField(max_length=50,db_column="descripcio")
+    geom = models.MultiPolygonField(srid=4326)
+    objects = models.GeoManager()
+
+    class Meta:
+        managed = False
+        db_table = "landuse-inegi5"
+        
+        
+    def __repr__(self):
+        c = '<LandUse: instance %s :: %s >' %(self.id,self.name.encode('utf8'))
+        return c
+    
+    
+    def __str__(self):
+        c = '<LandUse: instance %s :: %s >' %(self.id,self.name.encode('utf8'))
+        return c
+    
+
+
+
+
+
+
+

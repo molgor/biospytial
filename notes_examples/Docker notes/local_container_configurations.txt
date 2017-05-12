@@ -14,6 +14,7 @@ docker swarm leave
     docker run \
     --name=neo4j_local\
     --env NEO4J_AUTH=none \
+    --detach \
     --publish=7474:7474 \
     --publish=7687:7687 \
     --publish=1337:1337 \

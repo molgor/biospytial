@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'django_pdb',
     'django_extensions',
     'drivers',
+    'ecoregions',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -122,8 +123,9 @@ DATABASES = {
 NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
-        #'HOST':'neo4j_local',
-        'HOST':'neo4j',
+        'HOST':'neo4j_local',
+        #'HOST':'biospytial_neo4j_1',
+        #'HOST':'neo4j',
         #'HOST':'148.88.197.8',
        #'HOST':'panthera',
        #'HOST': '10.42.17.241',
@@ -131,8 +133,7 @@ NEO4J_DATABASES = {
         #'PORT':7687,
         'ENDPOINT':'/db/data',
         'USERNAME':'neo4j',
-        'PASSWORD':'perro'
-        
+
     }
 }
 

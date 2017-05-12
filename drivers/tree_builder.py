@@ -123,9 +123,9 @@ class LocalTree(object):
 
     def __repr__(self):
         try:
-            cad = "<TreeNode | %s: %s - n.count : %s- | AF: %s >"%(self.levelname,self.name,self.richness,self.n_presences_in_list)
+            cad = "<LocalTree | %s: %s - n.count : %s- | AF: %s >"%(self.levelname,self.name,self.richness,self.n_presences_in_list)
         except:
-            cad = "<TreeNode | %s: - n.count : %s- >"%('No record available',self.richness)
+            cad = "<LocalTree | %s: - n.count : %s- >"%('No record available',self.richness)
         return cad.encode('utf-8')
 
     def setOccurrences(self):

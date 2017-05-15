@@ -13,7 +13,7 @@
 import pandas
 import copy
 from itertools import groupby
-from drivers.graph_models import Occurrence
+from drivers.graph_models import Occurrence as OccurrenceNode
 from drivers.graph_models import Cell
 from drivers.raster_node_builder import RasterCollection
 import numpy as np
@@ -143,7 +143,7 @@ class LocalTree(object):
         """
         logger.debug("Retrieving the subtrees")
         for occurrence in self.children:
-            if not isinstance(occurrence, Occurrence):
+            if not isinstance(occurrence, OccurrenceNode):
                 #logger.debug("Children are not type occurrence")
                 try:
                     occurrences_on_children = occurrence.setOccurrences()

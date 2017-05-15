@@ -10,21 +10,24 @@
 
 
 import logging
+
 #from drivers.tree_builder import TreeNeo
 
 logger = logging.getLogger('biospytial.graph_models')
 
 from py2neo.ogm import GraphObject, Property, RelatedTo, RelatedFrom
 from django.contrib.gis.geos import GEOSGeometry
-from itertools import groupby
+from itertools import groupby, imap
 #from drivers.tree_builder import LocalTree
-
 from biospytial import settings
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
 import py2neo
 graph = py2neo.Graph(uri,bolt=True)
+
+
+
 
 global TAXDESCEND
 TAXDESCEND = "IS_A_MEMBER_OF"
@@ -321,7 +324,6 @@ class TreeNode(GraphObject):
         #siblings = filter(lambda node : node != self,siblings)
         return siblings
     
-
     def _isOccurrence(self):
         if self.level == 999:
             return True
@@ -381,6 +383,50 @@ class TreeNode(GraphObject):
             return True
         else:
             return False
+        
+        
+        
+    def getAssociatedTrees(self):
+        """
+        Returns a list of trees for each of the cells where the Node has events
+        """
+        logger.info("Retrieving cells")
+        #cells = self.cells
+        logger.info("Done!")
+        logger.info("Retriving Occurrences")
+        from drivers.tree_builder import TreeNeo
+       
+        gettree = lambda cell : TreeNeo(cell.occurrencesHere())
+        trees = imap(gettree,self.cells)
+        return trees
+
+    def getUpperScaleCells(self):
+        """
+        si mira, te vengo manejando lo que es el m'etodo para obtener las celdas a una resoluci'on espacial mayor.
+        La inmediata superior.
+        
+        Returns list of upper scale cells.
+        """
+        #upcell = lambda cell : list(cell.contained_in)
+        #upper_cells = imap(upcell,self.cells)
+        #logger.info("Reducing cells")
+        #upp_cells = list(set(reduce(lambda c1,c2 : c1 + c2 ,upper_cells)))
+        #return upp_cells
+    
+        upcell = lambda cell : cell.upperCell.next()
+        upper_cells = imap(upcell,self.cells)
+        logger.info("Reducing cells")
+        return upper_cells
+    
+    def insideCellRatio(self):
+        """
+        Calculates the inside cell ratio.
+        """
+        n = float(len(set(self.cells)))
+        k = float(len(set(self.getUpperScaleCells())))
+        return k / n
+    
+    
 
 class Kingdom(TreeNode):
    __property_label__ ='Kingdom'
@@ -426,6 +472,7 @@ class Cell(GraphObject):
     
     connected_to = RelatedTo("Cell", ISNEIGHBOUR)
     
+    contained_in = RelatedTo("Cell", ISCONTAINED)
 
     Occurrences = RelatedFrom(Occurrence, ISIN)
     
@@ -444,7 +491,11 @@ class Cell(GraphObject):
         polygon = GEOSGeometry(self.cell)
         return polygon
 
-
+    @property
+    def upperCell(self):
+        return iter(self.contained_in)
+        
+        
     def getNeighbours(self):
         #ln = [n for n in self.connected_from]
         rn = [n for n in self.connected_to]

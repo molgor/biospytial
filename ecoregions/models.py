@@ -5,8 +5,8 @@ class Ecoregion(models.Model):
     id = models.AutoField(primary_key=True, db_column="gid")
     area = models.FloatField()
     perimeter = models.FloatField()
-    cov_ = models.FloatField()
-    cov_id = models.FloatField()
+    cov = models.FloatField()
+    covid = models.FloatField()
     tipo_zona = models.CharField(max_length=20)
     num_zona = models.CharField(max_length=10)
     nomzonecol = models.CharField(max_length=100)
@@ -45,8 +45,8 @@ class Ecoregion(models.Model):
     
 class InegiIV(models.Model):
     id = models.AutoField(primary_key=True, db_column="gid")
-    cov_id = models.IntegerField(db_column="cov_id")
-    cov_ = models.IntegerField()
+    covid = models.IntegerField(db_column="cov_id")
+    cov = models.IntegerField(db_column="cov_")
     code = models.IntegerField(db_column="codigo")
     name = models.CharField(max_length=50,db_column="descripcio")
     geom = models.MultiPolygonField(srid=4326)

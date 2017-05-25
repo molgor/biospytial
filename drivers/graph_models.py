@@ -11,6 +11,7 @@
 
 import logging
 
+
 #from drivers.tree_builder import TreeNeo
 
 logger = logging.getLogger('biospytial.graph_models')
@@ -46,6 +47,11 @@ global RASTERDICT
 
 global ISCONTAINED
 ISCONTAINED = "IS_CONTAINED_IN"
+
+
+global BOTTOMSCALE_CLASSNODE
+BOTTOMSCALE_CLASSNODE = "Mex4km"
+
 
 
 # Fixes an bug from the original library
@@ -144,7 +150,8 @@ class Occurrence(GraphObject):
     
     
     #species = RelatedFrom("Specie", "HAS_EVENT")
-    is_in  = RelatedTo("Cell",ISIN)
+    #is_in  = RelatedTo("Cell",ISIN)
+    is_in  = RelatedTo(BOTTOMSCALE_CLASSNODE,ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")
     parent_link = RelatedTo("TreeNode",TAXDESCEND)
     children_link = RelatedTo("TreeNode",TAXASCEND)
@@ -418,14 +425,59 @@ class TreeNode(GraphObject):
         logger.info("Reducing cells")
         return upper_cells
     
-    def insideCellRatio(self):
+    def insideCellRatio(self,cells_list='',option=1):
         """
-        Calculates the inside cell ratio.
+        Scales 
+        Calculates the inside cell ratio for all scales
+        Returns list of ratios 
+        
+        parameters: 
+             option : 1 
+                 returns ratios
+            option : 2
+                returns true values (number of cells)
         """
-        n = float(len(set(self.cells)))
-        k = float(len(set(self.getUpperScaleCells())))
-        return k / n
+        nested_cells = self.propagateCells(cells_list)
+        lengths = map(lambda lc : float(len(lc)),nested_cells)
+        if option == 2:
+            return lengths
+        elif option == 1:
+            c = lengths
+            return [c[i+1]/c[i] for i in range(len(c)-1) ]
     
+    def propagateCells(self,cells_list=''):
+        """
+        Extracts the cells by going upstream in the scales.
+        It uses the POSET structure of the Quadtree.
+        """
+        
+        ## This function maps all the cells given by the parameter cells and extract the upperCell.
+        ## Later performs a cast list -> set to remove repetitions
+
+        if not cells_list:
+            cells_list = list(self.cells)
+        levels = [list(cells_list)]    
+        getUpperCells = lambda list_of_cells : set(imap(lambda cell : list(cell.upperCell)[0],list_of_cells))
+        finish = False
+        i = 0
+        #import ipdb; ipdb.set_trace()
+        while not finish:
+            logger.info("Raising scale layer %s"%i)
+            try:
+                if cells_list:
+                    cells_list = getUpperCells(cells_list)
+                    levels.append(cells_list)
+                    i += 1
+                else:
+                    finish = True
+            except:
+                finish = True
+            
+        return levels
+            
+        
+
+
     
 
 class Kingdom(TreeNode):
@@ -481,6 +533,17 @@ class Cell(GraphObject):
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
     @property
+    def gridname(self, *args, **kwargs):
+        l = list(self.__ogm__.node.labels())
+        name = reduce(lambda a,b : str(a) + '-' +str(b) ,l)
+        return name
+        
+    def __repr__(self):
+        c = "< %s id = %s >"%(self.gridname,str(self.id))
+        return c
+        
+
+    @property
     def centroid(self):
         pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
         point = GEOSGeometry(pointstr)
@@ -513,6 +576,51 @@ class Cell(GraphObject):
 
 
 
+###########EXPERIMENTAL 
+
+
+class GridLevel1(Cell):
+   __property_label__ ='mexico_grid1'
+
+class GridLevel2(Cell):
+   __property_label__ ='mexico_grid2'
+   contained_in = RelatedTo("GridLevel1", ISCONTAINED)
+   
+class GridLevel3(Cell):
+   __property_label__ ='mexico_grid4'
+   contained_in = RelatedTo("GridLevel2", ISCONTAINED)
+   
+class GridLevel4(Cell):
+   __property_label__ ='mexico_grid8'
+   contained_in = RelatedTo("GridLevel3", ISCONTAINED)      
+
+class GridLevel5(Cell):
+   __property_label__ ='mexico_grid16'
+   contained_in = RelatedTo("GridLevel4", ISCONTAINED)
+   
+class GridLevel6(Cell):
+   __property_label__ ='mexico_grid32'
+   contained_in = RelatedTo("GridLevel5", ISCONTAINED)
+   
+   
+class GridLevel7(Cell):
+   __property_label__ ='mexico_grid64'
+   contained_in = RelatedTo("GridLevel6", ISCONTAINED)
+   
+   
+class GridLevel8(Cell):
+   __property_label__ ='mexico_grid128'
+   contained_in = RelatedTo("GridLevel7", ISCONTAINED)
+   
+class GridLevel9(Cell):
+   __property_label__ ='mexico_grid256'
+   contained_in = RelatedTo("GridLevel8", ISCONTAINED)
+
+class GridLevel10(Cell):
+   __property_label__ ='mexico_grid512'
+   contained_in = RelatedTo("GridLevel9", ISCONTAINED)
+
+
 class Mex4km(GraphObject):
     
     __primarykey__ = 'id'
@@ -526,8 +634,8 @@ class Mex4km(GraphObject):
     
     
     connected_to = RelatedTo("Mex4km", ISNEIGHBOUR)
-    contained_in = RelatedTo("Cell",ISCONTAINED)
-
+    #contained_in = RelatedTo("Cell",ISCONTAINED)
+    contained_in = RelatedTo("GridLevel10",ISCONTAINED)
     Occurrences = RelatedFrom(Occurrence, ISIN)
     
     #LocalTree  = RelatedFrom(TreeNode, ISIN)

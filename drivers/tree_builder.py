@@ -17,7 +17,7 @@ from drivers.graph_models import Occurrence as OccurrenceNode
 from drivers.graph_models import Cell
 from drivers.raster_node_builder import RasterCollection
 import numpy as np
-
+import itertools as it
 
 from collections import OrderedDict
 from compiler.ast import nodes
@@ -307,9 +307,18 @@ class LocalTree(object):
 
 
 
-
-
-
+    def childrenInsideCellRatios(self):
+        """
+        Returns the insideCell Ratios of all the Children in a lazy list (iterator) 
+        """
+        #return it.imap(lambda n : n.node.insideCellRatio(),self.children)
+        
+        import pandas as pd
+        ratios = map(lambda n : n.node.insideCellRatio(),self.children)
+        data = pd.DataFrame(ratios).transpose()
+        names = map(lambda n : n.name,self.children)
+        data.columns = names
+        return data
 
     def __eq__(self,other_tree):
         """

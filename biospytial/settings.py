@@ -298,7 +298,12 @@ LOGGING = {
             'propagate': False
             
         }, 
-
+        'biospytial.traversals' : {
+            'handlers' : ['console'],
+            'level' : 'INFO',
+            'propagate': False
+            
+        },
 },
 }
 

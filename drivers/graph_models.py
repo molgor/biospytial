@@ -320,10 +320,14 @@ class TreeNode(GraphObject):
 
     def getParent(self):
         parent = list(self.parent_link)
-        if len(parent) > 1 or not isinstance(parent[0],TreeNode):
-            raise TypeError
+        # Se if its not empty
+        if parent :
+            if len(parent) > 1 or not isinstance(parent[0],TreeNode):
+                raise TypeError
+            else:
+                return parent.pop()
         else:
-            return parent.pop()
+            raise TypeError
 
     def getSiblings(self):
         parent = self.getParent()
@@ -475,8 +479,6 @@ class TreeNode(GraphObject):
             
         return levels
             
-        
-
 
     
 
@@ -671,7 +673,38 @@ class Mex4km(GraphObject):
 
 
 
-
+def pickNode(type='TreeNodeClass',name="str",graph=graph):
+    """
+    A wrapper for loading TreeNodes of the class 'type'.
+    It uses the parameter name to look for a Node that satisfy the ~ string operator in py2neo.
+    Parameters:
+        type : A Class of Node taken from this module.
+            e.g. Family
+        name : A name in string. 
+    Returns : 
+        A TreeNode instance with data retrieved from the GraphDataBase.
+        
+    """
+    #import ipdb; ipdb.set_trace()
+    nameregexp = '\'' + name + '.*\''
+    try:
+        node = type.select(graph).where("_.name=~%s"%nameregexp)
+    except:
+        logger.error("type : %s argument is not a TreeNode valid Class" %type)
+        return None
+    #Check if it's empty
+    
+    nodeselector = list(node.limit(2))
+    n = len(nodeselector)
+    if n > 1 :
+        return node
+    elif n == 1:
+        return nodeselector.pop()   
+    
+    else:
+        logger.error("Name: \'%s\' was not found for TreeNode: %s"%(name,str(type)))
+        return None
+    
 
 """
 WindSpeed

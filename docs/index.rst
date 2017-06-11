@@ -20,7 +20,7 @@ BiosPytial Documentation and tutorial
   modules/gbif_nestedtaxonomy_class.rst
   modules/gbif_buildtree.rst
   modules/gbif_views.rst
-
+  modules/drivers_modules.rst
 
 
 

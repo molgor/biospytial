@@ -307,14 +307,18 @@ class LocalTree(object):
 
 
 
-    def childrenInsideCellRatios(self):
+    def childrenInsideCellRatios(self,option=1):
         """
-        Returns the insideCell Ratios of all the Children in a lazy list (iterator) 
+        Returns the insideCell Ratios of all the Children in a lazy list (iterator)
+        
+        Parameters: 
+            option : 1 Ratios
+            option : 2 number of cells in each layer.  
         """
         #return it.imap(lambda n : n.node.insideCellRatio(),self.children)
         
         import pandas as pd
-        ratios = map(lambda n : n.node.insideCellRatio(),self.children)
+        ratios = map(lambda n : n.node.insideCellRatio(option=option),self.children)
         data = pd.DataFrame(ratios).transpose()
         names = map(lambda n : n.name,self.children)
         data.columns = names
@@ -657,12 +661,6 @@ class TreeNeo(LocalTree):
             # Case the tree is empty
             return False
 
-
-
-
-
-
-
     def __add__(self, tree_neo):
         """
         Operator Overloading for adding Trees!
@@ -676,6 +674,22 @@ class TreeNeo(LocalTree):
         occs = copy.copy(new_occs)
         logger.info("Merging Trees")
         return TreeNeo(list_occurrences=occs)  
+
+
+    def rankLevels(self):
+        """
+        Ranks the taxonomicv levels (list of Families, Genera, etc) according to the attribute:
+        n_presences_in_list
+        """
+        count = lambda obj : obj.n_presences_in_list
+        levels = [self.kingdoms,self.classes,self.orders,self.families,self.genera,self.species]
+        try:
+            logger.info("Sorting nodes in taxonomic levels by counts on frequencies")
+            map(lambda level: level.sort(key=count,reverse=True),levels)
+            return True
+        except:
+            logger.error("No values of presences in list. \n Hint: RuncountNodesFrequenciesOnList first ")
+            return None
 
 
 class Neighbourhood(object):

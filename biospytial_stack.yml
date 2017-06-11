@@ -5,6 +5,15 @@ version: '3'
 #   external:
 #    name: 'biospytial_network_local'
 
+#docker network create \
+#  --driver=overlay \
+#  --subnet=10.0.9.0/24 \
+#  --attachable=true \
+#  biospytial_network_2
+
+
+      
+      
 services:
 
  ## Biospytial client
@@ -16,8 +25,13 @@ services:
    - '/mnt/data1/git-projects/biospytial:/apps'
    - '/mnt/data1:/mnt/data1'
    - '/tmp/.X11-unix:/tmp/.X11-unix'
+   - '${HOME}/.Xauthority:/root/.Xauthority'
   deploy:
-   replicas: 2
+   mode: global
+   resources:
+    limits:
+     memory: 25g
+   #replicas: 2
    update_config:
     parallelism: 1
     delay: 10s
@@ -27,6 +41,7 @@ services:
   depends_on:
    - postgis
    - neo4j
+   - redis
   environment:
     DISPLAY: '${DISPLAY}'
   image: molgor/biospytial
@@ -78,4 +93,8 @@ services:
   volumes:
    - '/home/juan/DataVolumesBank/redis:/data'
   image: redis
+  
+
+
+
   

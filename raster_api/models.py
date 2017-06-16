@@ -28,6 +28,39 @@ class Test(models.Model):
         
 
 
+class ETOPO1(models.Model):
+    """
+    ..
+    Digital Elevation Model for the World
+    Scale 1 arc Sec.
+    
+    Attributes
+    ==========
+    Default attributes given by the raster2pgsql
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    id = models.AutoField(primary_key=True, db_column="rid")
+    rast = models.RasterField()
+    objects = models.GeoManager()
+    number_bands = 1
+    neo_label_name = 'ETOPO1'
+    link_type_name = 'HAS_ELEVATION'
+    properties = {'units' : 'arc-secs' ,
+                  'resolution' : '1', 
+    }
+    
+    class Meta:
+        managed = False
+        db_table = 'etopo1_ice_c_geotiff'
+
+
+
+
+
+
+
 class DemMex(models.Model):
     """
     ..
@@ -187,7 +220,8 @@ class SolarRadiation(BioClimModel):
     units = '(KJ m^-2 day^-1)'
     
     class Meta:
-        db_table = 'bioclim\".\"srad'
+#        db_table = 'bioclim\".\"srad'
+        db_table = 'bioclim\".\"world-srad'
         managed = False
 
     def __str__(self):
@@ -227,7 +261,7 @@ class MaxTemperature(BioClimModel):
     units = '(C)'
     
     class Meta:
-        db_table = 'bioclim\".\"tmax'
+        db_table = 'bioclim\".\"world-tmax'
         managed = False
 
     def __str__(self):
@@ -316,7 +350,7 @@ class intersectWith(Lookup):
         return 'ST_Intersects( %s ,  %s  )' % things, params
     
     
-raster_models = [DemMex,Precipitation,SolarRadiation,MeanTemperature,MinTemperature,MaxTemperature,VaporPressure,WindSpeed]
+raster_models = [ETOPO1,Precipitation,SolarRadiation,MeanTemperature,MinTemperature,MaxTemperature,VaporPressure,WindSpeed]
 
 raster_models_dic = {
 'WindSpeed' : raster_models[7],
@@ -329,4 +363,4 @@ raster_models_dic = {
 'Precipitation' : raster_models[1] 
 }
 
-raster_models.pop(0)
+#raster_models.pop(0)

@@ -95,7 +95,7 @@ class LocalTree(object):
 
 
 
-    def setGraph(self,graph):
+    def getGraph(self,graph):
         """
         Converts to a Networkx object
         """
@@ -103,13 +103,21 @@ class LocalTree(object):
         for child in self.children:            
             graph.add_edge(node,child,weight=node.richness)
             try:
-                graph = child.setGraph(graph)
+                graph = child.getGraph(graph)
             except: 
                 continue
                 #return graph
             #G.add_edge(node, child.node,attr_dict=None)
         return graph
-        
+
+    def toNetworkx(self):
+        """
+        Converts the Tree to a Graph structure handled by the Networkx library
+        """
+        import networkx as nt
+        g = nt.Graph()
+        tree = self.getGraph(g)
+        return tree
     
     @property
     def richness(self):

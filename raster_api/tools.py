@@ -101,7 +101,7 @@ class RasterData(object):
         Parameters:
             rastermodel :  Is a django.contrib.db.models instance . An ORM in raster_data.models
             border : A polygon geometry. The border geometry that defines the interior of the raster.
-            date : string for date. Important for matchig nodes with date
+            date : string for date. Important for matching nodes with date
         """
         self.model = rastermodelinstance.objects.filter(rast__intersect_with=border)
         self.geometry = border

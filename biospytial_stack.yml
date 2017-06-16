@@ -22,6 +22,7 @@ services:
    - '8888:8888'
   volumes:
    - '/mnt/data1/RawDataCSV:/RawDataCSV'
+   - '/mnt/data1/outputs:/outputs'
    - '/mnt/data1/git-projects/biospytial:/apps'
    - '/mnt/data1:/mnt/data1'
    - '/tmp/.X11-unix:/tmp/.X11-unix'

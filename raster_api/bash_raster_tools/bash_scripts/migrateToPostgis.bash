@@ -4,25 +4,26 @@
 
 # Input bioclim 
 
-INPUTDIR=$1
+FILENAME=$1
 
 
-echo  "Processing: "${INPUTDIR}.vrt
+
+echo  "Processing: "${FILENAME}.vrt
+
+TABLE=$(basename -s .tif $FILENAME)
 
 
-TABLE=$(echo ${INPUTDIR} | awk -F_ '{ print $3 }')
-
-gdalbuildvrt -separate ${INPUTDIR}.vrt ${INPUTDIR}/*.tif
+gdalbuildvrt -separate $TABLE.vrt $FILENAME
 
 
 echo "Generating SQL table"
-raster2pgsql -d -I -C -M -F -t 128x128 ${INPUTDIR}.vrt bioclim.${TABLE} > ${TABLE}.sql
+raster2pgsql -d -I -C -M -F -t 128x128 $TABLE.vrt ${TABLE} > ${TABLE}.sql
 
 echo "Ingesting in DB"
-psql -d gbif -f ${TABLE}.sql
+psql -d biospytial -h panthera -U biospytial -f ${TABLE}.sql
 
 echo "Removing table"
-rm ${TABLE}.sql
+#rm ${TABLE}.sql
 
 echo $TABLE
 

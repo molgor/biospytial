@@ -124,8 +124,8 @@ NEO4J_DATABASES = {
     'default' : {
         #'HOST':'148.88.197.8',
         #'HOST':'neo4j_local',
-        'HOST':'biospytial_neo4j',
-        #HOST':'neo4j',
+        #'HOST':'biospytial_neo4j',
+        'HOST':'neo4j',
         #'HOST':'148.88.197.8',
        #'HOST':'panthera',
        #'HOST': '10.42.17.241',
@@ -436,7 +436,7 @@ OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','lat
 
 PATH_IMAGES = '/Users/juan/git_projects/biospytial/static/trees/'
 
-PATH_OUTPUT = '/home/juan/Research/biospytial-output/'
+PATH_OUTPUT = '/outputs'
 
 RASTERNODATAVALUE = -9999
 

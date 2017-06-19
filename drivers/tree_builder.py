@@ -101,7 +101,7 @@ class LocalTree(object):
         """
         node = self
         for child in self.children:            
-            graph.add_edge(node,child,weight=node.richness)
+            graph.add_edge(str(node.name),str(child.name),weight=node.richness)
             try:
                 graph = child.getGraph(graph)
             except: 

@@ -10,6 +10,7 @@
 
 
 import logging
+import itertools
 
 
 #from drivers.tree_builder import TreeNeo
@@ -305,7 +306,13 @@ class TreeNode(GraphObject):
         It gives all the nodes of type cell where this node has been found in all the database.
         """
         return iter(self.is_in)
-
+        #return self.is_in
+    
+    def giveNCells(self,k=10):
+        """
+        Gives the first 10 elements of the total list (which is an iterator)
+        """
+        return itertools.islice(self.is_in,k)
 
     def __repr__(self):
         c = "<TreeNode type: %s id = %s name: %s>"%(str(self.levelname),str(self.__primaryvalue__),str(self.name.encode('utf-8')))
@@ -397,19 +404,29 @@ class TreeNode(GraphObject):
         
         
         
-    def getAssociatedTrees(self):
+    def getAssociatedTrees(self,first_n_cells=10):
         """
-        Returns a list of trees for each of the cells where the Node has events
+        Returns an iterator of trees defined on each of the cells where the Node has events
+        Parameter :
+            first_n_cells : Number of cells to obtain 
+            note:
+             choose first_n_cells = 'all' to obtain all the cells.
         """
         logger.info("Retrieving cells")
         #cells = self.cells
         logger.info("Done!")
         logger.info("Retriving Occurrences")
         from drivers.tree_builder import TreeNeo
-       
-        gettree = lambda cell : TreeNeo(cell.occurrencesHere())
-        trees = imap(gettree,self.cells)
-        return trees
+        if first_n_cells != "all":
+            try:
+                cs = self.giveNCells(k=first_n_cells)
+            except:
+                logger.error("Bad parameter first_n_cells. Use an integer or \'all\' .")
+        else:
+            cs = self.cells
+        itrees = imap(lambda c : TreeNeo(c.occurrencesHere()),cs)
+        
+        return itrees
 
     def getUpperScaleCells(self):
         """

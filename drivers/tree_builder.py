@@ -82,7 +82,7 @@ class LocalTree(object):
         self.occurrences = []
         self.involvedCells = []
         self.neighbouringtrees = []
-        self.n_presences_in_list = 'N.A.'
+        self.n_presences_in_list = 0.05
 
 
     
@@ -95,28 +95,32 @@ class LocalTree(object):
 
 
 
-    def getGraph(self,graph):
+    def getGraph(self,graph,level_i=0,depth_level=100):
         """
         Converts to a Networkx object
         """
         node = self
+        level_i += 1
         for child in self.children:            
-            graph.add_edge(str(node.name),str(child.name),weight=node.richness)
-            try:
-                graph = child.getGraph(graph)
-            except: 
+            graph.add_edge(node,child,weight=node.richness)
+            if level_i < depth_level:
+                try:
+                    graph = child.getGraph(graph,level_i=level_i,depth_level=depth_level)
+                except: 
+                    continue
+            else:
                 continue
                 #return graph
             #G.add_edge(node, child.node,attr_dict=None)
         return graph
 
-    def toNetworkx(self):
+    def toNetworkx(self,depth_level=10):
         """
         Converts the Tree to a Graph structure handled by the Networkx library
         """
         import networkx as nt
         g = nt.Graph()
-        tree = self.getGraph(g)
+        tree = self.getGraph(g,depth_level=depth_level)
         return tree
     
     @property
@@ -131,10 +135,10 @@ class LocalTree(object):
 
     def __repr__(self):
         try:
-            cad = "<LocalTree | %s: %s - n.count : %s- | AF: %s >"%(self.levelname,self.name,self.richness,self.n_presences_in_list)
+            cad = "<LocalTree | %s: %s - n.count : %s- | AF: %s >"%(self.levelname,str(self.name.encode('utf-8')),self.richness,self.n_presences_in_list)
         except:
             cad = "<LocalTree | %s: - n.count : %s- >"%('No record available',self.richness)
-        return cad.encode('utf-8')
+        return cad.decode('utf-8')
 
     def setOccurrences(self):
         """
@@ -620,7 +624,7 @@ class TreeNeo(LocalTree):
         except:
             cad = "<LocalTree Of Life | %s: - n.count : %s- >"%('No record available',self.richness)        
     
-        return cad.encode('utf-8')
+        return cad.encode('utf-8').decode('utf-8')
    
     def setOccurrencesFromTaxonomies(self,list_of_taxonomies):
         """

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # graph_models.py
 # The Module for Object Graph Mapping OGM . 
 # Currently in Neo4J
@@ -6,7 +7,7 @@
 # Date: 26/10/2016
  
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+
 
 
 import logging
@@ -315,7 +316,10 @@ class TreeNode(GraphObject):
         return itertools.islice(self.is_in,k)
 
     def __repr__(self):
-        c = "<TreeNode type: %s id = %s name: %s>"%(str(self.levelname),str(self.__primaryvalue__),str(self.name.encode('utf-8')))
+        ## converting to ascii values ignoring special characters.
+        ## deprecated when migrating to python 3
+        c = "<TreeNode type: %s id = %s name: %s>"%(unicode(self.levelname),unicode(self.__primaryvalue__),self.name.encode('ascii','ignore'))
+        #.encode('utf-8')
         return c
 
     def setLabel(self,labelname):

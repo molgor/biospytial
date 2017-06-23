@@ -19,4 +19,7 @@ urlpatterns = [
     url(r'^getTree/',views.showTreeInGrid,name='showTreeInGrid'),
     url(r'^getAllTrees',views.showAllLevelsInTreeInGrid,name='showAllLevelsInTreeInGrid'),
     url(r'^extractDataOf',driver_views.ExtractDataFromCSVFile,name='ExtractDataFromCSVFile'),
+    url(r'^gvisualizer',driver_views.GraphVisualizer,name='GraphVisualizer'),
+    url(r'^getGraph$',driver_views.getGraphJson,name='getgraph'),
+    url(r'^getGraphTest$',driver_views.getGraphJsonTest,name='getGraphTest'),
 ] 

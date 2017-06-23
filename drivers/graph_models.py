@@ -283,6 +283,7 @@ class TreeNode(GraphObject):
         return iter(self.children_link)
     
 
+
     @property
     def allOccurrences(self):
         """

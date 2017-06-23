@@ -11,6 +11,7 @@ services:
  client:
   ports:
    - '8888:8888'
+   - '8000:8000'
   volumes:
    - '/mnt/data1/RawDataCSV:/RawDataCSV'
    - '/mnt/data1/outputs:/outputs'

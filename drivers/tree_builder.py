@@ -93,6 +93,13 @@ class LocalTree(object):
         
         #self.setOccurrences()
 
+    @property
+    def character(self):
+        """
+        Small representation of properties
+        """
+        d = {'id':self.id,'name':self.name,'level':self.level,'freq':self.n_presences_in_list}
+        return d
 
 
     def getGraph(self,graph,level_i=0,depth_level=100):

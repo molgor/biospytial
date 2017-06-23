@@ -27,7 +27,8 @@ DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = ['172.17.0.3','localhost']
+#ALLOWED_HOSTS = ['172.17.0.3','localhost']
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -330,13 +331,29 @@ NULL_DATA_INTEGER = -99999
 STATIC_URL = '/static/'
 #STATIC_ROOT = '/var/tmp/trees/'
 
-TEMPLATE_DIRS = (
-    '/Users/juan/git_projects/biospytial/templates/',
-)
+
+TEMPLATES = [
+{
+    'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    'DIRS': [os.path.join(BASE_DIR,'templates')],
+    'APP_DIRS': True,
+    'OPTIONS': {
+        'context_processors': [
+            'django.template.context_processors.debug',
+            'django.template.context_processors.request',
+            'django.contrib.auth.context_processors.auth',
+            'django.contrib.messages.context_processors.messages',
+
+        ],
+    },
+},] 
+
+
+
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
-    '/var/tmp/trees/',
+    '/apps/staticfiles',
 )
 
 STATICFILES_FINDERS = ( 

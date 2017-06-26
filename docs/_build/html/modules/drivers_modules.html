@@ -1,0 +1,233 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Basic modules for interacting with the Graph Stuctures &#8212; Biospytial beta documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Interfacing Bios`Py`tial with HTTP" href="gbif_views.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gbif_views.html" title="Interfacing Bios`Py`tial with HTTP"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Biospytial beta documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="basic-modules-for-interacting-with-the-graph-stuctures">
+<h1>Basic modules for interacting with the Graph Stuctures<a class="headerlink" href="#basic-modules-for-interacting-with-the-graph-stuctures" title="Permalink to this headline">¶</a></h1>
+<p>This are the basic models.</p>
+<span class="target" id="module-drivers.graph_models"></span><dl class="class">
+<dt id="drivers.graph_models.Elevation">
+<em class="property">class </em><code class="descclassname">drivers.graph_models.</code><code class="descname">Elevation</code><a class="reference internal" href="../_modules/drivers/graph_models.html#Elevation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.Elevation" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="drivers.graph_models.Occurrence">
+<em class="property">class </em><code class="descclassname">drivers.graph_models.</code><code class="descname">Occurrence</code><span class="sig-paren">(</span><em>filtered_nodes</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#Occurrence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.Occurrence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lets see hoe this works</p>
+<p class="rubric">Methods</p>
+<dl class="method">
+<dt id="drivers.graph_models.Occurrence.getAncestors">
+<code class="descname">getAncestors</code><span class="sig-paren">(</span><em>depth=8</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#Occurrence.getAncestors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.Occurrence.getAncestors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the parameter depth it walks through the Subgraph Taxonomy
+Starting from the Occurrence Node to the depth specified.
+Remember that there is a loop in the LUCA node there fore,</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.Occurrence.getCells">
+<code class="descname">getCells</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#Occurrence.getCells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.Occurrence.getCells" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all the cells that are associated with this taxa.
+Occurrence is the Leaf Node of the Tree Of life, therefore 
+It gives the real cell where it was found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.Occurrence.isDescendantOf">
+<code class="descname">isDescendantOf</code><span class="sig-paren">(</span><em>ancestor</em>, <em>depth=8</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#Occurrence.isDescendantOf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.Occurrence.isDescendantOf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ancestor is a tree node. Returns True if this occurrence has ‘ancestor’ in some level of it’s Ancestors chain.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.Occurrence.pullbackRasterNodes">
+<code class="descname">pullbackRasterNodes</code><span class="sig-paren">(</span><em>raster_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#Occurrence.pullbackRasterNodes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.Occurrence.pullbackRasterNodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the associated value of each occurrence based on the available models.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drivers.graph_models.RasterNode">
+<em class="property">class </em><code class="descclassname">drivers.graph_models.</code><code class="descname">RasterNode</code><a class="reference internal" href="../_modules/drivers/graph_models.html#RasterNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.RasterNode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Super class for each node.</p>
+<p class="rubric">Methods</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="drivers.graph_models.TreeNode">
+<em class="property">class </em><code class="descclassname">drivers.graph_models.</code><code class="descname">TreeNode</code><a class="reference internal" href="../_modules/drivers/graph_models.html#TreeNode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.TreeNode" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Attributes</p>
+<p class="rubric">Methods</p>
+<dl class="attribute">
+<dt id="drivers.graph_models.TreeNode.allOccurrences">
+<code class="descname">allOccurrences</code><a class="headerlink" href="#drivers.graph_models.TreeNode.allOccurrences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve all data! related to this taxonimic node.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="drivers.graph_models.TreeNode.cells">
+<code class="descname">cells</code><a class="headerlink" href="#drivers.graph_models.TreeNode.cells" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns all the cells that are associated with this taxa.
+Does not take into account the current leaf nodes in the TreeNode.
+It gives all the nodes of type cell where this node has been found in all the database.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.TreeNode.getAssociatedTrees">
+<code class="descname">getAssociatedTrees</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#TreeNode.getAssociatedTrees"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.TreeNode.getAssociatedTrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of trees for each of the cells where the Node has events</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.TreeNode.getUpperScaleCells">
+<code class="descname">getUpperScaleCells</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#TreeNode.getUpperScaleCells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.TreeNode.getUpperScaleCells" title="Permalink to this definition">¶</a></dt>
+<dd><p>si mira, te vengo manejando lo que es el m’etodo para obtener las celdas a una resoluci’on espacial mayor.
+La inmediata superior.</p>
+<p>Returns list of upper scale cells.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.TreeNode.insideCellRatio">
+<code class="descname">insideCellRatio</code><span class="sig-paren">(</span><em>cells_list=”</em>, <em>option=1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#TreeNode.insideCellRatio"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.TreeNode.insideCellRatio" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scales 
+Calculates the inside cell ratio for all scales
+Returns list of ratios</p>
+<dl class="docutils">
+<dt>parameters: </dt>
+<dd><blockquote class="first">
+<div><dl class="docutils">
+<dt>option <span class="classifier-delimiter">:</span> <span class="classifier">1 </span></dt>
+<dd>returns ratios</dd>
+</dl>
+</div></blockquote>
+<dl class="last docutils">
+<dt>option <span class="classifier-delimiter">:</span> <span class="classifier">2</span></dt>
+<dd>returns true values (number of cells)</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.TreeNode.propagateCells">
+<code class="descname">propagateCells</code><span class="sig-paren">(</span><em>cells_list=”</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#TreeNode.propagateCells"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.TreeNode.propagateCells" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts the cells by going upstream in the scales.
+It uses the POSET structure of the Quadtree.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="drivers.graph_models.TreeNode.setLabel">
+<code class="descname">setLabel</code><span class="sig-paren">(</span><em>labelname</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/drivers/graph_models.html#TreeNode.setLabel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.TreeNode.setLabel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Usefull when selecting arbitrary nodes of certain taxonomy.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="drivers.graph_models.WindSpeed">
+<em class="property">class </em><code class="descclassname">drivers.graph_models.</code><code class="descname">WindSpeed</code><a class="reference internal" href="../_modules/drivers/graph_models.html#WindSpeed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#drivers.graph_models.WindSpeed" title="Permalink to this definition">¶</a></dt>
+<dd><p class="rubric">Methods</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gbif_views.html"
+                        title="previous chapter">Interfacing Bios`Py`tial with HTTP</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/modules/drivers_modules.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gbif_views.html" title="Interfacing Bios`Py`tial with HTTP"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Biospytial beta documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015 - 2017, Juan Escamilla Molgora.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

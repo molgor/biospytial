@@ -1,0 +1,504 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gbif.buildtree &#8212; Biospytial beta documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Biospytial beta documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gbif.buildtree</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1">#-*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">Buildtree</span>
+<span class="sd">=========</span>
+<span class="sd">..</span>
+<span class="sd">This module provides the functions necessary to build a hierarchical</span>
+<span class="sd">acyclic and connected graph (Tree) build upon the taxonomic relationships</span>
+<span class="sd">of the biological classification.</span>
+
+<span class="sd">This module makes use of the models define in gbif.models as well as the</span>
+<span class="sd">common geospatial operations like intersects.</span>
+<span class="sd">Based on the :ref:`gbif.models` and spatial operations.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Juan Escamilla Mólgora&quot;</span>
+<span class="n">__copyright__</span> <span class="o">=</span> <span class="s2">&quot;Copyright 2015, JEM&quot;</span>
+<span class="n">__license__</span> <span class="o">=</span> <span class="s2">&quot;GPL&quot;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;2.2.1&quot;</span>
+<span class="n">__mantainer__</span> <span class="o">=</span> <span class="s2">&quot;Juan&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span><span class="s2">&quot;molgor@gmail.com&quot;</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s2">&quot;Prototype&quot;</span>
+
+<span class="kn">from</span> <span class="nn">ete2</span> <span class="k">import</span> <span class="n">Tree</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;biospytial.gbif.buildtree&#39;</span><span class="p">)</span>
+
+
+        
+
+
+<div class="viewcode-block" id="getGenera"><a class="viewcode-back" href="../../modules/models.html#gbif.buildtree.getGenera">[docs]</a><span class="k">def</span> <span class="nf">getGenera</span><span class="p">(</span><span class="n">taxonomy_queryset</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. </span>
+<span class="sd">    This function generates a Tree object derived from the collapse </span>
+<span class="sd">    of all *species* under the scope of a spatial queryset.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    taxonomy_queryset gbif.models / GeoquerySet</span>
+<span class="sd">    </span>
+<span class="sd">    </span>
+<span class="sd">    only_id : Boolean (flag)</span>
+<span class="sd">        True (default False) means that is going to append the full name of the genera.</span>
+<span class="sd">        This is a string and can be vary in length. If it is used in big data sets it will </span>
+<span class="sd">        impact the amount of memory used because of the heavy load of information.   </span>
+<span class="sd">     </span>
+<span class="sd">    </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :genera_tree: derived from ete2.TreeNode()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tax</span> <span class="o">=</span> <span class="n">taxonomy_queryset</span>
+    <span class="n">sps</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">species</span>
+    <span class="n">genera</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">genera</span>
+    <span class="n">family_tree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;genus_root&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">genus</span> <span class="ow">in</span> <span class="n">genera</span><span class="p">:</span>
+        <span class="n">family_id</span> <span class="o">=</span> <span class="n">genus</span><span class="p">[</span><span class="s1">&#39;parent_id&#39;</span><span class="p">]</span>
+        <span class="n">genus_id</span> <span class="o">=</span> <span class="n">genus</span><span class="p">[</span><span class="s1">&#39;genus_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">only_id</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">genus</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">genus_id</span>
+        <span class="n">ab</span> <span class="o">=</span> <span class="n">genus</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">]</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">genus</span><span class="p">[</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+        <span class="n">sp_by_gns</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">genus_id__exact</span><span class="o">=</span><span class="n">genus_id</span><span class="p">)</span>
+        <span class="n">gn_t</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span><span class="n">support</span><span class="o">=</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">gn_t</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;abundance&#39;</span><span class="p">,</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">gn_t</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="n">genus_id</span><span class="p">)</span>
+        <span class="n">gn_t</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;parent_id&#39;</span><span class="p">,</span><span class="n">family_id</span><span class="p">)</span>
+        <span class="n">gn_t</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;genus_id&#39;</span><span class="p">,</span> <span class="n">genus_id</span><span class="p">)</span>
+        <span class="n">gn_t</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span><span class="s1">&#39;genus&#39;</span><span class="p">)</span>
+        <span class="n">gn_t</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span><span class="n">points</span><span class="p">)</span>
+        <span class="c1">#logger.info(&#39;Building branch for genus %s&#39; %name)</span>
+        <span class="k">for</span> <span class="n">specie</span> <span class="ow">in</span> <span class="n">sp_by_gns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">only_id</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">specie</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">name</span> <span class="o">=</span> <span class="n">specie</span><span class="p">[</span><span class="s1">&#39;species_id&#39;</span><span class="p">]</span>
+<span class="c1">#                 logger.info(&#39;The name assigned is %s&#39; %name)</span>
+            <span class="n">points</span> <span class="o">=</span> <span class="n">specie</span><span class="p">[</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+            <span class="n">s</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="p">,</span><span class="n">support</span><span class="o">=</span><span class="n">specie</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">])</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;abundance&#39;</span><span class="p">,</span><span class="n">ab</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="n">specie</span><span class="p">[</span><span class="s1">&#39;species_id&#39;</span><span class="p">])</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;species_id&#39;</span><span class="p">,</span> <span class="n">specie</span><span class="p">[</span><span class="s1">&#39;species_id&#39;</span><span class="p">])</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span><span class="s1">&#39;species&#39;</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span><span class="n">points</span><span class="p">)</span>
+            <span class="n">gn_t</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">s</span><span class="p">)</span>
+        <span class="n">family_tree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">gn_t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">family_tree</span></div>
+            
+          
+<div class="viewcode-block" id="getFamilies"><a class="viewcode-back" href="../../modules/models.html#gbif.buildtree.getFamilies">[docs]</a><span class="k">def</span> <span class="nf">getFamilies</span><span class="p">(</span><span class="n">taxonomic_queryset</span><span class="p">,</span><span class="n">genera_tree</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ..</span>
+<span class="sd">    This function generates a Tree object derived from the collapse </span>
+<span class="sd">    of all *families* under the scope of a spatial queryset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    taxonomy_queryset gbif.models / GeoquerySet</span>
+<span class="sd">        :genera_tree: Tree derived from getGenera</span>
+<span class="sd">    </span>
+<span class="sd">    only_id : Boolean (flag)</span>
+<span class="sd">        True (default False) means that is going to append the full name of the families.</span>
+<span class="sd">        This is a string and can be vary in length. If it is used in big data sets it will </span>
+<span class="sd">        impact the amount of memory used because of the heavy load of information.   </span>
+<span class="sd">     </span>
+<span class="sd">    </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :families_tree: derived from ete2.TreeNode()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tax</span> <span class="o">=</span> <span class="n">taxonomic_queryset</span>
+    <span class="n">families</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">families</span>
+    <span class="n">genera</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">genera</span>
+    <span class="n">orders_tree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;order_root&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">family</span> <span class="ow">in</span> <span class="n">families</span><span class="p">:</span>
+        <span class="n">order_id</span> <span class="o">=</span> <span class="n">family</span><span class="p">[</span><span class="s1">&#39;parent_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">only_id</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">family</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">family</span><span class="p">[</span><span class="s1">&#39;family_id&#39;</span><span class="p">]</span>
+        <span class="n">ab</span> <span class="o">=</span> <span class="n">family</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">]</span>
+        <span class="c1">#Add here the geometric feature (if necessary)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">family</span><span class="p">[</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+        <span class="n">family_id</span> <span class="o">=</span> <span class="n">family</span><span class="p">[</span><span class="s1">&#39;family_id&#39;</span><span class="p">]</span>
+        <span class="n">famTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span><span class="n">support</span><span class="o">=</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">famTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;abundance&#39;</span><span class="p">,</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">famTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="n">family_id</span><span class="p">)</span> 
+        <span class="n">famTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;parent_id&#39;</span><span class="p">,</span><span class="n">order_id</span><span class="p">)</span>       
+        <span class="n">famTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;family_id&#39;</span><span class="p">,</span><span class="n">family_id</span><span class="p">)</span>
+        <span class="n">famTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span><span class="s1">&#39;family&#39;</span><span class="p">)</span>
+        <span class="n">famTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">gens_by_fam</span> <span class="o">=</span> <span class="n">genera</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">parent_id__exact</span><span class="o">=</span><span class="n">family_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">genus</span> <span class="ow">in</span> <span class="n">gens_by_fam</span><span class="p">:</span>
+            <span class="n">id_g</span> <span class="o">=</span> <span class="n">genus</span><span class="p">[</span><span class="s1">&#39;genus_id&#39;</span><span class="p">]</span>
+            <span class="c1">#Filter the branch of the tree with the selected genus (for loop)</span>
+            <span class="n">branch</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">node</span> <span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">branch</span> <span class="p">:</span> <span class="n">branch</span><span class="o">.</span><span class="n">genus_id</span><span class="o">==</span><span class="n">id_g</span><span class="p">,</span><span class="n">genera_tree</span><span class="o">.</span><span class="n">get_children</span><span class="p">()</span> <span class="p">))</span>
+            <span class="c1"># Attach the branch to the family tree</span>
+            <span class="n">famTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">branch</span><span class="p">)</span>
+        <span class="n">orders_tree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">famTree</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">orders_tree</span></div>
+ 
+
+<div class="viewcode-block" id="getOrders"><a class="viewcode-back" href="../../modules/models.html#gbif.buildtree.getOrders">[docs]</a><span class="k">def</span> <span class="nf">getOrders</span><span class="p">(</span><span class="n">taxonomic_queryset</span><span class="p">,</span><span class="n">families_tree</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function generates a Tree object derived from the collapse </span>
+<span class="sd">    of all *orders* under the scope of a spatial queryset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    taxonomy_queryset gbif.models / GeoquerySet</span>
+<span class="sd">    :families_tree: Tree derived from getFamilies</span>
+
+<span class="sd">    only_id : Boolean (flag)</span>
+<span class="sd">        True (default False) means that is going to append the full name of the orders.</span>
+<span class="sd">        This is a string and can be vary in length. If it is used in big data sets it will </span>
+<span class="sd">        impact the amount of memory used because of the heavy load of information.   </span>
+<span class="sd"> </span>
+
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :orders_tree: derived from ete2.TreeNode()    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tax</span> <span class="o">=</span> <span class="n">taxonomic_queryset</span>
+    <span class="n">orders</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">orders</span>
+    <span class="n">families</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">families</span>
+    <span class="n">classTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;class_root&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[gbif.buildtree] Collapsing Orders&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="n">orders</span><span class="p">:</span>
+        <span class="n">class_id</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="s1">&#39;parent_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">only_id</span><span class="p">:</span>      
+            <span class="n">name</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="s1">&#39;order_id&#39;</span><span class="p">]</span>
+        <span class="n">ab</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">]</span>
+        <span class="c1">#Add here the geometric feature (if necessary)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+        <span class="n">order_id</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="s1">&#39;order_id&#39;</span><span class="p">]</span>
+        <span class="c1">#logger.info(&quot;Colapsing Order id: %s&quot; %order_id)</span>
+        <span class="n">orderTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span><span class="n">support</span><span class="o">=</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">orderTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;abundance&#39;</span><span class="p">,</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">orderTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="n">order_id</span><span class="p">)</span>
+        <span class="n">orderTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;parent_id&#39;</span><span class="p">,</span><span class="n">class_id</span><span class="p">)</span>        
+        <span class="n">orderTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;order_id&#39;</span><span class="p">,</span><span class="n">order_id</span><span class="p">)</span>
+        <span class="n">orderTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span><span class="s1">&#39;order&#39;</span><span class="p">)</span>
+        <span class="n">orderTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span><span class="n">points</span><span class="p">)</span>
+        <span class="c1">#orderTree.add_feature(&#39;points&#39;,points)</span>
+        <span class="n">fams_by_order</span> <span class="o">=</span> <span class="n">families</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">parent_id__exact</span><span class="o">=</span><span class="n">order_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">family</span> <span class="ow">in</span> <span class="n">fams_by_order</span><span class="p">:</span>
+            <span class="n">id_f</span> <span class="o">=</span> <span class="n">family</span><span class="p">[</span><span class="s1">&#39;family_id&#39;</span><span class="p">]</span>
+            <span class="c1">#Filter the branch of the tree with the selected genus (for loop)</span>
+            <span class="n">branch</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">node</span> <span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">branch</span> <span class="p">:</span> <span class="n">branch</span><span class="o">.</span><span class="n">family_id</span><span class="o">==</span><span class="n">id_f</span><span class="p">,</span><span class="n">families_tree</span><span class="o">.</span><span class="n">get_children</span><span class="p">()))</span>
+            <span class="c1">#print branch</span>
+            <span class="c1"># Attach the branch to the family tree</span>
+            <span class="n">orderTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">branch</span><span class="p">)</span>
+        <span class="n">classTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">orderTree</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">classTree</span>   </div>
+
+
+<div class="viewcode-block" id="getClasses"><a class="viewcode-back" href="../../modules/models.html#gbif.buildtree.getClasses">[docs]</a><span class="k">def</span> <span class="nf">getClasses</span><span class="p">(</span><span class="n">taxonomic_queryset</span><span class="p">,</span><span class="n">orders_tree</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ..</span>
+<span class="sd">    This function generates a Tree object derived from the collapse </span>
+<span class="sd">    of all *classes* under the scope of a spatial queryset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    taxonomy_queryset gbif.models / GeoquerySet</span>
+<span class="sd">        :orders_tree: Tree derived from getOrders</span>
+<span class="sd">    </span>
+<span class="sd">    only_id : Boolean (flag)</span>
+<span class="sd">        True (default False) means that is going to append the full name of the classes.</span>
+<span class="sd">        This is a string and can be vary in length. If it is used in big data sets it will </span>
+<span class="sd">        impact the amount of memory used because of the heavy load of information.   </span>
+<span class="sd"> </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :classes_tree: derived from ete2.TreeNode() </span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tax</span> <span class="o">=</span> <span class="n">taxonomic_queryset</span>
+    <span class="n">classes</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">classes</span>
+    <span class="n">orders</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">orders</span>
+    <span class="n">phylumTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;phylum_root&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[gbif.buildtree] Collapsing Classes&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">class_</span> <span class="ow">in</span> <span class="n">classes</span><span class="p">:</span>
+        <span class="n">phylum_id</span> <span class="o">=</span> <span class="n">class_</span><span class="p">[</span><span class="s1">&#39;parent_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">only_id</span><span class="p">:</span> 
+            <span class="n">name</span> <span class="o">=</span> <span class="n">class_</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">class_</span><span class="p">[</span><span class="s1">&#39;class_id&#39;</span><span class="p">]</span>
+        <span class="n">ab</span> <span class="o">=</span> <span class="n">class_</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">]</span>
+        <span class="c1">#Add here the geometric feature (if necessary)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">class_</span><span class="p">[</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+        <span class="n">class_id</span> <span class="o">=</span> <span class="n">class_</span><span class="p">[</span><span class="s1">&#39;class_id&#39;</span><span class="p">]</span>
+        <span class="c1">#logger.info(&quot;Colapsing Class id: %s&quot; %class_id)</span>
+        <span class="n">classTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span><span class="n">support</span><span class="o">=</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">classTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="n">class_id</span><span class="p">)</span>
+        <span class="n">classTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;abundance&#39;</span><span class="p">,</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">classTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;parent_id&#39;</span><span class="p">,</span><span class="n">phylum_id</span><span class="p">)</span>
+        <span class="n">classTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;class_id&#39;</span><span class="p">,</span><span class="n">class_id</span><span class="p">)</span>
+        <span class="n">classTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span><span class="s1">&#39;class&#39;</span><span class="p">)</span>
+        <span class="n">classTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">orders_by_class</span> <span class="o">=</span> <span class="n">orders</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">parent_id__exact</span><span class="o">=</span><span class="n">class_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">order</span> <span class="ow">in</span> <span class="n">orders_by_class</span><span class="p">:</span>
+            <span class="n">id_o</span> <span class="o">=</span> <span class="n">order</span><span class="p">[</span><span class="s1">&#39;order_id&#39;</span><span class="p">]</span>
+            <span class="c1">#Filter the branch of the tree with the selected genus (for loop)</span>
+            <span class="n">branch</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">node</span> <span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">branch</span> <span class="p">:</span> <span class="n">branch</span><span class="o">.</span><span class="n">order_id</span><span class="o">==</span><span class="n">id_o</span><span class="p">,</span><span class="n">orders_tree</span><span class="o">.</span><span class="n">get_children</span><span class="p">()))</span>
+            <span class="c1">#print branch</span>
+            <span class="c1"># Attach the branch to the family tree</span>
+            <span class="n">classTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">branch</span><span class="p">)</span>
+        <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">classTree</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">phylumTree</span>  </div>
+
+<div class="viewcode-block" id="getPhyla"><a class="viewcode-back" href="../../modules/models.html#gbif.buildtree.getPhyla">[docs]</a><span class="k">def</span> <span class="nf">getPhyla</span><span class="p">(</span><span class="n">taxonomic_queryset</span><span class="p">,</span><span class="n">classes_tree</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ...</span>
+<span class="sd">    This function generates a Tree object derived from the collapse </span>
+<span class="sd">    of all *phyla* under the scope of a spatial queryset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    taxonomy_queryset gbif.models / GeoquerySet</span>
+<span class="sd">        :classes_tree: Tree derived from getclasses</span>
+
+<span class="sd">        only_id : Boolean (flag)</span>
+<span class="sd">            True (default False) means that is going to append the full name of the Phyla.</span>
+<span class="sd">            This is a string and can be vary in length. If it is used in big data sets it will </span>
+<span class="sd">            impact the amount of memory used because of the heavy load of information.   </span>
+<span class="sd">  </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :phyla_tree: derived from ete2.TreeNode()   </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tax</span> <span class="o">=</span> <span class="n">taxonomic_queryset</span>
+    <span class="n">phyla</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">phyla</span>
+    <span class="n">classes</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">classes</span>
+    <span class="n">kingdomTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;kingdom_root&#39;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[gbif.buildtree] Collapsing Phyla&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">phylum</span> <span class="ow">in</span> <span class="n">phyla</span><span class="p">:</span>
+        <span class="n">kingdom_id</span> <span class="o">=</span> <span class="n">phylum</span><span class="p">[</span><span class="s1">&#39;parent_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">only_id</span><span class="p">:</span>         
+            <span class="n">name</span> <span class="o">=</span> <span class="n">phylum</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">phylum</span><span class="p">[</span><span class="s1">&#39;phylum_id&#39;</span><span class="p">]</span>
+        <span class="n">ab</span> <span class="o">=</span> <span class="n">phylum</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">]</span>
+        <span class="c1">#Add here the geometric feature (if necessary)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">phylum</span><span class="p">[</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+        <span class="n">phylum_id</span> <span class="o">=</span> <span class="n">phylum</span><span class="p">[</span><span class="s1">&#39;phylum_id&#39;</span><span class="p">]</span>
+        <span class="c1">#logger.info(&quot;Colapsing Phylum: %s&quot; %name)</span>
+        <span class="n">phylumTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span><span class="n">support</span><span class="o">=</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="n">phylum_id</span><span class="p">)</span>
+        <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;abundance&#39;</span><span class="p">,</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;parent_id&#39;</span><span class="p">,</span><span class="n">kingdom_id</span><span class="p">)</span>        
+        <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;phylum_id&#39;</span><span class="p">,</span><span class="n">phylum_id</span><span class="p">)</span>
+        <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span><span class="s1">&#39;phylum&#39;</span><span class="p">)</span>
+        <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">classes_by_phylum</span> <span class="o">=</span> <span class="n">classes</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">parent_id__exact</span><span class="o">=</span><span class="n">phylum_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">class_</span> <span class="ow">in</span> <span class="n">classes_by_phylum</span><span class="p">:</span>
+            <span class="n">id_c</span> <span class="o">=</span> <span class="n">class_</span><span class="p">[</span><span class="s1">&#39;class_id&#39;</span><span class="p">]</span>
+            <span class="c1">#Filter the branch of the tree with the selected genus (for loop)</span>
+            <span class="n">branch</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">node</span> <span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">branch</span> <span class="p">:</span> <span class="n">branch</span><span class="o">.</span><span class="n">class_id</span><span class="o">==</span><span class="n">id_c</span><span class="p">,</span><span class="n">classes_tree</span><span class="o">.</span><span class="n">get_children</span><span class="p">()))</span>
+            <span class="c1">#print branch</span>
+            <span class="c1"># Attach the branch to the family tree</span>
+            <span class="n">phylumTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">branch</span><span class="p">)</span>
+        <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">phylumTree</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">kingdomTree</span>  </div>
+
+<div class="viewcode-block" id="getKingdoms"><a class="viewcode-back" href="../../modules/models.html#gbif.buildtree.getKingdoms">[docs]</a><span class="k">def</span> <span class="nf">getKingdoms</span><span class="p">(</span><span class="n">taxonomic_queryset</span><span class="p">,</span><span class="n">phyla_tree</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ...</span>
+<span class="sd">    This function generates a Tree object derived from the collapse </span>
+<span class="sd">    of all *kingdoms* under the scope of a spatial queryset.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        taxonomy_queryset gbif.models / GeoquerySet</span>
+<span class="sd">            :phyla_tree: Tree derived from getKingdoms</span>
+
+<span class="sd">        only_id : Boolean (flag)</span>
+<span class="sd">            True (default False) means that is going to append the full name of the kingdoms.</span>
+<span class="sd">            This is a string and can be vary in length. If it is used in big data sets it will </span>
+<span class="sd">            impact the amount of memory used because of the heavy load of information.   </span>
+<span class="sd"> </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :kingdoms_tree: derived from ete2.TreeNode()   </span>
+<span class="sd">    </span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tax</span> <span class="o">=</span> <span class="n">taxonomic_queryset</span>
+    <span class="n">kingdoms</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">kingdoms</span>
+    <span class="n">total_abundance</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span> <span class="p">:</span> <span class="n">a</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">],</span><span class="n">kingdoms</span><span class="p">))</span>
+    <span class="n">phyla</span> <span class="o">=</span> <span class="n">tax</span><span class="o">.</span><span class="n">phyla</span>
+    <span class="n">TreeOfLife</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Life&#39;</span><span class="p">)</span>
+    <span class="n">TreeOfLife</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s2">&quot;abundance&quot;</span><span class="p">,</span> <span class="n">total_abundance</span><span class="p">)</span>
+    <span class="n">TreeOfLife</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s1">&#39;LOCAL_LUCA&#39;</span><span class="p">)</span>
+    <span class="n">TreeOfLife</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s2">&quot;parent_id&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">TreeOfLife</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s2">&quot;level&quot;</span><span class="p">,</span> <span class="s2">&quot;root&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;[gbif.buildtree] Collapsing Kingdoms&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">kingdom</span> <span class="ow">in</span> <span class="n">kingdoms</span><span class="p">:</span>
+        <span class="n">kingdom_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">only_id</span><span class="p">:</span>         
+            <span class="n">name</span> <span class="o">=</span> <span class="n">kingdom</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">kingdom</span><span class="p">[</span><span class="s1">&#39;kingdom_id&#39;</span><span class="p">]</span>    
+        <span class="n">ab</span> <span class="o">=</span> <span class="n">kingdom</span><span class="p">[</span><span class="s1">&#39;ab&#39;</span><span class="p">]</span>
+        <span class="c1">#Add here the geometric feature (if necessary)</span>
+        <span class="n">points</span> <span class="o">=</span> <span class="n">kingdom</span><span class="p">[</span><span class="s1">&#39;points&#39;</span><span class="p">]</span>
+        <span class="n">kingdom_id</span> <span class="o">=</span> <span class="n">kingdom</span><span class="p">[</span><span class="s1">&#39;kingdom_id&#39;</span><span class="p">]</span>
+        <span class="c1">#logger.info(&quot;Colapsing kingdom: %s&quot; %name)</span>
+        <span class="n">kingdomTree</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span><span class="n">support</span><span class="o">=</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span><span class="n">kingdom_id</span><span class="p">)</span>
+        <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;abundance&#39;</span><span class="p">,</span><span class="n">ab</span><span class="p">)</span>
+        <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;parent_id&#39;</span><span class="p">,</span><span class="s1">&#39;LOCAL_LUCA&#39;</span><span class="p">)</span>
+        <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;kingdom_id&#39;</span><span class="p">,</span><span class="n">kingdom_id</span><span class="p">)</span>
+        <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;level&#39;</span><span class="p">,</span><span class="s1">&#39;kingdom&#39;</span><span class="p">)</span>
+        <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_feature</span><span class="p">(</span><span class="s1">&#39;points&#39;</span><span class="p">,</span><span class="n">points</span><span class="p">)</span>
+        <span class="n">phyla_by_kingdom</span> <span class="o">=</span> <span class="n">phyla</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">parent_id__exact</span><span class="o">=</span><span class="n">kingdom_id</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">phylum</span> <span class="ow">in</span> <span class="n">phyla_by_kingdom</span><span class="p">:</span>
+            <span class="n">id_p</span> <span class="o">=</span> <span class="n">phylum</span><span class="p">[</span><span class="s1">&#39;phylum_id&#39;</span><span class="p">]</span>
+            <span class="c1">#Filter the branch of the tree with the selected genus (for loop)</span>
+            <span class="n">branch</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">node</span> <span class="p">:</span> <span class="n">node</span><span class="o">.</span><span class="n">next</span><span class="p">(),</span><span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">branch</span> <span class="p">:</span> <span class="n">branch</span><span class="o">.</span><span class="n">phylum_id</span><span class="o">==</span><span class="n">id_p</span><span class="p">,</span><span class="n">phyla_tree</span><span class="o">.</span><span class="n">get_children</span><span class="p">()))</span>
+            <span class="c1">#print branch</span>
+            <span class="c1"># Attach the branch to the family tree</span>
+            <span class="n">kingdomTree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">branch</span><span class="p">)</span>
+        <span class="n">TreeOfLife</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">child</span><span class="o">=</span><span class="n">kingdomTree</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">TreeOfLife</span>  </div>
+
+
+<div class="viewcode-block" id="getTOL"><a class="viewcode-back" href="../../modules/models.html#gbif.buildtree.getTOL">[docs]</a><span class="k">def</span> <span class="nf">getTOL</span><span class="p">(</span><span class="n">taxonomic_queryset</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ...</span>
+<span class="sd">    Calculates the entire Local Tree of Life derived from the collapsing functions.</span>
+<span class="sd">    Gives the complete tree of life</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">        only_id : Boolean (flag)</span>
+<span class="sd">            True (default False) means that is going to append the full name of the taxons.</span>
+<span class="sd">            This is a string and can be vary in length. If it is used in big data sets it will </span>
+<span class="sd">            impact the amount of memory used because of the heavy load of information.   </span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    :local_tree_of_life: derived from ete2.TreeNode() </span>
+<span class="sd">    </span>
+<span class="sd">    See also</span>
+<span class="sd">    --------</span>
+<span class="sd">    gbif.taxonomy : Where this module is highly used.</span>
+<span class="sd"> </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tax</span> <span class="o">=</span> <span class="n">taxonomic_queryset</span>
+    <span class="c1">#tree_genera = getGenera(tax)</span>
+    
+    <span class="n">TOL</span> <span class="o">=</span> <span class="n">getKingdoms</span><span class="p">(</span><span class="n">tax</span><span class="p">,</span><span class="n">getPhyla</span><span class="p">(</span><span class="n">tax</span><span class="p">,</span><span class="n">getClasses</span><span class="p">(</span><span class="n">tax</span><span class="p">,</span><span class="n">getOrders</span><span class="p">(</span><span class="n">tax</span><span class="p">,</span><span class="n">getFamilies</span><span class="p">(</span><span class="n">tax</span><span class="p">,</span><span class="n">getGenera</span><span class="p">(</span><span class="n">tax</span><span class="p">,</span><span class="n">only_id</span><span class="o">=</span><span class="n">only_id</span><span class="p">),</span><span class="n">only_id</span><span class="o">=</span><span class="n">only_id</span><span class="p">),</span><span class="n">only_id</span><span class="o">=</span><span class="n">only_id</span><span class="p">),</span><span class="n">only_id</span><span class="o">=</span><span class="n">only_id</span><span class="p">),</span><span class="n">only_id</span><span class="o">=</span><span class="n">only_id</span><span class="p">),</span><span class="n">only_id</span><span class="o">=</span><span class="n">only_id</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">TOL</span></div>
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Biospytial beta documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015 - 2017, Juan Escamilla Molgora.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

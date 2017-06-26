@@ -1,0 +1,189 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting started (super incomplete introduction) &#8212; Biospytial beta documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Object Relational mapping with Postgis" href="gbif_models.html" />
+    <link rel="prev" title="BiosPytial Documentation and tutorial" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gbif_models.html" title="Object Relational mapping with Postgis"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="BiosPytial Documentation and tutorial"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Biospytial beta documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="getting-started-super-incomplete-introduction">
+<h1>Getting started (super incomplete introduction)<a class="headerlink" href="#getting-started-super-incomplete-introduction" title="Permalink to this headline">¶</a></h1>
+<p>This is an ultra-minor draft.
+The idea is to convert all this documentation into a
+<a href="#id1"><span class="problematic" id="id2">`</span></a>dissertation-style´ online manuscript</p>
+<div class="section" id="biospytial">
+<h2>BiosPytial<a class="headerlink" href="#biospytial" title="Permalink to this headline">¶</a></h2>
+<p><em>An interactive / command-line modeller’s suite for analyzing biodiversity across scales and space.</em>
+Biospytial is a set of tools written in the Python programming language
+that allows the identification of biodiversity patterns in space.
+It uses the GBIF database, the biggest repository of species records in the world.</p>
+<div class="section" id="datasource">
+<h3>Datasource<a class="headerlink" href="#datasource" title="Permalink to this headline">¶</a></h3>
+<p><em>“The Global Biodiversity Information Facility (GBIF) is an international open data infrastructure, funded by governments.
+It allows anyone, anywhere to access data about all types of life on Earth, shared across national boundaries via the Internet.”“</em>
+<cite>GBIF &lt;http://gbif.org&gt;`</cite></p>
+<p>Biospytial uses the GBIF dataset as principal input provider.
+The data is then imported into a Postgis instance and managed by Django using REST and ORM interface.</p>
+<p>There is a network representation that will work with Neo4j instead of the pickle-Redis implementation.</p>
+<blockquote>
+<div>Each occurrence has information about:</div></blockquote>
+<ul class="simple">
+<li>Location (Lat/Long  EPSG:4326)</li>
+<li>Species</li>
+<li>Genus</li>
+<li>Family</li>
+<li>Order</li>
+<li>Class</li>
+<li>Phylum</li>
+<li>Kingdom</li>
+<li>Timestamp</li>
+<li>Country</li>
+<li>Collect - Id</li>
+</ul>
+<p>See model gbif for more information.</p>
+<p>Currently the entire GBIF database is mirrored</p>
+<dl class="docutils">
+<dt>Bios`py`tial uses the Django framework to build complex object representation of</dt>
+<dd>biological occurrences.</dd>
+</dl>
+<p>##
+# Biospytial
+## A Computer tool for modelling biodiversity patterns in space and time.
+## Juan Escamilla Mólgora
+## Last modified: 29/01/2017</p>
+<p>## Installation
+The suite is currently installed in a Docker container. (molgor/biospytial)
+It uses a ne4j and a postgis backend that can be found in the molgor reprositoryin the Docker Hub.</p>
+<p>## Run postgis backend container
+## Use the following command to run the Postgis backend.
+docker run </p>
+<blockquote>
+<div>–name=postgis –network=biospytial_network -it –publish=5432:5432 –volume=[postgis_data_PATH]:/DataVolumes molgor/postgis_biospytial /bin/bash</div></blockquote>
+<p>The containers need to be defined in the same network. In this case “biospytial_network”</p>
+<p>### Install Postgis function.
+Once the postgis container is up and running. Install the functions for buildinggrids.
+There are some SQL functions that are needed to be installed in the Postgis database.</p>
+<p>cd SQL_functions ;</p>
+<p>./install_mesh_functions.sql localhost biospytial</p>
+<p>#### localhost (server name)  biospytial (user name)</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting started (super incomplete introduction)</a><ul>
+<li><a class="reference internal" href="#biospytial">BiosPytial</a><ul>
+<li><a class="reference internal" href="#datasource">Datasource</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="../index.html"
+                        title="previous chapter">BiosPytial Documentation and tutorial</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gbif_models.html"
+                        title="next chapter">Object Relational mapping with Postgis</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/modules/getting_started.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gbif_models.html" title="Object Relational mapping with Postgis"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../index.html" title="BiosPytial Documentation and tutorial"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Biospytial beta documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015 - 2017, Juan Escamilla Molgora.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

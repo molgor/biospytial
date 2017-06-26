@@ -1,0 +1,779 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>drivers.graph_models &#8212; Biospytial beta documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Biospytial beta documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for drivers.graph_models</h1><div class="highlight"><pre>
+<span></span><span class="c1"># graph_models.py</span>
+<span class="c1"># The Module for Object Graph Mapping OGM . </span>
+<span class="c1"># Currently in Neo4J</span>
+ 
+<span class="c1"># Author: Juan Escamilla </span>
+<span class="c1"># Date: 26/10/2016</span>
+ 
+<span class="c1">#!/usr/bin/env python</span>
+<span class="c1">#-*- coding: utf-8 -*-</span>
+
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<span class="c1">#from drivers.tree_builder import TreeNeo</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;biospytial.graph_models&#39;</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">py2neo.ogm</span> <span class="k">import</span> <span class="n">GraphObject</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">RelatedTo</span><span class="p">,</span> <span class="n">RelatedFrom</span>
+<span class="kn">from</span> <span class="nn">django.contrib.gis.geos</span> <span class="k">import</span> <span class="n">GEOSGeometry</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">groupby</span><span class="p">,</span> <span class="n">imap</span>
+<span class="c1">#from drivers.tree_builder import LocalTree</span>
+<span class="kn">from</span> <span class="nn">biospytial</span> <span class="k">import</span> <span class="n">settings</span>
+<span class="n">neoparams</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">NEO4J_DATABASES</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span>
+<span class="n">uri</span> <span class="o">=</span> <span class="s2">&quot;http://</span><span class="si">%(HOST)s</span><span class="s2">:</span><span class="si">%(PORT)s%(ENDPOINT)s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">neoparams</span>
+
+<span class="kn">import</span> <span class="nn">py2neo</span>
+<span class="n">graph</span> <span class="o">=</span> <span class="n">py2neo</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span><span class="n">bolt</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+
+
+<span class="k">global</span> <span class="n">TAXDESCEND</span>
+<span class="n">TAXDESCEND</span> <span class="o">=</span> <span class="s2">&quot;IS_A_MEMBER_OF&quot;</span>
+
+<span class="k">global</span> <span class="n">TAXASCEND</span>
+<span class="n">TAXASCEND</span> <span class="o">=</span> <span class="s2">&quot;IS_PARENT_OF&quot;</span>
+<span class="k">global</span> <span class="n">ISNEIGHBOUR</span> 
+<span class="n">ISNEIGHBOUR</span> <span class="o">=</span> <span class="s2">&quot;IS_NEIGHBOUR_OF&quot;</span>
+<span class="k">global</span> <span class="n">ISIN</span> 
+<span class="n">ISIN</span> <span class="o">=</span> <span class="s2">&quot;IS_IN&quot;</span>
+
+<span class="k">global</span> <span class="n">HASEVENT</span>
+<span class="n">HASEVENT</span> <span class="o">=</span> <span class="s2">&quot;HAS_EVENT&quot;</span>
+
+<span class="k">global</span> <span class="n">RASTERDICT</span>
+
+<span class="k">global</span> <span class="n">ISCONTAINED</span>
+<span class="n">ISCONTAINED</span> <span class="o">=</span> <span class="s2">&quot;IS_CONTAINED_IN&quot;</span>
+
+
+<span class="k">global</span> <span class="n">BOTTOMSCALE_CLASSNODE</span>
+<span class="n">BOTTOMSCALE_CLASSNODE</span> <span class="o">=</span> <span class="s2">&quot;Mex4km&quot;</span>
+
+
+
+<span class="c1"># Fixes an bug from the original library</span>
+<span class="k">class</span> <span class="nc">GraphObject</span><span class="p">(</span><span class="n">GraphObject</span><span class="p">):</span>
+    
+    <span class="k">def</span> <span class="nf">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method overwritten because it was broken.</span>
+<span class="sd">        This was necessary to have hashable objects and converting to Sets. </span>
+<span class="sd">        Uff it wa difficult to find this problem. </span>
+<span class="sd">        https://docs.python.org/2/library/stdtypes.html#set</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ogm__</span><span class="o">.</span><span class="n">node</span><span class="p">)</span>
+
+
+<span class="c1"># Nodes for Raster data</span>
+<div class="viewcode-block" id="RasterNode"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.RasterNode">[docs]</a><span class="k">class</span> <span class="nc">RasterNode</span><span class="p">(</span><span class="n">GraphObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Super class for each node.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__primarykey__</span> <span class="o">=</span> <span class="s2">&quot;uniqueid&quot;</span>
+    <span class="n">uniqueid</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">regval</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span><span class="s1">&#39;reg.val&#39;</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;&lt;Raster Data type: </span><span class="si">%s</span><span class="s2"> value = </span><span class="si">%s</span><span class="s2"> &gt;&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__primarylabel__</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">regval</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">c</span></div>
+
+
+
+<span class="c1">## Environmental Data.</span>
+<span class="c1">## Here insert for inserting new variables from the Knowledge Graph.</span>
+
+<div class="viewcode-block" id="WindSpeed"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.WindSpeed">[docs]</a><span class="k">class</span> <span class="nc">WindSpeed</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    WindSpeed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;WindSpeed-30s&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;WindSpeed&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Elevation"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.Elevation">[docs]</a><span class="k">class</span> <span class="nc">Elevation</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Elevation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;DEM_12&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;Elevation&#39;</span><span class="p">)</span></div>
+    
+<span class="k">class</span> <span class="nc">Vapor</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;Vapor-30s&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;Vapor&#39;</span><span class="p">)</span>
+            
+<span class="k">class</span> <span class="nc">MaxTemp</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>   
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;MaxTemp-30s&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;MaxTemperature&#39;</span><span class="p">)</span>
+ 
+<span class="k">class</span> <span class="nc">MinTemp</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>    
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;MinTemp-30s&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;MinTemperature&#39;</span><span class="p">)</span>
+    
+<span class="k">class</span> <span class="nc">MeanTemp</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;MeanTemp-30s&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;MeanTemperature&#39;</span><span class="p">)</span>
+      
+<span class="k">class</span> <span class="nc">SolarRadiation</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;SlrRad-30s&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;SolarRadiation&#39;</span><span class="p">)</span>
+  
+<span class="k">class</span> <span class="nc">Precipitation</span><span class="p">(</span><span class="n">RasterNode</span><span class="p">):</span>        
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;Prec-30s&#39;</span>
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="s1">&#39;Precipitation&#39;</span><span class="p">)</span>
+ 
+ 
+ 
+ 
+<span class="c1"># The atomic entity, the random variable, The Unit !</span>
+<div class="viewcode-block" id="Occurrence"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.Occurrence">[docs]</a><span class="k">class</span> <span class="nc">Occurrence</span><span class="p">(</span><span class="n">GraphObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Lets see hoe this works</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">__primarykey__</span> <span class="o">=</span> <span class="s2">&quot;pk&quot;</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;Occurrence&#39;</span>
+    
+    
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">month</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">year</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">pk</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">levelname</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">longitude</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">latitude</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">event_date</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    
+    
+    
+    <span class="c1">#species = RelatedFrom(&quot;Specie&quot;, &quot;HAS_EVENT&quot;)</span>
+    <span class="c1">#is_in  = RelatedTo(&quot;Cell&quot;,ISIN)</span>
+    <span class="n">is_in</span>  <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">BOTTOMSCALE_CLASSNODE</span><span class="p">,</span><span class="n">ISIN</span><span class="p">)</span>
+    <span class="c1">#families = RelatedFrom(&quot;Family&quot;, &quot;HAS_EVENT&quot;)</span>
+    <span class="n">parent_link</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">,</span><span class="n">TAXDESCEND</span><span class="p">)</span>
+    <span class="n">children_link</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">,</span><span class="n">TAXASCEND</span><span class="p">)</span>
+    <span class="n">has_event</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">,</span><span class="n">HASEVENT</span><span class="p">)</span>
+    
+    
+
+    <span class="n">lives_with_windspeed_of</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">WindSpeed</span><span class="p">,</span><span class="s1">&#39;WindSpeed&#39;</span><span class="p">)</span>
+    <span class="n">lives_in_a_elevation_of</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">Elevation</span><span class="p">,</span><span class="s1">&#39;Elevation&#39;</span><span class="p">)</span> 
+    <span class="n">lives_with_vapor_pressure_of</span>  <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">Vapor</span><span class="p">,</span><span class="s1">&#39;Vapor&#39;</span><span class="p">)</span>   
+    <span class="n">lives_in_a_maximum_temperature_of</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">MaxTemp</span><span class="p">,</span><span class="s1">&#39;MaxTemperature&#39;</span><span class="p">)</span>
+    <span class="n">lives_in_a_minimum_temperature_of</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">MinTemp</span><span class="p">,</span><span class="s1">&#39;MinTemperature&#39;</span><span class="p">)</span>
+    <span class="n">lives_in_a_mean_temperature_of</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">MeanTemp</span><span class="p">,</span><span class="s1">&#39;MeanTemperature&#39;</span><span class="p">)</span>
+    <span class="n">lives_with_a_solar_radiation_of</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">SolarRadiation</span><span class="p">,</span><span class="s1">&#39;SolarRadiation&#39;</span><span class="p">)</span>
+    <span class="n">lives_with_a_precipitation_of</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="n">Precipitation</span><span class="p">,</span><span class="s1">&#39;Precipitation&#39;</span><span class="p">)</span>
+
+
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">filtered_nodes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Test</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filtered_nodes</span> <span class="o">=</span> <span class="n">filtered_nodes</span>
+
+    <span class="k">def</span> <span class="nf">getParent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_link</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">TreeNode</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Occurrence.getAncestors"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.Occurrence.getAncestors">[docs]</a>    <span class="k">def</span> <span class="nf">getAncestors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">depth</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Given the parameter depth it walks through the Subgraph Taxonomy</span>
+<span class="sd">        Starting from the Occurrence Node to the depth specified.</span>
+<span class="sd">        Remember that there is a loop in the LUCA node there fore, </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">getParent</span><span class="p">()</span>
+            <span class="n">nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="n">nodes</span></div>
+
+<div class="viewcode-block" id="Occurrence.isDescendantOf"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.Occurrence.isDescendantOf">[docs]</a>    <span class="k">def</span> <span class="nf">isDescendantOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ancestor</span><span class="p">,</span><span class="n">depth</span><span class="o">=</span><span class="mi">8</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Ancestor is a tree node. Returns True if this occurrence has &#39;ancestor&#39; in some level of it&#39;s Ancestors chain.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+            <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">getParent</span><span class="p">()</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Okey&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ancestor</span> <span class="o">==</span> <span class="n">parent</span><span class="p">:</span>
+                
+                <span class="n">i</span> <span class="o">=</span> <span class="n">depth</span>
+                <span class="k">return</span> <span class="kc">True</span>
+                
+        <span class="k">return</span> <span class="kc">False</span></div>
+            
+            
+    
+<div class="viewcode-block" id="Occurrence.getCells"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.Occurrence.getCells">[docs]</a>    <span class="k">def</span> <span class="nf">getCells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns all the cells that are associated with this taxa.</span>
+<span class="sd">        Occurrence is the Leaf Node of the Tree Of life, therefore </span>
+<span class="sd">        It gives the real cell where it was found.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_in</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">l</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    
+    
+<div class="viewcode-block" id="Occurrence.pullbackRasterNodes"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.Occurrence.pullbackRasterNodes">[docs]</a>    <span class="k">def</span> <span class="nf">pullbackRasterNodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">raster_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the associated value of each occurrence based on the available models.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">models</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Elevation&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_in_a_elevation_of</span> <span class="p">,</span>
+          <span class="s1">&#39;MaxTemperature&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_in_a_maximum_temperature_of</span><span class="p">,</span>
+          <span class="s1">&#39;MinTemperature&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_in_a_minimum_temperature_of</span><span class="p">,</span>
+          <span class="s1">&#39;MeanTemperature&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_in_a_mean_temperature_of</span><span class="p">,</span>
+          <span class="s1">&#39;Precipitation&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_with_a_precipitation_of</span><span class="p">,</span>
+          <span class="s1">&#39;Vapor&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_with_vapor_pressure_of</span><span class="p">,</span>
+          <span class="s1">&#39;SolarRadiation&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_with_a_solar_radiation_of</span><span class="p">,</span>
+          <span class="s1">&#39;WindSpeed&#39;</span> <span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">lives_with_windspeed_of</span>
+          <span class="p">}</span>
+    
+        
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">models</span><span class="p">[</span><span class="n">raster_name</span><span class="p">])</span></div></div>
+
+
+
+
+
+<div class="viewcode-block" id="TreeNode"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.TreeNode">[docs]</a><span class="k">class</span> <span class="nc">TreeNode</span><span class="p">(</span><span class="n">GraphObject</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__primarykey__</span> <span class="o">=</span> <span class="s2">&quot;id&quot;</span>
+    
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">levelname</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">abundance</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">keyword</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    
+    <span class="n">parent_link</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">,</span><span class="n">TAXDESCEND</span><span class="p">)</span>
+    <span class="n">children_link</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;TreeNode&quot;</span><span class="p">,</span><span class="n">TAXASCEND</span><span class="p">)</span>
+    <span class="n">is_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;Cell&quot;</span><span class="p">,</span><span class="n">ISIN</span><span class="p">)</span>
+    
+    <span class="n">has_events</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;Occurrence&quot;</span><span class="p">,</span><span class="n">HASEVENT</span><span class="p">)</span>
+
+    <span class="n">localoccurrences</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@property</span> 
+    <span class="k">def</span> <span class="nf">children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">children_link</span><span class="p">)</span>
+    
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">allOccurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve all data! related to this taxonimic node.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_events</span><span class="p">)</span>
+    
+    <span class="k">def</span> <span class="nf">setLocalOccurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">list_occurrences</span><span class="p">):</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">localoccurrences</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">o</span><span class="p">:</span> <span class="n">o</span><span class="o">.</span><span class="n">isDescendantOf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">),</span><span class="n">list_occurrences</span><span class="p">)</span>
+    
+    <span class="c1">#def localOccurrences(self):</span>
+    <span class="c1">#    ls = filter(lambda o: o.isDescendantOf(self),self.localoccurrences)</span>
+     <span class="c1">#   return ls</span>
+
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns all the cells that are associated with this taxa.</span>
+<span class="sd">        Does not take into account the current leaf nodes in the TreeNode.</span>
+<span class="sd">        It gives all the nodes of type cell where this node has been found in all the database.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">is_in</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;&lt;TreeNode type: </span><span class="si">%s</span><span class="s2"> id = </span><span class="si">%s</span><span class="s2"> name: </span><span class="si">%s</span><span class="s2">&gt;&quot;</span><span class="o">%</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">levelname</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__primaryvalue__</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">c</span>
+
+<div class="viewcode-block" id="TreeNode.setLabel"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.TreeNode.setLabel">[docs]</a>    <span class="k">def</span> <span class="nf">setLabel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">labelname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Usefull when selecting arbitrary nodes of certain taxonomy.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__primarylabel__</span> <span class="o">=</span> <span class="n">labelname</span></div>
+        
+
+    <span class="k">def</span> <span class="nf">getParent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent_link</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">TreeNode</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">parent</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">getSiblings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParent</span><span class="p">()</span>
+        <span class="n">siblings</span> <span class="o">=</span> <span class="n">parent</span><span class="o">.</span><span class="n">children</span>
+        <span class="c1">#siblings = filter(lambda node : node != self,siblings)</span>
+        <span class="k">return</span> <span class="n">siblings</span>
+    
+    <span class="k">def</span> <span class="nf">_isOccurrence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">999</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    
+    <span class="k">def</span> <span class="nf">_isRoot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+    <span class="k">def</span> <span class="nf">_isKingdom</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_isPhylum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+                
+
+    <span class="k">def</span> <span class="nf">_isClass</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_isOrder</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_isFamily</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+    
+    <span class="k">def</span> <span class="nf">_isGenus</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        
+    <span class="k">def</span> <span class="nf">_isSpecie</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        
+        
+        
+<div class="viewcode-block" id="TreeNode.getAssociatedTrees"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.TreeNode.getAssociatedTrees">[docs]</a>    <span class="k">def</span> <span class="nf">getAssociatedTrees</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a list of trees for each of the cells where the Node has events</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Retrieving cells&quot;</span><span class="p">)</span>
+        <span class="c1">#cells = self.cells</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Done!&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Retriving Occurrences&quot;</span><span class="p">)</span>
+        <span class="kn">from</span> <span class="nn">drivers.tree_builder</span> <span class="k">import</span> <span class="n">TreeNeo</span>
+       
+        <span class="n">gettree</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">cell</span> <span class="p">:</span> <span class="n">TreeNeo</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">occurrencesHere</span><span class="p">())</span>
+        <span class="n">trees</span> <span class="o">=</span> <span class="n">imap</span><span class="p">(</span><span class="n">gettree</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">trees</span></div>
+
+<div class="viewcode-block" id="TreeNode.getUpperScaleCells"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.TreeNode.getUpperScaleCells">[docs]</a>    <span class="k">def</span> <span class="nf">getUpperScaleCells</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        si mira, te vengo manejando lo que es el m&#39;etodo para obtener las celdas a una resoluci&#39;on espacial mayor.</span>
+<span class="sd">        La inmediata superior.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns list of upper scale cells.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1">#upcell = lambda cell : list(cell.contained_in)</span>
+        <span class="c1">#upper_cells = imap(upcell,self.cells)</span>
+        <span class="c1">#logger.info(&quot;Reducing cells&quot;)</span>
+        <span class="c1">#upp_cells = list(set(reduce(lambda c1,c2 : c1 + c2 ,upper_cells)))</span>
+        <span class="c1">#return upp_cells</span>
+    
+        <span class="n">upcell</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">cell</span> <span class="p">:</span> <span class="n">cell</span><span class="o">.</span><span class="n">upperCell</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+        <span class="n">upper_cells</span> <span class="o">=</span> <span class="n">imap</span><span class="p">(</span><span class="n">upcell</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reducing cells&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">upper_cells</span></div>
+    
+<div class="viewcode-block" id="TreeNode.insideCellRatio"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.TreeNode.insideCellRatio">[docs]</a>    <span class="k">def</span> <span class="nf">insideCellRatio</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cells_list</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">option</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Scales </span>
+<span class="sd">        Calculates the inside cell ratio for all scales</span>
+<span class="sd">        Returns list of ratios </span>
+<span class="sd">        </span>
+<span class="sd">        parameters: </span>
+<span class="sd">             option : 1 </span>
+<span class="sd">                 returns ratios</span>
+<span class="sd">            option : 2</span>
+<span class="sd">                returns true values (number of cells)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nested_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">propagateCells</span><span class="p">(</span><span class="n">cells_list</span><span class="p">)</span>
+        <span class="n">lengths</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">lc</span> <span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lc</span><span class="p">)),</span><span class="n">nested_cells</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">option</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">lengths</span>
+        <span class="k">elif</span> <span class="n">option</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">lengths</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="n">c</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">]</span></div>
+    
+<div class="viewcode-block" id="TreeNode.propagateCells"><a class="viewcode-back" href="../../modules/drivers_modules.html#drivers.graph_models.TreeNode.propagateCells">[docs]</a>    <span class="k">def</span> <span class="nf">propagateCells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cells_list</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extracts the cells by going upstream in the scales.</span>
+<span class="sd">        It uses the POSET structure of the Quadtree.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="c1">## This function maps all the cells given by the parameter cells and extract the upperCell.</span>
+        <span class="c1">## Later performs a cast list -&gt; set to remove repetitions</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cells_list</span><span class="p">:</span>
+            <span class="n">cells_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>
+        <span class="n">levels</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">cells_list</span><span class="p">)]</span>    
+        <span class="n">getUpperCells</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">list_of_cells</span> <span class="p">:</span> <span class="nb">set</span><span class="p">(</span><span class="n">imap</span><span class="p">(</span><span class="k">lambda</span> <span class="n">cell</span> <span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">cell</span><span class="o">.</span><span class="n">upperCell</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span><span class="n">list_of_cells</span><span class="p">))</span>
+        <span class="n">finish</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1">#import ipdb; ipdb.set_trace()</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">finish</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Raising scale layer </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cells_list</span><span class="p">:</span>
+                    <span class="n">cells_list</span> <span class="o">=</span> <span class="n">getUpperCells</span><span class="p">(</span><span class="n">cells_list</span><span class="p">)</span>
+                    <span class="n">levels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cells_list</span><span class="p">)</span>
+                    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">finish</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">finish</span> <span class="o">=</span> <span class="kc">True</span>
+            
+        <span class="k">return</span> <span class="n">levels</span></div></div>
+            
+        
+
+
+    
+
+<span class="k">class</span> <span class="nc">Kingdom</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;Kingdom&#39;</span>
+
+<span class="k">class</span> <span class="nc">Phylum</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;Phylum&#39;</span>
+   
+<span class="k">class</span> <span class="nc">Class</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;Class&#39;</span>
+
+<span class="k">class</span> <span class="nc">Order</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;Order&#39;</span>
+   
+<span class="k">class</span> <span class="nc">Family</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+    <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;Family&#39;</span>
+
+<span class="k">class</span> <span class="nc">Genus</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;Genus&#39;</span> 
+
+<span class="k">class</span> <span class="nc">Specie</span><span class="p">(</span><span class="n">TreeNode</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;Specie&#39;</span>
+   
+   
+
+
+
+<span class="c1">## Rememeber that We have two semilattices. </span>
+<span class="c1">## ONe given by the nature of the object (Occurrence) and it&#39;s taxonomy (Tree Node).</span>
+<span class="c1">## The other given by the location in the quadtree (Cell)</span>
+ 
+
+<span class="k">class</span> <span class="nc">Cell</span><span class="p">(</span><span class="n">GraphObject</span><span class="p">):</span>
+    
+    <span class="n">__primarykey__</span> <span class="o">=</span> <span class="s1">&#39;id&#39;</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;Cell&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">longitude</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">latitude</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+       
+    
+    
+    <span class="n">connected_to</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;Cell&quot;</span><span class="p">,</span> <span class="n">ISNEIGHBOUR</span><span class="p">)</span>
+    
+    <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;Cell&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+
+    <span class="n">Occurrences</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="n">Occurrence</span><span class="p">,</span> <span class="n">ISIN</span><span class="p">)</span>
+    
+    <span class="c1">#LocalTree  = RelatedFrom(TreeNode, ISIN)</span>
+    <span class="c1">#families = RelatedFrom(&quot;Family&quot;,ISIN)</span>
+    <span class="c1">#families = RelatedFrom(&quot;Family&quot;, &quot;HAS_EVENT&quot;)    </span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">gridname</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__ogm__</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">labels</span><span class="p">())</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">reduce</span><span class="p">(</span><span class="k">lambda</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span> <span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="p">,</span><span class="n">l</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">name</span>
+        
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="s2">&quot;&lt; </span><span class="si">%s</span><span class="s2"> id = </span><span class="si">%s</span><span class="s2"> &gt;&quot;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gridname</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">c</span>
+        
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">centroid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pointstr</span> <span class="o">=</span> <span class="s1">&#39;POINT(</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">)&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">)</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">GEOSGeometry</span><span class="p">(</span><span class="n">pointstr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">point</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">polygon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">polygon</span> <span class="o">=</span> <span class="n">GEOSGeometry</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">polygon</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">upperCell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contained_in</span><span class="p">)</span>
+        
+        
+    <span class="k">def</span> <span class="nf">getNeighbours</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#ln = [n for n in self.connected_from]</span>
+        <span class="n">rn</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_to</span><span class="p">]</span>
+        <span class="c1"># testing thingy</span>
+        <span class="n">rn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rn</span>
+        
+    <span class="k">def</span> <span class="nf">occurrencesHere</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter the list of occurrences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">occs</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span> <span class="p">:</span> <span class="n">l</span><span class="o">.</span><span class="n">pk</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Occurrences</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">occs</span>        
+
+
+
+
+<span class="c1">###########EXPERIMENTAL </span>
+
+
+<span class="k">class</span> <span class="nc">GridLevel1</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid1&#39;</span>
+
+<span class="k">class</span> <span class="nc">GridLevel2</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid2&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel1&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+   
+<span class="k">class</span> <span class="nc">GridLevel3</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid4&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel2&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+   
+<span class="k">class</span> <span class="nc">GridLevel4</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid8&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel3&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>      
+
+<span class="k">class</span> <span class="nc">GridLevel5</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid16&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel4&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+   
+<span class="k">class</span> <span class="nc">GridLevel6</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid32&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel5&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+   
+   
+<span class="k">class</span> <span class="nc">GridLevel7</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid64&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel6&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+   
+   
+<span class="k">class</span> <span class="nc">GridLevel8</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid128&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel7&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+   
+<span class="k">class</span> <span class="nc">GridLevel9</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid256&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel8&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">GridLevel10</span><span class="p">(</span><span class="n">Cell</span><span class="p">):</span>
+   <span class="n">__property_label__</span> <span class="o">=</span><span class="s1">&#39;mexico_grid512&#39;</span>
+   <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel9&quot;</span><span class="p">,</span> <span class="n">ISCONTAINED</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Mex4km</span><span class="p">(</span><span class="n">GraphObject</span><span class="p">):</span>
+    
+    <span class="n">__primarykey__</span> <span class="o">=</span> <span class="s1">&#39;id&#39;</span>
+    <span class="n">__primarylabel__</span> <span class="o">=</span> <span class="s1">&#39;mex4km&#39;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">longitude</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">latitude</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="n">cell</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Property</span><span class="p">()</span>
+       
+    
+    
+    <span class="n">connected_to</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;Mex4km&quot;</span><span class="p">,</span> <span class="n">ISNEIGHBOUR</span><span class="p">)</span>
+    <span class="c1">#contained_in = RelatedTo(&quot;Cell&quot;,ISCONTAINED)</span>
+    <span class="n">contained_in</span> <span class="o">=</span> <span class="n">RelatedTo</span><span class="p">(</span><span class="s2">&quot;GridLevel10&quot;</span><span class="p">,</span><span class="n">ISCONTAINED</span><span class="p">)</span>
+    <span class="n">Occurrences</span> <span class="o">=</span> <span class="n">RelatedFrom</span><span class="p">(</span><span class="n">Occurrence</span><span class="p">,</span> <span class="n">ISIN</span><span class="p">)</span>
+    
+    <span class="c1">#LocalTree  = RelatedFrom(TreeNode, ISIN)</span>
+    <span class="c1">#families = RelatedFrom(&quot;Family&quot;,ISIN)</span>
+    <span class="c1">#families = RelatedFrom(&quot;Family&quot;, &quot;HAS_EVENT&quot;)    </span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">centroid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">pointstr</span> <span class="o">=</span> <span class="s1">&#39;POINT(</span><span class="si">%s</span><span class="s1"> </span><span class="si">%s</span><span class="s1">)&#39;</span><span class="o">%</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">longitude</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">latitude</span><span class="p">)</span>
+        <span class="n">point</span> <span class="o">=</span> <span class="n">GEOSGeometry</span><span class="p">(</span><span class="n">pointstr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">point</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">polygon</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">polygon</span> <span class="o">=</span> <span class="n">GEOSGeometry</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cell</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">polygon</span>
+
+
+    <span class="k">def</span> <span class="nf">getNeighbours</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1">#ln = [n for n in self.connected_from]</span>
+        <span class="n">rn</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connected_to</span><span class="p">]</span>
+        <span class="c1"># testing thingy</span>
+        <span class="n">rn</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rn</span>
+        
+    <span class="k">def</span> <span class="nf">occurrencesHere</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filter the list of occurrences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">occs</span> <span class="o">=</span> <span class="nb">filter</span><span class="p">(</span><span class="k">lambda</span> <span class="n">l</span> <span class="p">:</span> <span class="n">l</span><span class="o">.</span><span class="n">pk</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Occurrences</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">occs</span>   
+
+
+
+
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">WindSpeed</span>
+<span class="sd">Elevation</span>
+<span class="sd">Vapor     </span>
+<span class="sd">MaxTemp</span>
+<span class="sd">MinTemp</span>
+<span class="sd">MeanTemp</span>
+<span class="sd">SolarRadiation</span>
+<span class="sd">Precipitation</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Biospytial beta documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015 - 2017, Juan Escamilla Molgora.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

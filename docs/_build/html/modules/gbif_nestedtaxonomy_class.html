@@ -1,0 +1,183 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Taxonomies in the nested grid &#8212; Biospytial beta documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     'beta',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Converting the ORM objects into a Tree structure" href="gbif_buildtree.html" />
+    <link rel="prev" title="Class definition of Gridded Taxonomy" href="gbif_griddedtaxonomy_class.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gbif_buildtree.html" title="Converting the ORM objects into a Tree structure"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="gbif_griddedtaxonomy_class.html" title="Class definition of Gridded Taxonomy"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Biospytial beta documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="taxonomies-in-the-nested-grid">
+<h1>Taxonomies in the nested grid<a class="headerlink" href="#taxonomies-in-the-nested-grid" title="Permalink to this headline">¶</a></h1>
+<p>A Nested Taxonomy is a hierarchical arrangement of Gridded Taxonomies,
+each of this called ´level´. The arrangement is a list in ascending resolution
+order. All levels have exactly the same geographic extent
+and referencing system what makes them unique is the resolution.</p>
+<p>The first level is composed by one grid cell. This level is often called parent.</p>
+<p>The resolution increases to double when it changes from level to level.
+Meaning that the first level</p>
+<p>This is the definition of the class and its respective methods:</p>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>This example shows how to define a NestedTaxonomy for a specific
+area in South America.</p>
+<div class="section" id="defining-the-area">
+<h3>Defining the area<a class="headerlink" href="#defining-the-area" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>Using the QGIS support for visualizing the data it’s possible to retrieve the Id</dt>
+<dd>value and the first zooming level (parent_level)</dd>
+</dl>
+<p>(See figure below:)</p>
+<blockquote>
+<div><img alt="modules/_static/nestedtaxonomy_parent_sel.png" src="modules/_static/nestedtaxonomy_parent_sel.png" />
+</div></blockquote>
+<p>The Id and zoom level for this region corresponds to:</p>
+<ul class="simple">
+<li>‘Id : 167   Zoom Level : 9’</li>
+</ul>
+<p>To create an the Nested Taxonomy in this region for all the available zooming levels
+use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">In</span> <span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="kn">from</span> <span class="nn">gbif.taxonomy</span> <span class="kn">import</span> <span class="n">NestedTaxonomy</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">2</span><span class="p">]:</span> <span class="kn">from</span> <span class="nn">gbif.models</span> <span class="kn">import</span> <span class="n">Occurrence</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">3</span><span class="p">]:</span> <span class="n">biosphere</span> <span class="o">=</span> <span class="n">Occurrence</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+<span class="n">In</span> <span class="p">[</span><span class="mi">4</span><span class="p">]:</span> <span class="n">nt</span> <span class="o">=</span> <span class="n">NestedTaxonomy</span><span class="p">(</span><span class="mi">167</span><span class="p">,</span><span class="n">biosphere</span><span class="p">,</span><span class="n">start_level</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span><span class="n">end_level</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span><span class="n">generate_tree_now</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The time spent in executing this analysis was:</p>
+<ul class="simple">
+<li>CPU times: user 41min 49s</li>
+<li>sys: 6min 15s, total: 48min 4s</li>
+<li>‘Wall time: 4h 38min 5s’</li>
+</ul>
+<p>Therefore the need to use a caching method.</p>
+<p>To store in cache the current Nested Taxonomy object use the cache method.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">In</span><span class="p">[</span><span class="mi">5</span><span class="p">]:</span> <span class="kn">import</span> <span class="nn">redis</span>
+<span class="c1"># Initialize redis connection (redis_wrapper)</span>
+<span class="n">In</span><span class="p">[</span><span class="mi">6</span><span class="p">]:</span> <span class="n">r</span> <span class="o">=</span> <span class="n">redis</span><span class="o">.</span><span class="n">StrictRedis</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span><span class="n">db</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># Store in the cache</span>
+<span class="n">In</span><span class="p">[</span><span class="mi">7</span><span class="p">]:</span> <span class="n">nt</span><span class="o">.</span><span class="n">cache</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Taxonomies in the nested grid</a><ul>
+<li><a class="reference internal" href="#examples">Examples</a><ul>
+<li><a class="reference internal" href="#defining-the-area">Defining the area</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="gbif_griddedtaxonomy_class.html"
+                        title="previous chapter">Class definition of Gridded Taxonomy</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gbif_buildtree.html"
+                        title="next chapter">Converting the ORM objects into a Tree structure</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/modules/gbif_nestedtaxonomy_class.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gbif_buildtree.html" title="Converting the ORM objects into a Tree structure"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="gbif_griddedtaxonomy_class.html" title="Class definition of Gridded Taxonomy"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Biospytial beta documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2015 - 2017, Juan Escamilla Molgora.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

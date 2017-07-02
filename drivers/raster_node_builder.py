@@ -92,7 +92,7 @@ class RasterCollection(object):
         return df
 
 
-    def getEnvironmentalVariablesCells(self,vars=['MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_std=False):
+    def getEnvironmentalVariablesCells(self,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_std=False):
         """
         This is by cell.
         But by definition each Tree is defined in a united cell. 
@@ -107,7 +107,11 @@ class RasterCollection(object):
         df = {}
         for variable in vars:
             raster = self.getAssociatedRasterAreaData(variable)
-            statistics = raster.rasterdata.allBandStatistics()
+            try:
+                statistics = raster.rasterdata.allBandStatistics()
+            except:
+                #import ipdb; ipdb.set_trace()
+                statistics = {'mean':'N.A.','mean_std':'N.A'}
             mean_env = statistics['mean']
             df[variable + '_mean'] = mean_env
             

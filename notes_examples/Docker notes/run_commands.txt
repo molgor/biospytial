@@ -200,6 +200,26 @@ docker service create \
     molgor/postgis_biospytial \
     /bin/sh -c "/root/startPostgres"
 
+##### To activate Xserver, graphing plotting capabilities in osx container do:
+
+## 1.- Open an XQuartz terminal
+
+## open -a Xquartz
+
+## Get ip addr and add the ip to the xhost
+
+# ip=$(ifconfig en1 | grep inet | awk '$1=="inet" {print $2}')
+
+# xhost + $ip
+
+# Export DISPLAY variable to the ip:0
+
+
+
+
+
+
+
 
 
 

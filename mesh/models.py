@@ -32,6 +32,8 @@ from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 from py2neo import Node, Relationship, Graph, NodeSelector
 from django.forms import ModelForm
 from biospytial import settings
+from drivers.graph_models import Cell
+
 
 
 neoparams = settings.NEO4J_DATABASES['default']
@@ -392,6 +394,14 @@ class MexMesh(mesh):
             if writeDB:
                 graph.create(n0)
             return n0
+        
+    def toCellNode(self):
+        """
+        Returns the OGM of the Cell Node type
+        """
+        
+        cell = Cell.select(graph,primary_value=self.id)
+        return cell
 
     def getParentCells(self):
         parent = initMesh((self.spatiallevel - 1), scales=scales)

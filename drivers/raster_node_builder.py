@@ -130,6 +130,7 @@ class RasterPointNodesList(object):
     """    
     
     def __init__(self,list_duple_raster_occs):
+
         self.data, self.occurrences = zip(*list_duple_raster_occs)
         self.table = self.transformToTable()
         self.nametype = self.setNameType()

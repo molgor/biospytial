@@ -200,7 +200,8 @@ class Precipitation(BioClimModel):
     units = '(mm)'
     
     class Meta:
-        db_table = 'bioclim\".\"prec'
+        #db_table = 'bioclim\".\"prec'
+        db_table = 'bioclim\".\"world-prec'
         managed = False
 
     def __str__(self):

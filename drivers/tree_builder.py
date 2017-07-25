@@ -18,6 +18,7 @@ from drivers.graph_models import Cell
 from drivers.raster_node_builder import RasterCollection
 import numpy as np
 import itertools as it
+from django.contrib.gis.geos import GEOSGeometry
 
 from collections import OrderedDict
 from compiler.ast import nodes
@@ -81,6 +82,7 @@ class LocalTree(object):
         self.level = self.node.level
         self.occurrences = []
         self.involvedCells = []
+        #self.involvedCells = this_node.involvedCells
         self.neighbouringtrees = []
         self.n_presences_in_list = 0.05
 
@@ -227,8 +229,8 @@ class LocalTree(object):
             cells = reduce(lambda a,b : a+b , cells)
             # take away repetition
             cells =  list(set(cells))
-            self.involvedCells = cells
-            return cells
+            self.involvedCells = list(set(cells + self.involvedCells))
+            return self.involvedCells
         else:
             return self.involvedCells
         
@@ -579,12 +581,13 @@ class LocalTree(object):
         for child in self.children:
             try:
                 subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
-                child.n_presences_in_list = len(subtrees_with_node)
+                ## Here experiment for getting relative frequencies
+                child.n_presences_in_list = len(subtrees_with_node) / float(len(list_of_trees))
                 n = child.countNodesFrequenciesOnList(list_of_trees) 
                 logger.info("Going deep %s"%n)
             except:
                 subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
-                child.n_presences_in_list = len(subtrees_with_node)
+                child.n_presences_in_list = len(subtrees_with_node)/ float(len(list_of_trees))
                 continue
         return self.n_presences_in_list
   
@@ -597,7 +600,7 @@ class TreeNeo(LocalTree):
     A prototype for reading taxonomic trees stored in the Neo4J database.
     """
 
-    def __init__(self,list_occurrences,cell_object=''):
+    def __init__(self,list_occurrences,cell_objects=''):
         """
         THIS IS A PROTOTYPE.
         For now it need a list of node occurrences. Use the function extractOccurrencesFromTaxonomies
@@ -610,15 +613,17 @@ class TreeNeo(LocalTree):
         #self.occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_taxonomies ]])
         if list_occurrences:
             self.occurrences = list_occurrences
-            self.involvedCells = cell_object
+            
+            #self.involvedCells = ''
             self.windUpLevels()
+            self.involvedCells = cell_objects
         else:
             logger.debug('No occurrences found. Returning empty')
             self.occurrences = []
             self.parent = 'No Data found'
             self.children = []
             self.node = None
-            self.involvedCells = cell_object
+            self.involvedCells = cell_objects
             self.associatedData = RasterCollection(self)
             self.levels = [self]
         
@@ -692,7 +697,12 @@ class TreeNeo(LocalTree):
         new_occs = list(set(new_occs))
         occs = copy.copy(new_occs)
         logger.info("Merging Trees")
-        return TreeNeo(list_occurrences=occs)  
+        ## This is experimental (if this still here is because it worked)
+        ## Get this cell
+        cells = self.getExactCells()
+        other_cells = tree_neo.getExactCells()
+        new_cells = list(set(cells + other_cells))
+        return TreeNeo(list_occurrences=occs,cell_objects=new_cells)  
 
 
     def rankLevels(self):
@@ -709,6 +719,8 @@ class TreeNeo(LocalTree):
         except:
             logger.error("No values of presences in list. \n Hint: RuncountNodesFrequenciesOnList first ")
             return None
+
+
 
 
 class Neighbourhood(object):
@@ -840,4 +852,17 @@ class Neighbourhood(object):
             p = pandas.DataFrame(points)
             p.columns = ['x','y']
         return p
+    
+    
+def buildTreeNeo(cell):
+    """
+    Creates an instance of a TreeNeo with geospatial extetn even if there are no occurrences.
+    """
+    ocs = cell.occurrencesHere()
+    #cell_geom = GEOSGeometry(cell.cell)
+    tree = TreeNeo(ocs,cell_objects=[cell])
+    return tree
+    
+    
+    
     

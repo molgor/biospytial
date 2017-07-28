@@ -80,7 +80,7 @@ def getEnvironmentalCovariatesFromListOfTrees(list_of_trees):
     rdata = map(getdata,list_of_trees)
     return pd.DataFrame(rdata)
     
-def getSignalForNode(TreeNode,list_of_trees, option='presences'):
+def getPresencesForNode(TreeNode,list_of_trees, option='presences'):
     """
     Given a list of trees and a Tree Node the function returns a binary list if the node was found on that Tree.
     Returns:
@@ -93,12 +93,12 @@ def getSignalForNode(TreeNode,list_of_trees, option='presences'):
     y = {TreeNode.name : signal}
     return pd.DataFrame(y)
     
-def getSignalForListOfNodes(list_of_tree_nodes,list_of_trees):
+def getPresencesForListOfNodes(list_of_tree_nodes,list_of_trees):
     """
     Given a list of trees and a list of TreeNodes this function returns a binary table if the node was found on each of the trees.
     Similar to getSignalForNode but multivaluated.
     """    
-    signals = map(lambda tree_node :  getSignalForNode(tree_node, list_of_trees),list_of_tree_nodes)
+    signals = map(lambda tree_node :  getPresencesForNode(tree_node, list_of_trees),list_of_tree_nodes)
     return pd.concat(signals,axis=1)
     
     

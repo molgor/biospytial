@@ -212,9 +212,9 @@ docker service create \
 
 # xhost + $ip
 
-# Export DISPLAY variable to the ip:0
+# Export DISPLAY variable to the ip:0 inside the container
 
-
+export DISPLAY=[ip]:0
 
 
 

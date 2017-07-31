@@ -34,13 +34,17 @@ def corr_exp_ij(distance,phi=1.0):
 ## Generate the preimage . For this exampe will be: time \in R
 
 time = np.linspace(0, 100, 100)
-lat = np.linspace(0,100,10)
-lon = np.linspace(0,100,10)
+lat = np.linspace(0,100,50)
+lon = np.linspace(0,100,50)
 
 
 ### Calculate crosws product of time for distance matrix
 
 makeDuples = lambda list_of_points : [(i,j) for i in list_of_points for j in list_of_points]
+
+points = map(lambda l : np.array(l),makeDuples(lat))
+
+
 
 ## This function returns a Distance Matrix given a list of pairs of the form (a,b). It will calculate de distance between (a and b) 
 
@@ -52,6 +56,7 @@ calculateDistanceMatrix = lambda list_of_vectors : np.array(map(lambda (a,b) : n
 
 corr_exp_list = map(lambda phi : partial(corr_exp_ij,phi=phi),np.linspace(1,100,50))
 corr_exp_list = map(lambda phi : partial(corr_exp_ij,phi=phi),[0.001,20,80])
+corr_exp_list = map(lambda phi : partial(corr_exp_ij,phi=phi),[20])
 
 ## Calculate correlations 
 makeCorrelations = lambda model : lambda list_of_points : np.array(map(model,calculateDistanceMatrix(makeDuples(list_of_points))))
@@ -61,19 +66,20 @@ makeCorrelations = lambda model : lambda list_of_points : np.array(map(model,cal
 
 
 ## Calculate covariances
-makeCovarianceMatrix = lambda sigma : lambda model: lambda list_of_points : (makeCorrelations(model)(list_of_points) * sigma).reshape(100,100)
+makeCovarianceMatrix = lambda sigma : lambda model: lambda list_of_points : (makeCorrelations(model)(list_of_points) * sigma)#.reshape(100,100)
 
 
 ## Different models for phi
-covarianceMatricesModels = map(lambda model : makeCovarianceMatrix(1.0)(model)(time),corr_exp_list)
+covarianceMatricesModels = lambda list_of_points : map(lambda model : makeCovarianceMatrix(1.0)(model)(list_of_points),corr_exp_list)
 
+#covarianceMatricesModels = map(lambda model : makeCovarianceMatrix(1.0)(list_of_points)(list_of_points),corr_exp_list)
 
 
 ## Simulation process
 
-zeros = np.zeros(100)
+zeros = lambda list_of_points : np.zeros(np.sqrt(len(list_of_points))**2)
 
-Zs = map(lambda Sigma : sp.random.multivariate_normal(zeros,Sigma),covarianceMatricesModels)
+simulateWithThisPoints = lambda list_of_points : map(lambda Sigma : sp.random.multivariate_normal(zeros(list_of_points),Sigma.reshape(len(list_of_points),len(list_of_points))),covarianceMatricesModels(list_of_points))
 
 
 

@@ -5,7 +5,7 @@
 Simulation Exercises done with Mr. Erick "El Vikingo" Chacon Montalvan 
 ======================================================================
 
-Some functions an ,methods for implementing Gaussian simulation of autocorrelated processes. 
+Some functions an methods for implementing Gaussian simulation of autocorrelated processes. 
 
 Authors :
 
@@ -52,6 +52,14 @@ calculateDistanceMatrix = lambda list_of_vectors : np.array(map(lambda (a,b) : n
 ## note it doesn't have shape of a matrix but doesn't matter.
 
 
+def generateCorrelationFunctional(funcion, list_parameter_space,parameter_name):
+    """
+    Returns a list of functions mapped with a partition.
+    i.e. given a function $f$ with parameters $\theta$ for a given parameter.
+    """
+    f = function
+    functions = map(lambda phi : partial(f,parameter_name=phi),list_parameter_space)
+    return functions
 #### Let's generate several correlation functions for different phis
 
 corr_exp_list = map(lambda phi : partial(corr_exp_ij,phi=phi),np.linspace(1,100,50))

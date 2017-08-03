@@ -3,7 +3,7 @@
 """
 
 Statistical Models
-======================================================================
+===============================================================================================
 
 This module combines traversal strategies for visiting and storing the spatial tree-structures.
 
@@ -36,8 +36,79 @@ def corr_exp_ij(distance,phi=1.0):
     return np.exp(-(distance / phi))
 
 
+def exponentialModel(phi=1.0):
+    """
+    A functional form of the exponentialModel
+    """
+    def corr_exp_ij(distance):
+        """
+        This function calculates the correlation function of an exponential model with parameter phi.
+        Returns :
+            correlation value for distance 'distance'
+        """
+        return np.exp(-(distance / phi))
+    return corr_exp_ij
 
-## Generate the preimage . For this exampe will be: time \in R
+
+
+def generateCorrelationFunctional(function, list_parameter_space,parameter_name):
+    """
+    Returns a list of functions mapped with a partition.
+    i.e. given a function $f$ with parameters $\theta$ for a given parameter.
+    """
+    f = function
+    functions = map(lambda phi : partial(f,parameter_name=phi),list_parameter_space)
+    return functions
+
+
+
+## This function returns a Distance Matrix given a list of pairs of the form (a,b). It will calculate de distance between (a and b) 
+
+calculateDistanceMatrix = lambda list_of_vectors : np.array(map(lambda (a,b) : np.linalg.norm(a-b),list_of_vectors))
+## note it doesn't have shape of a matrix but doesn't matter.
+
+
+
+## Calculate correlations given a valid model 
+makeCorrelations = lambda model : lambda list_of_points : np.array(map(model,calculateDistanceMatrix(makeDuples(list_of_points))))
+
+
+def calculateCovarianceMatrix(points,model,sigma=1.0):
+    """
+    Returns the covariance matrix calculated from a $Z(x) \sim N(0,|Sigma)$ stationary anisotropic model. 
+    """
+## Calculate covariances  
+    makeCovarianceMatrix = lambda sigma : lambda model: lambda list_of_points : (makeCorrelations(model)(list_of_points) * sigma)#.reshape(100,100)
+    
+    return makeCovarianceMatrix(sigma)(model)(points)
+
+
+
+
+def exponentialModelFunctional(points,phi,sigma):
+    """
+    Test
+    Use the exponential correlation with parameter phi and sigma
+    """
+    
+    n = len(points)
+    f = exponentialModel(phi)
+    CM = calculateCovarianceMatrix(points, f, sigma=sigma).reshape(n,n)
+    zeros = np.zeros(n)
+    model = sp.stats.multivariate_normal(zeros,CM)
+    return model
+    
+    
+    
+    
+
+
+
+
+
+
+
+## Generate the pre-image . For this example will be: time \in R
 
 time = np.linspace(0, 100, 100)
 lat = np.linspace(0,100,50)
@@ -51,55 +122,21 @@ makeDuples = lambda list_of_points : [(i,j) for i in list_of_points for j in lis
 points = map(lambda l : np.array(l),makeDuples(lat))
 
 
-
-## This function returns a Distance Matrix given a list of pairs of the form (a,b). It will calculate de distance between (a and b) 
-
-calculateDistanceMatrix = lambda list_of_vectors : np.array(map(lambda (a,b) : np.linalg.norm(a-b),list_of_vectors))
-## note it doesn't have shape of a matrix but doesn't matter.
-
-
-def generateCorrelationFunctional(function, list_parameter_space,parameter_name):
-    """
-    Returns a list of functions mapped with a partition.
-    i.e. given a function $f$ with parameters $\theta$ for a given parameter.
-    """
-    f = function
-    functions = map(lambda phi : partial(f,parameter_name=phi),list_parameter_space)
-    return functions
 #### Let's generate several correlation functions for different phis
 
 corr_exp_list = map(lambda phi : partial(corr_exp_ij,phi=phi),np.linspace(1,100,50))
 corr_exp_list = map(lambda phi : partial(corr_exp_ij,phi=phi),[0.001,20,80])
 corr_exp_list = map(lambda phi : partial(corr_exp_ij,phi=phi),[20])
 
-## Calculate correlations 
-makeCorrelations = lambda model : lambda list_of_points : np.array(map(model,calculateDistanceMatrix(makeDuples(list_of_points))))
-
-
-
-
-
-## Calculate covariances
-makeCovarianceMatrix = lambda sigma : lambda model: lambda list_of_points : (makeCorrelations(model)(list_of_points) * sigma)#.reshape(100,100)
-
-
 ## Different models for phi
 covarianceMatricesModels = lambda list_of_points : map(lambda model : makeCovarianceMatrix(1.0)(model)(list_of_points),corr_exp_list)
 
 #covarianceMatricesModels = map(lambda model : makeCovarianceMatrix(1.0)(list_of_points)(list_of_points),corr_exp_list)
-
-
 ## Simulation process
 
 zeros = lambda list_of_points : np.zeros(np.sqrt(len(list_of_points))**2)
 
 simulateWithThisPoints = lambda list_of_points : map(lambda Sigma : sp.random.multivariate_normal(zeros(list_of_points),Sigma.reshape(len(list_of_points),len(list_of_points))),covarianceMatricesModels(list_of_points))
-
-
-
-
-
-
 
 
 

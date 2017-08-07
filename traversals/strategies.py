@@ -93,15 +93,26 @@ def getPresencesForNode(TreeNode,list_of_trees, option='presences'):
     y = {TreeNode.name : signal}
     return pd.DataFrame(y)
     
-def getPresencesForListOfNodes(list_of_tree_nodes,list_of_trees):
+def getPresencesForListOfNodes(list_of_tree_nodes,list_of_trees,with_centroids=True):
     """
     Given a list of trees and a list of TreeNodes this function returns a binary table if the node was found on each of the trees.
     Similar to getSignalForNode but multivaluated.
     """    
     signals = map(lambda tree_node :  getPresencesForNode(tree_node, list_of_trees),list_of_tree_nodes)
-    return pd.concat(signals,axis=1)
+    if with_centroids:
+        centroids = pd.DataFrame({'centroids':getCentroidsFromListofTrees(list_of_trees)})
+        p = pd.concat(signals,axis=1)
+        
+        return pd.concat([p,centroids],axis=1)
+    else:
+        return pd.concat(signals,axis=1)
     
     
-    
+def getCentroidsFromListofTrees(list_of_trees):
+    """
+    Returns list of centroids in numpy array format.
+    """    
+    npoints = map(lambda c : np.array(c.getExactCells()[0].centroid),list_of_trees)
+    return npoints
     
     

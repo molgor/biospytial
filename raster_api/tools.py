@@ -99,7 +99,7 @@ class RasterData(object):
     def __init__(self,rastermodelinstance,border,date='N.A'):
         """
         Parameters:
-            rastermodel :  Is a django.contrib.db.models instance . An ORM in raster_data.models
+            rastermodel :  Is a django.contrib.db.spystats instance . An ORM in raster_data.spystats
             border : A polygon geometry. The border geometry that defines the interior of the raster.
             date : string for date. Important for matching nodes with date
         """

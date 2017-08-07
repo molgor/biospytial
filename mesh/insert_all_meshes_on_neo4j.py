@@ -4,7 +4,7 @@
 
 Insert all meshes in the Neo4J database
 ========================================
-This module implements tools for generating grids based on the Postgis models into the NEO4J database.
+This module implements tools for generating grids based on the Postgis spystats into the NEO4J database.
 
 """
 

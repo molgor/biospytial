@@ -23,7 +23,7 @@ from gbif.models import Occurrence, Specie
 from django.db import models
 from sketches.models import Sketch
 import dateutil.parser
-#from models import Count,Sum,Avg
+#from spystats import Count,Sum,Avg
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 from gbif.models import Specie,Genus,Family,Order,Class,Phylum,Kingdom
 from mesh.models import NestedMesh

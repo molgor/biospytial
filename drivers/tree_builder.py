@@ -1,7 +1,7 @@
 # tree_builder.py
 # THis module abstracts the general node in the OGM implementation, to the TreeNOde and LocalTree objects of biospytial.
 # The OGM makes the mapping to the database and this class instantiates the data given a location in time or space.
-# It uses the Occurrence QuerySet from the Django models in gbif.taxonomy. 
+# It uses the Occurrence QuerySet from the Django spystats in gbif.taxonomy. 
 #The Module for Object Graph Mapping OGM . 
 
 # Author: Juan Escamilla 

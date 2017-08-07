@@ -56,7 +56,7 @@ node_selector = NodeSelector(graph)
 
 
 class Occurrence_CSV_Verbatim(models.Model):
-    #     id_gbif = models.IntegerField()
+    #     id_gbif = spystats.IntegerField()
     id = models.AutoField(primary_key=True, db_column="id_gbif")
     popo =  models.TextField(db_index=False,blank=True, null=True)
     dataset_id = models.TextField(db_index=False,blank=True, null=True)
@@ -131,7 +131,7 @@ class Occurrence_CSV_Verbatim(models.Model):
 
 class Occurrence(models.Model):
     """
-    .. _gbif.models.occurrece:
+    .. _gbif.spystats.occurrece:
     This is the Base class that maps the Occurrence (and further taxonomic aggregates)
     with the spatial enabled database. The current database is built on Postgis.
     It includes the field string length definition for automatic populating the database using a standard CSV provided by GBIF.
@@ -198,21 +198,21 @@ class Occurrence(models.Model):
         Name of country
     geom : Geometric Point
         Geometric Value in WKB
-    objects : models.GeoManager()
+    objects : spystats.GeoManager()
         Wrapper for GeoDjango
     
     """
     chars = {'l1':55,'l2':55,'l3':55,'l4':100,'l5':60,'l6':70,'l7':100}
     id = models.AutoField(primary_key=True, db_column="id_gbif")
-    #id_gf = models.IntegerField(blank=True,null=True)
+    #id_gf = spystats.IntegerField(blank=True,null=True)
     dataset_id = models.TextField(db_index=True,blank=True, null=True)
     institution_code = models.TextField(db_index=True, blank=True, null=True)
     collection_code = models.TextField(db_index=True, blank=True, null=True)
     catalog_number = models.TextField(db_index=True, blank=True, null=True)
     basis_of_record = models.TextField(db_index=True, blank=True, null=True)
     scientific_name = models.TextField(db_index=True, blank=True, null=True)
-    #scientific_name_author = models.TextField(db_index=True,blank=True, null=True)
-    #taxon_id = models.IntegerField(blank=True, null=True)
+    #scientific_name_author = spystats.TextField(db_index=True,blank=True, null=True)
+    #taxon_id = spystats.IntegerField(blank=True, null=True)
     kingdom = models.TextField(db_index=True, blank=True, null=True)
     phylum = models.TextField(db_index=True, blank=True, null=True)
     _class = models.TextField(db_index=True, blank=True, null=True)
@@ -235,42 +235,42 @@ class Occurrence(models.Model):
     day = models.IntegerField(db_index=True,blank=True, null=True)
 
     event_date = models.DateTimeField(db_index=True,blank=True, null=True)
-    #elevation_in_meters = models.FloatField(db_index=True,blank=True, null=True)
-    #depth_in_meters = models.FloatField(db_index=True,blank=True, null=True)
-    #verbatim_scientific_name = models.TextField(db_index=True,blank=True, null=True)
-    #taxon_rank = models.IntegerField(db_index=True,blank=True, null=True)
-    #verbatim_kingdom = models.TextField(db_index=True,blank=True, null=True)
-    #verbatim_phylum = models.TextField(db_index=True,blank=True, null=True)
-    #verbatim_class = models.TextField(db_index=True,blank=True, null=True)
-    #verbatim_order = models.TextField(db_index=True,blank=True, null=True)
-    #verbatim_genus = models.TextField(db_index=True, blank=True, null=True)
-    #verbatim_family = models.TextField(db_index=True, blank=True, null=True)
-    #verbatim_specific_epithet = models.TextField(db_index=True,blank=True, null=True)
-    #verbatim_infraspecific_epithet = models.TextField(db_index=True, blank=True, null=True)
-    #verbatim_latitude = models.FloatField(db_index=True,blank=True, null=True)
-    #verbatim_longitude = models.FloatField(db_index=True,blank=True, null=True)
-    #coordinate_precision = models.FloatField(db_index=True,blank=True, null=True)
-    #maximum_elevation_in_meters = models.FloatField(db_index=True,blank=True, null=True)
-    #minimum_elevation_in_meters = models.FloatField(db_index=True,blank=True, null=True)
-    #elevation_precision = models.FloatField(db_index=True,blank=True, null=True)
-    #minimum_depth_in_meters = models.FloatField(db_index=True,blank=True, null=True)
-    #maximum_depth_in_meters = models.FloatField(db_index=True,blank=True, null=True)
-    #depth_precision = models.FloatField(db_index=True,blank=True, null=True)
-    #continent_ocean = models.FloatField(db_index=True,blank=True, null=True)
+    #elevation_in_meters = spystats.FloatField(db_index=True,blank=True, null=True)
+    #depth_in_meters = spystats.FloatField(db_index=True,blank=True, null=True)
+    #verbatim_scientific_name = spystats.TextField(db_index=True,blank=True, null=True)
+    #taxon_rank = spystats.IntegerField(db_index=True,blank=True, null=True)
+    #verbatim_kingdom = spystats.TextField(db_index=True,blank=True, null=True)
+    #verbatim_phylum = spystats.TextField(db_index=True,blank=True, null=True)
+    #verbatim_class = spystats.TextField(db_index=True,blank=True, null=True)
+    #verbatim_order = spystats.TextField(db_index=True,blank=True, null=True)
+    #verbatim_genus = spystats.TextField(db_index=True, blank=True, null=True)
+    #verbatim_family = spystats.TextField(db_index=True, blank=True, null=True)
+    #verbatim_specific_epithet = spystats.TextField(db_index=True,blank=True, null=True)
+    #verbatim_infraspecific_epithet = spystats.TextField(db_index=True, blank=True, null=True)
+    #verbatim_latitude = spystats.FloatField(db_index=True,blank=True, null=True)
+    #verbatim_longitude = spystats.FloatField(db_index=True,blank=True, null=True)
+    #coordinate_precision = spystats.FloatField(db_index=True,blank=True, null=True)
+    #maximum_elevation_in_meters = spystats.FloatField(db_index=True,blank=True, null=True)
+    #minimum_elevation_in_meters = spystats.FloatField(db_index=True,blank=True, null=True)
+    #elevation_precision = spystats.FloatField(db_index=True,blank=True, null=True)
+    #minimum_depth_in_meters = spystats.FloatField(db_index=True,blank=True, null=True)
+    #maximum_depth_in_meters = spystats.FloatField(db_index=True,blank=True, null=True)
+    #depth_precision = spystats.FloatField(db_index=True,blank=True, null=True)
+    #continent_ocean = spystats.FloatField(db_index=True,blank=True, null=True)
     state_province = models.TextField(db_index=True,blank=True, null=True)
     county = models.TextField(db_index=True,blank=True, null=True)
     country = models.TextField(db_index=True,blank=True, null=True)
-    #recorded_by  = models.TextField(db_index=True,blank=True, null=True)
-    #locality  = models.TextField(db_index=True,blank=True, null=True)
-    #verbatim_month = models.IntegerField(db_index=True,blank=True, null=True)
-    #verbatim_year = models.IntegerField(db_index=True,blank=True, null=True)
-    #day = models.IntegerField(db_index=True,blank=True, null=True)
-    #verbatim_basis_of_record  = models.TextField(db_index=True,blank=True, null=True)
-    #date_identified = models.DateTimeField(db_index=True,blank=True, null=True)
-    #identified_by  = models.TextField(db_index=True,blank=True, null=True)
-    #created = models.DateTimeField(db_index=True,blank=True, null=True)
+    #recorded_by  = spystats.TextField(db_index=True,blank=True, null=True)
+    #locality  = spystats.TextField(db_index=True,blank=True, null=True)
+    #verbatim_month = spystats.IntegerField(db_index=True,blank=True, null=True)
+    #verbatim_year = spystats.IntegerField(db_index=True,blank=True, null=True)
+    #day = spystats.IntegerField(db_index=True,blank=True, null=True)
+    #verbatim_basis_of_record  = spystats.TextField(db_index=True,blank=True, null=True)
+    #date_identified = spystats.DateTimeField(db_index=True,blank=True, null=True)
+    #identified_by  = spystats.TextField(db_index=True,blank=True, null=True)
+    #created = spystats.DateTimeField(db_index=True,blank=True, null=True)
     geom = models.PointField()
-    #modified = models.DateTimeField(db_index=True,blank=True, null=True)
+    #modified = spystats.DateTimeField(db_index=True,blank=True, null=True)
     objects = models.GeoManager()
     
     class Meta:
@@ -492,7 +492,7 @@ class Occurrence(models.Model):
 
 class Occurrence_CSV_4insert(models.Model):
     chars = {'l1':15,'l2':15,'l3':25,'l4':100,'l5':60,'l6':70,'l7':100}
-    #     id_gbif = models.IntegerField()
+    #     id_gbif = spystats.IntegerField()
     id = models.AutoField(primary_key=True, db_column="id_gbif")
     dataset_id = models.TextField(db_index=False,blank=True, null=True)
     institution_code = models.TextField(db_index=False,blank=True, null=True)
@@ -710,7 +710,7 @@ class Level(object):
         The aggregation of the taxonomic level name (e.g. species,genus,etc)
     level : int
         The id f the level
-    Queryset : django.contrib.gis.models.GeoQuerySet
+    Queryset : django.contrib.gis.spystats.GeoQuerySet
         The Geoqueryset of the mapped objects
     name : string
         Aggregation name at some taxonomic level (e.g. Solanacea).
@@ -940,7 +940,7 @@ class Individual(Level):
     ..
     Parameters
     ----------
-    localQuerySet : gbif.models.Occurrence.Geoqueryset
+    localQuerySet : gbif.spystats.Occurrence.Geoqueryset
     species_metadata : dictionary
         The dictionary obtained from the GeoquerySet annotation
         See also
@@ -949,7 +949,7 @@ class Individual(Level):
     
     Attributes
     ----------
-    occurrences : gbif.models.Level.QuerySet
+    occurrences : gbif.spystats.Level.QuerySet
         The QuerySet of the filtered at occurrence level
     geometry : geometry
         WKB representation
@@ -1025,7 +1025,7 @@ class Specie(Level):
     ..
     Parameters
     ----------
-    localQuerySet : gbif.models.Occurrence.Geoqueryset
+    localQuerySet : gbif.spystats.Occurrence.Geoqueryset
     species_metadata : dictionary
         The dictionary obtained from the GeoquerySet annotation
         See also
@@ -1034,7 +1034,7 @@ class Specie(Level):
     
     Attributes
     ----------
-    occurrences : gbif.models.Level.QuerySet
+    occurrences : gbif.spystats.Level.QuerySet
         The QuerySet of the filtered at occurrence level
     geometry : geometry
         WKB representation
@@ -1119,7 +1119,7 @@ class Genus(Level):
     
     Attributes
     ----------
-    species : gbif.models.Level.QuerySet
+    species : gbif.spystats.Level.QuerySet
         The QuerySet of the filtered at occurrence level
     geometry : geometry
         WKB representation    

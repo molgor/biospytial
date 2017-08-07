@@ -34,7 +34,7 @@ class Sketch(models.Model):
     id = models.AutoField(primary_key=True)
     description = models.CharField(db_index=True, max_length=50,blank=True, null=True)   
     geom = models.PolygonField()
-    #modified = models.DateTimeField(db_index=True,blank=True, null=True)
+    #modified = spystats.DateTimeField(db_index=True,blank=True, null=True)
     objects = models.GeoManager()
     
     class Meta:
@@ -70,4 +70,4 @@ class Country(models.Model):
         return u'<Country instance: %s >'%(self.name)
 
 
-# Create your models here.
+# Create your spystats here.

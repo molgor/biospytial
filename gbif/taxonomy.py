@@ -33,7 +33,7 @@ from gbif.models import Occurrence, Specie, Genus, Family, Order, Class, Phylum,
 from django.db import models
 from sketches.models import Sketch
 import dateutil.parser
-#from models import Count,Sum,Avg
+#from spystats import Count,Sum,Avg
 from django.contrib.gis.db.models import Extent, Union, Collect,Count,Min
 from gbif.models import Specie,Genus,Family,Order,Class,Phylum,Kingdom,Root
 from mesh.models import NestedMesh
@@ -132,7 +132,7 @@ def embedTaxonomyInNestedGrid(id_in_grid,biosphere,start_level=10,end_level=11,g
     biosphere : Geoqueryset
         This is the Geoqueryset of gbif occurrences
     start_level : int
-        This is the scale level to start, the parent level of the mesh :ref: mesh.models    
+        This is the scale level to start, the parent level of the mesh :ref: mesh.spystats    
     end_level : int 
         This is the last level in the nested grid stack, i.e. the bottom
 
@@ -295,21 +295,21 @@ class Taxonomy:
     
     Attributes
     ----------
-    occurrences : Gbif.models.Occurence
+    occurrences : Gbif.spystats.Occurence
         All the occurrences within the geometry of the biome
-    species : Gbif.models.Occurence.aggregated(species)
+    species : Gbif.spystats.Occurence.aggregated(species)
         All the occurrences aggregated by the relationship of being a member of the species S. 
-    genera  : Gbif.models.Occurence.aggregated(genera)
+    genera  : Gbif.spystats.Occurence.aggregated(genera)
         All the species aggregated by the relationship of being a member of the genus G.
-    families : Gbif.models.Occurence.aggregated(families)
+    families : Gbif.spystats.Occurence.aggregated(families)
         All the genera aggregated by the relationship of being a member of the family F.
-    orders : Gbif.models.Occurence.aggregated(orders)
+    orders : Gbif.spystats.Occurence.aggregated(orders)
         All the families aggregated by the relationship of being a member of the order O. 
-    classes  : Gbif.models.Occurence.aggregated(classes)
+    classes  : Gbif.spystats.Occurence.aggregated(classes)
         All the orders aggregated by the relationship of being a member of the class C.
-    phyla : Gbif.models.Occurence.aggregated(phyla)
+    phyla : Gbif.spystats.Occurence.aggregated(phyla)
         All the classes aggregated by the relationship of being a member of the phylum P. 
-    kingdoms : Gbif.models.Occurence.aggregated(kingdoms)
+    kingdoms : Gbif.spystats.Occurence.aggregated(kingdoms)
         All the phyla aggregated by the relationship of being a member of the kingdom K. 
     
     richness : dictionary
@@ -362,7 +362,7 @@ class Taxonomy:
   
     Parameters
     ----------
-    biome : gbif.models.GeoQuerySet
+    biome : gbif.spystats.GeoQuerySet
         Biome is a query set of the gbif occurrence instance modulus a 2-d geometry in Earth.
     geometry : geometry WKB
         It is a geometric attribute that could be independent of biome.
@@ -1328,7 +1328,7 @@ class GriddedTaxonomy:
     Parameters
     ==========    
     biosphere : Geoqueryset (GBIF)
-        The GBIF Geoqueryset attribute from gbif.models.Occurrence
+        The GBIF Geoqueryset attribute from gbif.spystats.Occurrence
     mesh : mesh.mesh
         A mesh instance (grid layer). Alternatively called grid
     upper_level_grid_id : int (default 0)

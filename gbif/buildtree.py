@@ -9,9 +9,9 @@ This module provides the functions necessary to build a hierarchical
 acyclic and connected graph (Tree) build upon the taxonomic relationships
 of the biological classification.
 
-This module makes use of the models define in gbif.models as well as the
+This module makes use of the spystats define in gbif.spystats as well as the
 common geospatial operations like intersects.
-Based on the :ref:`gbif.models` and spatial operations.
+Based on the :ref:`gbif.spystats` and spatial operations.
 """
 
 __author__ = "Juan Escamilla Mólgora"
@@ -39,7 +39,7 @@ def getGenera(taxonomy_queryset,only_id=False):
     
     Parameters
     ----------
-    taxonomy_queryset gbif.models / GeoquerySet
+    taxonomy_queryset gbif.spystats / GeoquerySet
     
     
     only_id : Boolean (flag)
@@ -102,7 +102,7 @@ def getFamilies(taxonomic_queryset,genera_tree,only_id=False):
 
     Parameters
     ----------
-    taxonomy_queryset gbif.models / GeoquerySet
+    taxonomy_queryset gbif.spystats / GeoquerySet
         :genera_tree: Tree derived from getGenera
     
     only_id : Boolean (flag)
@@ -155,7 +155,7 @@ def getOrders(taxonomic_queryset,families_tree,only_id=False):
 
     Parameters
     ----------
-    taxonomy_queryset gbif.models / GeoquerySet
+    taxonomy_queryset gbif.spystats / GeoquerySet
     :families_tree: Tree derived from getFamilies
 
     only_id : Boolean (flag)
@@ -213,7 +213,7 @@ def getClasses(taxonomic_queryset,orders_tree,only_id=False):
 
     Parameters
     ----------
-    taxonomy_queryset gbif.models / GeoquerySet
+    taxonomy_queryset gbif.spystats / GeoquerySet
         :orders_tree: Tree derived from getOrders
     
     only_id : Boolean (flag)
@@ -270,7 +270,7 @@ def getPhyla(taxonomic_queryset,classes_tree,only_id=False):
 
     Parameters
     ----------
-    taxonomy_queryset gbif.models / GeoquerySet
+    taxonomy_queryset gbif.spystats / GeoquerySet
         :classes_tree: Tree derived from getclasses
 
         only_id : Boolean (flag)
@@ -325,7 +325,7 @@ def getKingdoms(taxonomic_queryset,phyla_tree,only_id=False):
 
     Parameters
     ----------
-        taxonomy_queryset gbif.models / GeoquerySet
+        taxonomy_queryset gbif.spystats / GeoquerySet
             :phyla_tree: Tree derived from getKingdoms
 
         only_id : Boolean (flag)

@@ -75,8 +75,8 @@ class mesh(models.Model):
     
     """
     id = models.AutoField(primary_key=True, db_column="gid")
-    #row = models.IntegerField()
-    #col = models.IntegerField()
+    #row = spystats.IntegerField()
+    #col = spystats.IntegerField()
     cell = models.PolygonField()
     objects = models.GeoManager()
 
@@ -310,16 +310,16 @@ class MexMesh(mesh):
     
     """
     
-    #id = models.AutoField(primary_key=True, db_column="gid")
+    #id = spystats.AutoField(primary_key=True, db_column="gid")
     gid = models.IntegerField(db_column="id")
     xmin = models.FloatField(db_column="__xmin")
     xmax = models.FloatField(db_column="__xmax")
     ymin = models.FloatField()
     ymax = models.FloatField()    
-    #row = models.IntegerField()
-    #col = models.IntegerField()
+    #row = spystats.IntegerField()
+    #col = spystats.IntegerField()
     cell = models.MultiPolygonField(db_column = "geom")
-    #objects = models.GeoManager()
+    #objects = spystats.GeoManager()
     spatiallevel = 11
     
     @property

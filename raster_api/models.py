@@ -4,7 +4,7 @@ from compiler.ast import Function
 from django.contrib.gis.db.models import RasterField
 from django.contrib.gis.gdal import GDALRaster
 from django.db.models import TextField
-# Create your models here.
+# Create your spystats here.
 class Test(models.Model):
     """
     ..

@@ -238,7 +238,7 @@ class Occurrence(GraphObject):
     
     def pullbackRasterNodes(self,raster_name):
         """
-        Returns the associated value of each occurrence based on the available models.
+        Returns the associated value of each occurrence based on the available spystats.
         """
         models = {'Elevation' : self.lives_in_a_elevation_of ,
           'MaxTemperature' : self.lives_in_a_maximum_temperature_of,

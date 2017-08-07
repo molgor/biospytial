@@ -11,7 +11,7 @@ Check thath the bottom mesh (mex4km) is not a "standard" meshed derived from par
 a quadtree but it's one created at 4km resolution (approx).
 
 To see the logic behind in selecting the parent polygon (because it's not a funcion , originally) see the method:
-rankIntersections in mesh.models.MexMesh
+rankIntersections in mesh.spystats.MexMesh
 
 This module implements tools for generating grids based on polygons.
 

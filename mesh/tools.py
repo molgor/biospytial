@@ -102,7 +102,7 @@ def createRegionalNestedGrid(parent_square,store_prefix,n_levels):
     -------
     
         scales : dictionary
-        The dictionary of the tables builded. For use with the mesh models. module
+        The dictionary of the tables builded. For use with the mesh spystats. module
         
         e.g.
             scales = { 8 : 'mesh\".\"braz_grid8a',

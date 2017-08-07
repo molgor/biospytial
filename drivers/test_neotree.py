@@ -27,7 +27,7 @@ uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
 
 # Load data from a Country polygon 
-#from sketches.models import Country
+#from sketches.spystats import Country
 #mexico_border = Country.objects.filter(name__contains='exico').get()
 
 

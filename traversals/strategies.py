@@ -100,7 +100,7 @@ def getPresencesForListOfNodes(list_of_tree_nodes,list_of_trees,with_centroids=T
     """    
     signals = map(lambda tree_node :  getPresencesForNode(tree_node, list_of_trees),list_of_tree_nodes)
     if with_centroids:
-        centroids = pd.DataFrame({'centroids':getCentroidsFromListofTrees(list_of_trees)})
+        centroids = getCentroidsFromListofTrees(list_of_trees)
         p = pd.concat(signals,axis=1)
         
         return pd.concat([p,centroids],axis=1)
@@ -113,6 +113,8 @@ def getCentroidsFromListofTrees(list_of_trees):
     Returns list of centroids in numpy array format.
     """    
     npoints = map(lambda c : np.array(c.getExactCells()[0].centroid),list_of_trees)
-    return npoints
+    points = pd.DataFrame(npoints,columns=["Longitude","Latitude"])
+    
+    return points
     
     

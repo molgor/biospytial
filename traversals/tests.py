@@ -14,8 +14,9 @@ from mesh.models import initMesh
 from traversals.strategies import getEnvironmentalCovariatesFromListOfTrees,getPresencesForListOfNodes,getCentroidsFromListofTrees
 
 
-
+## Small area.
 polystr = 'POLYGON((-92.24837214921502948 16.53658521768252854,-92.11186028915844304 16.52849027585105901,-92.10623093410457329 16.37327180168962926,-92.25118682674197146 16.37462206197250225,-92.24837214921502948 16.53658521768252854))'
+## Bigger Area
 #polystr = 'POLYGON((-92.54989447928841173 16.93450143453089396,-91.70267654367958698 16.9021871200489322,-91.68015912346406537 16.28717344210308937,-92.56396786692310741 16.31959139053146757,-92.54989447928841173 16.93450143453089396))'
 trees = PolygonToTrees(polystr)
 big_t = reduce(lambda a,b : a+b, trees)
@@ -33,13 +34,13 @@ s = getPresencesForListOfNodes(big_t.to_Animalia.to_Chordata.to_Aves.to_Falconif
 
 X = rd[["WindSpeed_mean","Elevation_mean"]]
 y = s.Falconidae
-centroids = list(s.centroids.as_matrix())
+centroids = list(s[["Longitude","Latitude"]].as_matrix())
 phis =np.linspace(0.01,1.0,100)
 sigmas =np.linspace(0.01,2.0,100)
 
 phis_sigma = [(phi , sigma) for phi in phis for sigma in sigmas]
 
-x0 = np.array([0.01,0.01,1.0,1.0])   
+x0 = np.array([0.1,0.22,0.001,0.001,0.001])  
 Xs = np.matrix(X)
 
 

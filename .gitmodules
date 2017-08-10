@@ -1,0 +1,3 @@
+[submodule "spystats"]
+	path = spystats
+	url = https://github.com/molgor/spystats.git

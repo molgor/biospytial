@@ -1,5 +1,5 @@
 
-from spystats.models import *
+from external_plugins.spystats.models import *
 from django.contrib.gis.geos import GEOSGeometry 
 import numpy as np
 import matplotlib.pyplot as plt

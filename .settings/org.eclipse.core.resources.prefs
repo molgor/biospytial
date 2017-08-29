@@ -15,6 +15,7 @@ encoding//drivers/views.py=utf-8
 encoding//ecoregions/migrations/biodiversity/__init__.py=utf-8
 encoding//external_plugins/DjangoFIA/load_shp_into_db.py=utf-8
 encoding//external_plugins/DjangoFIA/models.py=utf-8
+encoding//external_plugins/DjangoFIA/sampling_scenarios.py=utf-8
 encoding//gbif/buildtree.py=utf-8
 encoding//gbif/difference_operation.py=utf-8
 encoding//gbif/migratedata_beta4django.py=utf-8

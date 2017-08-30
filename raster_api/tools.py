@@ -33,6 +33,7 @@ from numpy.ma import masked_where,masked_equal
 import numpy
 from django.contrib.gis.db.models.fields import RasterField
 from raster_api.models import intersectWith
+import pandas as pd
 
 
 # register the new lookup
@@ -77,6 +78,18 @@ class GDALRasterExtended(GDALRaster):
         return {'min':min_t,'max':max_t,'mean':mean_t,'mean_std':stds_t,'nodata':b.nodata_value}
 
 
+    def getCentroidCoordinates(self):
+        """
+        Returns precise location of centroids derived by an affine transformation
+        """
+        A = numpy.array(self.geotransform).reshape(2,3)
+        ## Create the coordinates in the matrix coordinate systems
+
+        ijs = [ numpy.array((1,i,j)) for i in range(self.height) for j in range(self.width)]
+        coords = map(lambda v : A.dot(v),ijs)
+        return coords
+        
+        
 
 def aggregateDictToRaster(aggregate_dic):
     """
@@ -362,13 +375,15 @@ class RasterData(object):
 
     def getCoordinates(self):
         """
-        Returns array of coordinates for each pixel
+        Returns array of coordinates for each pixel a wrapper.
+        Translates it into a pandas object for better manipulation
         """
-        raster = self.rasterdata
-        startx,starty,endx,endy = raster.extent
-        xs = numpy.linspace(startx,endx,raster.width)
-        ys = numpy.linspace(starty,endy,raster.height)
-        return xs, ys 
+        data = pd.DataFrame(self.rasterdata.getCentroidCoordinates())
+        data.columns = ['Longitude','Latitude']
+        
+        return data 
+
+        
 
         
     def meanLayer(self):

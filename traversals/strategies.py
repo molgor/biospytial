@@ -5,7 +5,7 @@
 Strategies
 ==========
 ..
-This modile implments different strategies for retrieving information in the shape of Graphs.
+This module implements different strategies for retrieving information in the shape of Graphs.
 
 Based on the :ref:`drivers.graph_builder` and spatial operations.
 """

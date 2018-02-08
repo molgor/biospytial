@@ -48,7 +48,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'drivers',
     'ecoregions',
-    'external_plugins.spystats',
+    'external_plugins.spystats.spystats',
     'external_plugins.DjangoFIA',
 )
 

@@ -678,6 +678,8 @@ class Mex4km(GraphObject):
         return polygon
 
 
+
+
     def getNeighbours(self):
         #ln = [n for n in self.connected_from]
         rn = [n for n in self.connected_to]
@@ -727,6 +729,22 @@ def pickNode(type='TreeNodeClass',name="str",graph=graph):
         logger.error("Name: \'%s\' was not found for TreeNode: %s"%(name,str(type)))
         return None
     
+
+def countObjectsOf(NodeClass):
+    """
+    Returns the total number of objects of the class NodeClass.
+    """
+    try:
+        cypher_str = "MATCH (n:%s) RETURN Count(n)"%NodeClass.__primarylabel__
+        n = graph.data(cypher_str).pop()['Count(n)']
+        return n
+
+    except AttributeError:
+        logger.error("Not a Node Object defined in the Graph Database")
+        raise
+
+
+
 
 """
 WindSpeed

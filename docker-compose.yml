@@ -8,7 +8,8 @@ networks:
 services:
 
  ## Biospytial client
- client:
+ name Biospytial3:
+  client3:
   ports:
    - '8888:8888'
    - '8000:8000'

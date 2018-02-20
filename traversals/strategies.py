@@ -96,7 +96,7 @@ def getPresencesForNode(TreeNode,list_of_trees, option='presences'):
 def getPresencesForListOfNodes(list_of_tree_nodes,list_of_trees,with_centroids=True):
     """
     Given a list of trees and a list of TreeNodes this function returns a binary table if the node was found on each of the trees.
-    Similar to getSignalForNode but multivaluated.
+    Similar to getSignalForNode but multivalued.
     """    
     signals = map(lambda tree_node :  getPresencesForNode(tree_node, list_of_trees),list_of_tree_nodes)
     if with_centroids:

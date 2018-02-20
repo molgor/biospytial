@@ -27,6 +27,7 @@ services:
    - '/mnt/data1/git-projects/biospytial:/apps'
    - '/mnt/data1:/mnt/data1'
    - '/tmp/.X11-unix:/tmp/.X11-unix'
+   - '/tmp:/tmp'
    - '${HOME}/.Xauthority:/root/.Xauthority'
   deploy:
    mode: global
@@ -47,6 +48,7 @@ services:
   environment:
     #DISPLAY: '${DISPLAY}'
     DISPLAY: 'unix:0'
+  shm_size: 1024M
   image: molgor/biospytial
   # For interactive mode
   stdin_open: true

@@ -18,7 +18,8 @@ import itertools
 
 logger = logging.getLogger('biospytial.graph_models')
 
-from py2neo.ogm import GraphObject, Property, RelatedTo, RelatedFrom
+from py2neo import NodeSelector
+from py2neo.ogm import GraphObject, Property, RelatedTo, RelatedFrom, Related
 from django.contrib.gis.geos import GEOSGeometry
 from itertools import groupby, imap
 #from drivers.tree_builder import LocalTree
@@ -278,6 +279,8 @@ class TreeNode(GraphObject):
 
     localoccurrences = []
 
+
+
     @property 
     def children(self):
         return iter(self.children_link)
@@ -505,25 +508,26 @@ class TreeNode(GraphObject):
     
 
 class Kingdom(TreeNode):
-   __property_label__ ='Kingdom'
+    __primarylabel__  ='Kingdom'
 
 class Phylum(TreeNode):
-   __property_label__ ='Phylum'
+    __primarylabel__  ='Phylum'
    
-class Class(TreeNode):
-   __property_label__ ='Class'
+class Class_(TreeNode):
+    __primarylabel__  ='Class'
 
 class Order(TreeNode):
-   __property_label__ ='Order'
+    __primarylabel__  ='Order'
    
 class Family(TreeNode):
-    __property_label__ ='Family'
+    __primarylabel__ = 'Family'
+    #__property_label__ ='Family'
 
 class Genus(TreeNode):
-   __property_label__ ='Genus' 
+    __primarylabel__  ='Genus' 
 
 class Specie(TreeNode):
-   __property_label__ ='Specie'
+    __primarylabel__  ='Specie'
    
    
 
@@ -538,6 +542,7 @@ class Cell(GraphObject):
     
     __primarykey__ = 'id'
     __primarylabel__ = 'Cell'
+    __property_label__ ='Cell'
     name = Property()
     longitude = Property()
     latitude = Property()
@@ -550,11 +555,61 @@ class Cell(GraphObject):
     
     contained_in = RelatedTo("Cell", ISCONTAINED)
 
-    Occurrences = RelatedFrom(Occurrence, ISIN)
+    #Occurrences = RelatedFrom(Occurrence, ISIN)
     
     #LocalTree  = RelatedFrom(TreeNode, ISIN)
-    #families = RelatedFrom("Family",ISIN)
+    #Families = RelatedFrom("Family",ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
+
+    @staticmethod
+    def _getAssociatedNodesPerTaxonLevel(self,ClassNode):
+        """
+        Gets the family nodes
+        It's a test
+        """
+        label = self.__primarylabel__
+        pv = self.__primaryvalue__
+        pk = self.__primarykey__
+        targetlabel = ClassNode.__primarylabel__
+        query = "MATCH (a:%s {%s:%s})<-[_:IS_IN]-(b:%s) RETURN b.id"%(label,pk,pv,targetlabel)
+        ids = map(lambda d : d['b.id'],graph.run(query).data())
+        nodes = ClassNode.select(graph).where("_.id IN  %s "%str(ids))
+        return nodes
+     
+    #########
+    ## Related Taxonomic nodes inside the cell
+    @property
+    def has_kingdoms(self,Kingdom):
+        return list(self._getAssociatedNodesPerTaxonLevel(Kingdom))
+    
+#     @property
+#     def has_phyla(self,Phylum):
+#         return self._getAssociatedNodesPerTaxonLevel(Phylum)
+#     
+#     @property
+#     def has_classes(self,Class_):
+#        return self._getAssociatedNodesPerTaxonLevel(Class_)
+#     
+#     @property
+#     def has_orders(self,Order):
+#         return self._getAssociatedNodesPerTaxonLevel(Order)
+# 
+#     @property
+#     def has_families(self,Family):
+#         return self._getAssociatedNodesPerTaxonLevel(Family)
+#     
+#     @property
+#     def has_genera(self,Genus):
+#         return self._getAssociatedNodesPerTaxonLevel(Genus)
+#     
+#     @property
+#     def has_species(self,Specie):
+#         return self._getAssociatedNodesPerTaxonLevel(Specie)
+# 
+#     @property
+#     def has_occurrences(self,Occurrence):
+#         return self._getAssociatedNodesPerTaxonLevel(Occurrence)    
+        
 
     @property
     def gridname(self, *args, **kwargs):
@@ -604,48 +659,47 @@ class Cell(GraphObject):
 
 
 class GridLevel1(Cell):
-   __property_label__ ='mexico_grid1'
+    __primarylabel__ ='mexico_grid1'
 
 class GridLevel2(Cell):
-   __property_label__ ='mexico_grid2'
-   contained_in = RelatedTo("GridLevel1", ISCONTAINED)
+    __primarylabel__ ='mexico_grid2'
+    contained_in = RelatedTo("GridLevel1", ISCONTAINED)
    
 class GridLevel3(Cell):
-   __property_label__ ='mexico_grid4'
-   contained_in = RelatedTo("GridLevel2", ISCONTAINED)
+    __primarylabel__ ='mexico_grid4'
+    contained_in = RelatedTo("GridLevel2", ISCONTAINED)
    
 class GridLevel4(Cell):
-   __property_label__ ='mexico_grid8'
-   contained_in = RelatedTo("GridLevel3", ISCONTAINED)      
+    __primarylabel__ ='mexico_grid8'
+    contained_in = RelatedTo("GridLevel3", ISCONTAINED)      
 
 class GridLevel5(Cell):
-   __property_label__ ='mexico_grid16'
-   contained_in = RelatedTo("GridLevel4", ISCONTAINED)
+    __primarylabel__ ='mexico_grid16'
+    contained_in = RelatedTo("GridLevel4", ISCONTAINED)
    
 class GridLevel6(Cell):
-   __property_label__ ='mexico_grid32'
-   contained_in = RelatedTo("GridLevel5", ISCONTAINED)
+    __primarylabel__ ='mexico_grid32'
+    contained_in = RelatedTo("GridLevel5", ISCONTAINED)
    
    
 class GridLevel7(Cell):
-   __property_label__ ='mexico_grid64'
-   contained_in = RelatedTo("GridLevel6", ISCONTAINED)
+    __primarylabel__='mexico_grid64'
+    contained_in = RelatedTo("GridLevel6", ISCONTAINED)
    
    
 class GridLevel8(Cell):
-   __property_label__ ='mexico_grid128'
-   contained_in = RelatedTo("GridLevel7", ISCONTAINED)
+    __primarylabel__ ='mexico_grid128'
+    contained_in = RelatedTo("GridLevel7", ISCONTAINED)
    
 class GridLevel9(Cell):
-   __property_label__ ='mexico_grid256'
-   contained_in = RelatedTo("GridLevel8", ISCONTAINED)
+    __primarylabel__ ='mexico_grid256'
+    contained_in = RelatedTo("GridLevel8", ISCONTAINED)
 
 class GridLevel10(Cell):
-   __property_label__ ='mexico_grid512'
-   contained_in = RelatedTo("GridLevel9", ISCONTAINED)
+    __primarylabel__ = 'mexico_grid512'
+    contained_in = RelatedTo("GridLevel9", ISCONTAINED)
 
-
-class Mex4km(GraphObject):
+class Mex4km(Cell):
     
     __primarykey__ = 'id'
     __primarylabel__ = 'mex4km'
@@ -663,7 +717,8 @@ class Mex4km(GraphObject):
     Occurrences = RelatedFrom(Occurrence, ISIN)
     
     #LocalTree  = RelatedFrom(TreeNode, ISIN)
-    #families = RelatedFrom("Family",ISIN)
+    #Families = Related(Family,relationship_type=ISIN)
+    #Families = RelatedFrom(Family,ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
     @property
@@ -693,6 +748,60 @@ class Mex4km(GraphObject):
         """
         occs = filter(lambda l : l.pk,self.Occurrences)
         return occs   
+
+
+
+
+
+
+# class Mex4km(GraphObject):
+#     
+#     __primarykey__ = 'id'
+#     __primarylabel__ = 'mex4km'
+#     name = Property()
+#     longitude = Property()
+#     latitude = Property()
+#     cell = Property()
+#     id = Property()
+#        
+#     
+#     
+#     connected_to = RelatedTo("Mex4km", ISNEIGHBOUR)
+#     #contained_in = RelatedTo("Cell",ISCONTAINED)
+#     contained_in = RelatedTo("GridLevel10",ISCONTAINED)
+#     Occurrences = RelatedFrom(Occurrence, ISIN)
+#     
+#     #LocalTree  = RelatedFrom(TreeNode, ISIN)
+#     #families = RelatedFrom("Family",ISIN)
+#     #families = RelatedFrom("Family", "HAS_EVENT")    
+# 
+#     @property
+#     def centroid(self):
+#         pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
+#         point = GEOSGeometry(pointstr)
+#         return point
+#     
+#     @property
+#     def polygon(self):
+#         polygon = GEOSGeometry(self.cell)
+#         return polygon
+# 
+# 
+# 
+# 
+#     def getNeighbours(self):
+#         #ln = [n for n in self.connected_from]
+#         rn = [n for n in self.connected_to]
+#         # testing thingy
+#         rn.append(self)
+#         return rn
+#         
+#     def occurrencesHere(self):
+#         """
+#         Filter the list of occurrences.
+#         """
+#         occs = filter(lambda l : l.pk,self.Occurrences)
+#         return occs   
 
 
 

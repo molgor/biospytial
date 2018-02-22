@@ -133,7 +133,7 @@ class Precipitation(RasterNode):
 # The atomic entity, the random variable, The Unit !
 class Occurrence(GraphObject):
     """
-    Lets see hoe this works
+    Occurrence class for maping objects to nodes.
     """
     
     __primarykey__ = "pk"
@@ -290,7 +290,7 @@ class TreeNode(GraphObject):
     @property
     def allOccurrences(self):
         """
-        Retrieve all data! related to this taxonimic node.
+        Retrieve all data! related to this taxonomic node.
         """
         return iter(self.has_events)
     
@@ -328,7 +328,7 @@ class TreeNode(GraphObject):
 
     def setLabel(self,labelname):
         """
-        Usefull when selecting arbitrary nodes of certain taxonomy.
+        Useful when selecting arbitrary nodes of certain taxonomy.
         """
         self.__primarylabel__ = labelname
         
@@ -509,25 +509,32 @@ class TreeNode(GraphObject):
 
 class Kingdom(TreeNode):
     __primarylabel__  ='Kingdom'
+    __primarykey__ = "id"
 
 class Phylum(TreeNode):
     __primarylabel__  ='Phylum'
+    __primarykey__ = "id"
    
 class Class_(TreeNode):
     __primarylabel__  ='Class'
+    __primarykey__ = "id"
 
 class Order(TreeNode):
     __primarylabel__  ='Order'
+    __primarykey__ = "id"
    
 class Family(TreeNode):
     __primarylabel__ = 'Family'
+    __primarykey__ = "id"
     #__property_label__ ='Family'
 
 class Genus(TreeNode):
-    __primarylabel__  ='Genus' 
+    __primarylabel__  ='Genus'
+    __primarykey__ = "id" 
 
 class Specie(TreeNode):
     __primarylabel__  ='Specie'
+    __primarykey__ = "id"
    
    
 
@@ -561,7 +568,6 @@ class Cell(GraphObject):
     #Families = RelatedFrom("Family",ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
-    @staticmethod
     def _getAssociatedNodesPerTaxonLevel(self,ClassNode):
         """
         Gets the family nodes
@@ -571,44 +577,46 @@ class Cell(GraphObject):
         pv = self.__primaryvalue__
         pk = self.__primarykey__
         targetlabel = ClassNode.__primarylabel__
-        query = "MATCH (a:%s {%s:%s})<-[_:IS_IN]-(b:%s) RETURN b.id"%(label,pk,pv,targetlabel)
-        ids = map(lambda d : d['b.id'],graph.run(query).data())
-        nodes = ClassNode.select(graph).where("_.id IN  %s "%str(ids))
+        targetpk = ClassNode.__primarykey__
+        query = "MATCH (a:%s {%s:%s})<-[_:IS_IN]-(b:%s) RETURN b.%s"%(label,pk,pv,targetlabel,targetpk)
+        tkey = "b." + str(targetpk) 
+        ids = map(lambda d : d[tkey],graph.run(query).data())
+        nodes = ClassNode.select(graph).where("_.%s IN  %s "%(str(targetpk),str(ids)))
         return nodes
      
     #########
     ## Related Taxonomic nodes inside the cell
     @property
-    def has_kingdoms(self,Kingdom):
-        return list(self._getAssociatedNodesPerTaxonLevel(Kingdom))
+    def has_kingdoms(self):
+        return self._getAssociatedNodesPerTaxonLevel(Kingdom)
     
-#     @property
-#     def has_phyla(self,Phylum):
-#         return self._getAssociatedNodesPerTaxonLevel(Phylum)
-#     
-#     @property
-#     def has_classes(self,Class_):
-#        return self._getAssociatedNodesPerTaxonLevel(Class_)
-#     
-#     @property
-#     def has_orders(self,Order):
-#         return self._getAssociatedNodesPerTaxonLevel(Order)
-# 
-#     @property
-#     def has_families(self,Family):
-#         return self._getAssociatedNodesPerTaxonLevel(Family)
-#     
-#     @property
-#     def has_genera(self,Genus):
-#         return self._getAssociatedNodesPerTaxonLevel(Genus)
-#     
-#     @property
-#     def has_species(self,Specie):
-#         return self._getAssociatedNodesPerTaxonLevel(Specie)
-# 
-#     @property
-#     def has_occurrences(self,Occurrence):
-#         return self._getAssociatedNodesPerTaxonLevel(Occurrence)    
+    @property
+    def has_phyla(self):
+        return self._getAssociatedNodesPerTaxonLevel(Phylum)
+     
+    @property
+    def has_classes(self):
+        return self._getAssociatedNodesPerTaxonLevel(Class_)
+     
+    @property
+    def has_orders(self):
+        return self._getAssociatedNodesPerTaxonLevel(Order)
+ 
+    @property
+    def has_families(self):
+        return self._getAssociatedNodesPerTaxonLevel(Family)
+     
+    @property
+    def has_genera(self):
+        return self._getAssociatedNodesPerTaxonLevel(Genus)
+     
+    @property
+    def has_species(self):
+        return self._getAssociatedNodesPerTaxonLevel(Specie)
+ 
+    @property
+    def has_occurrences(self):
+        return self._getAssociatedNodesPerTaxonLevel(Occurrence)    
         
 
     @property

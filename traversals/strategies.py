@@ -70,6 +70,28 @@ def PolygonToTrees(polygon_wkt,mesh_level=11):
     return trees
  
  
+
+def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
+    """
+    Returns a Dataframe of the summary statistics of the raster covariates defined in the cell's border (polygon).
+    """ 
+    
+    getdata = lambda cell : cell.getEnvironmentalData(vars)
+    rdata = map(getdata,list_of_cells)
+    return pd.DataFrame(rdata)
+
+def getAllRichnessOf(list_of_cells,taxonomic_level_name):
+    """
+    Given a list of cells it returns the respective richness in the shape of pandas object.
+    Returns:
+        richness : DataFrame 
+    
+    """    
+    rs = map(lambda cell : cell.getRichnessOf(taxonomic_level_name))
+    richness = pd.DataFrame({'n.'+taxonomic_level_name : rs })
+    return richness
+    
+
 def getEnvironmentalCovariatesFromListOfTrees(list_of_trees):
     """
     Returns a Dataframe of the summary statistics of the raster covariates defined in the cell's border (polygon).

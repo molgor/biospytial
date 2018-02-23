@@ -101,7 +101,7 @@ def aggregateDictToRaster(aggregate_dic):
         raster = GDALRasterExtended(aggregate_dic[key])
         return raster
     except:
-        logger.error("Could not extract Raster data from aggregation")
+        logger.error("Could not extract Raster data from aggregation. The raster could not be defined in that area.")
         return None
 
 class RasterData(object):
@@ -130,7 +130,10 @@ class RasterData(object):
         """
         # First filter by border
         #self.model = self.model.filter(rast__intersect_with=self.geometry)
-        agg_dic = self.model.aggregate(raster=Union('rast',geometry=self.geometry,**bandnumber))
+        try:
+            agg_dic = self.model.aggregate(raster=Union('rast',geometry=self.geometry,**bandnumber))
+        except IndexError :
+            return None
         raster = aggregateDictToRaster(aggregate_dic=agg_dic)
         self.rasterdata = raster
         return raster
@@ -212,7 +215,7 @@ class RasterData(object):
         
         Parameters : 
         
-            filename : the filename to the output geotiff image. not necessarry to add .tif
+            filename : the filename to the output geotiff image. not necessary to add .tif
             path : the path to store the output. By default it uses the PATH_OUTPUT variable in settings
         
         """

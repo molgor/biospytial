@@ -24,6 +24,9 @@ from django.contrib.gis.geos import GEOSGeometry
 from itertools import groupby, imap
 #from drivers.tree_builder import LocalTree
 from biospytial import settings
+from raster_api.tools import RasterData
+from raster_api.models import raster_models_dic,raster_models
+
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
@@ -661,10 +664,81 @@ class Cell(GraphObject):
         return occs        
 
 
+    def getAssociatedRasterAreaData(self,string_selection,aggregated=True):
+        """
+        Returns the associated RasterData type for each cell where the occurrence happened.
+        Returns a raster data type.
+        Options:
+               
+            string_selection $in$ {'Elevation', 'MaxTemperature', 'MeanTemperature',
+             'MinTemperature', 'Precipitation', 'Vapor' , 'SolarRadiation' ,
+          'WindSpeed'        
+        """
+        
+        raster_model = raster_models_dic[string_selection]
+        polygon = self.polygon
+        rasters =  RasterData(raster_model,polygon)
+        #logger.debug("Retrieving information from layer: %s "%string_selection)
+        rasters.getRaster()
+        return rasters 
 
+    def getEnvironmentalData(self,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_std=False):
+        """
+        Returns summary statistics of each environmental layer defined as `vars`.
+
+        
+        Parameters :
+            vars : list with the name of the available raster models.
+            (Boolean flag) 
+            with_std =  Returns the data with means and standard deviation
+        
+        THIS CAN BE PRIORS!!
+        """
+        df = {}
+        for variable in vars:
+            raster = self.getAssociatedRasterAreaData(variable)
+            try:
+                statistics = raster.rasterdata.allBandStatistics()
+            except:
+                #import ipdb; ipdb.set_trace()
+                statistics = {'mean':'N.A.','mean_std':'N.A'}
+            mean_env = statistics['mean']
+            df[variable + '_mean'] = mean_env
+            
+            if with_std:
+                std_env = statistics['mean_std']
+                df[variable + '_std' ] = std_env
+        return df
 
 ###########EXPERIMENTAL 
 
+    def getRichnessOf(self,taxonomic_level_name):
+        """
+        Parameters :
+            taxonomic_level_name : (String)
+            The name of the type of nodes to calculate the richness.
+            Options are:
+                * kingdom
+                * phylum
+                * class
+                * order
+                * family
+                * genus
+                * species
+                * occurrence
+        """
+        dic = {'kingdom' : self.has_kingdoms, 
+                    'phylum' : self.has_phyla,
+                    'class' : self.has_classes,
+                    'order' : self.has_orders,
+                    'family' : self.has_families,
+                    'genus' :self.has_genera,
+                    'species' : self.has_species,
+                    'occurrence' : self.has_occurrences
+               }
+
+        taxa = dic[taxonomic_level_name]
+        return len(taxa)
 
 class GridLevel1(Cell):
     __primarylabel__ ='mexico_grid1'

@@ -727,6 +727,7 @@ class Cell(GraphObject):
                 * species
                 * occurrence
         """
+        taxonomic_level_name = taxonomic_level_name.lower() 
         dic = {'kingdom' : self.has_kingdoms, 
                     'phylum' : self.has_phyla,
                     'class' : self.has_classes,
@@ -737,8 +738,12 @@ class Cell(GraphObject):
                     'occurrence' : self.has_occurrences
                }
 
-        taxa = dic[taxonomic_level_name]
-        return len(taxa)
+        selection = dic[taxonomic_level_name]
+        query, param = selection._query_and_parameters
+        newq = query.replace('RETURN _','RETURN Count(_)')
+        dic = selection.graph.data(newq).pop() 
+        n = dic['Count(_)'] 
+        return n
 
 class GridLevel1(Cell):
     __primarylabel__ ='mexico_grid1'

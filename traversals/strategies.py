@@ -3,7 +3,7 @@
 """
 
 Strategies
-==========
+======
 ..
 This module implements different strategies for retrieving information in the shape of Graphs.
 
@@ -27,7 +27,81 @@ import logging
 logger = logging.getLogger('biospytial.traversals')
 
 import numpy as np
-from itertools import imap
+from itertools import imap, chain
+
+
+###############
+## Cell-wise: strategies 
+###############
+
+def getEnvironmentAndRichnessFromListOfCells(list_of_cells,taxonomic_level_name,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
+    """
+    A wrapper function that returns Richness, environmental covariates and centroids.
+    For a tailored version of this use the individual functions and concatenate dataframes.
+    
+    Parameters : 
+            vars : (list) name of the environmental layers. By default select all layers.
+            taxonomic_level_name : (String) the name of the taxonomic level to which take the richness from.
+
+    Returns : A dataframe 
+    
+    """
+    env = getEnvironmentalCovariatesFromListOfCells(list_of_cells, vars)
+    rich = getRichnessPerListOfCells(list_of_cells, taxonomic_level_name)
+    return pd.concat([rich,env],axis =1)
+
+def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
+    """
+    Parameters :
+        vars (list) name of the environmental layers. By default select all layers.
+    
+    Returns:
+         a Dataframe of the summary statistics of the raster covariates defined in the cell's border (polygon).
+    """ 
+    
+    getdata = lambda cell : cell.getEnvironmentalData(vars)
+    rdata = map(getdata,list_of_cells)
+    return pd.DataFrame(rdata)
+
+def getRichnessPerListOfCells(list_of_cells,taxonomic_level_name,with_centroids=True):
+    """
+    Given a list of cells it returns the respective richness in the shape of pandas object.
+    
+    Parameters:
+        list_of_cells : (List or iterator) the cells to take the richness from.
+        taxonomic_level_name : (String) the name of the taxonomic level to which take the richness from.
+        with_centroid :  (Bool) if True returns the centroids of each corresponding cell
+    Returns:
+        richness : DataFrame 
+    
+    """    
+    rs = map(lambda cell : cell.getRichnessOf(taxonomic_level_name),list_of_cells)
+    richness = pd.DataFrame({'n.'+taxonomic_level_name : rs })
+    if with_centroids:
+        coords = getCentroidsFromListofCells(list_of_cells, asDataFrame=True)
+        return pd.concat([richness,coords],axis=1)
+    else:
+        return richness
+    
+def getCentroidsFromListofCells(list_of_cells,asDataFrame=True):
+    """
+    Returns list of centroids in numpy array format.
+    Params : asDataFrame : (Bool) Returns a DataFrame otherwise returns an iterator. True by default. 
+    """
+    
+    itercentroid = imap(lambda cell : cell.centroid,list_of_cells)    
+    if asDataFrame:
+        centroids = chain(itercentroid)
+        coords = map(lambda p : (p.x,p.y) , centroids)
+        points = pd.DataFrame(coords,columns=["Longitude","Latitude"])
+        return points
+    else:
+        return itercentroid
+
+
+###############
+## Treewise Strategies
+###############
 
 def UniformRandomSampleForest(cell_list,size=100):
     """
@@ -62,7 +136,7 @@ def PolygonToTrees(polygon_wkt,mesh_level=11):
     polygon = GEOSGeometry(polygon_wkt)
     mesh = initMesh(mesh_level)
     cells = list(mesh.objects.filter(cell__intersects=polygon))
-    logger.info("Getting information. DEveloper! You can make this faster if you use Batchmode for py2neo.")
+    logger.info("Getting information. Developer! You can make this faster if you use Batchmode for py2neo.")
     cellnode = map(lambda c : c.toCellNode().first(),cells)
     logger.info("Retrieving the Tree Structures. \n Get a coffee this will take time.")
     trees = map(lambda cell : buildTreeNeo(cell),cellnode)
@@ -71,26 +145,7 @@ def PolygonToTrees(polygon_wkt,mesh_level=11):
  
  
 
-def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
-    """
-    Returns a Dataframe of the summary statistics of the raster covariates defined in the cell's border (polygon).
-    """ 
-    
-    getdata = lambda cell : cell.getEnvironmentalData(vars)
-    rdata = map(getdata,list_of_cells)
-    return pd.DataFrame(rdata)
 
-def getAllRichnessOf(list_of_cells,taxonomic_level_name):
-    """
-    Given a list of cells it returns the respective richness in the shape of pandas object.
-    Returns:
-        richness : DataFrame 
-    
-    """    
-    rs = map(lambda cell : cell.getRichnessOf(taxonomic_level_name))
-    richness = pd.DataFrame({'n.'+taxonomic_level_name : rs })
-    return richness
-    
 
 def getEnvironmentalCovariatesFromListOfTrees(list_of_trees):
     """
@@ -138,5 +193,7 @@ def getCentroidsFromListofTrees(list_of_trees):
     points = pd.DataFrame(npoints,columns=["Longitude","Latitude"])
     
     return points
+
+
     
     

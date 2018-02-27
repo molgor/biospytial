@@ -386,8 +386,16 @@ class RasterData(object):
         
         return data 
 
-        
-
+    def toPandasDataFrame(self):
+        """
+        Returns the values of the raster as a pandas DataFrame with spatial column coordinates
+        """
+        coords = self.getCoordinates()
+        array_data = self.toNumpyArray()
+        dataframes = map(lambda band : pd.DataFrame(band.flatten()),array_data)
+        dataframes.append(coords)
+        data = pd.concat(dataframes,axis=1)
+        return data
         
     def meanLayer(self):
         """

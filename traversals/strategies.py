@@ -13,6 +13,9 @@ from drivers.tree_builder import TreeNeo,buildTreeNeo
 from django.contrib.gis.geos import GEOSGeometry
 from mesh.models import initMesh
 import pandas as pd
+import geopandas as gpd
+from shapely.geometry import Point
+
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2017, JEM"
 __license__ = "GPL"
@@ -29,6 +32,29 @@ logger = logging.getLogger('biospytial.traversals')
 import numpy as np
 from itertools import imap, chain
 
+####
+## Multifunc
+## These are function for handling dataframes and creating subsets.
+def toGeoDataFrame(pandas_dataframe,xcoord_name,ycoord_name,srs = 'epsg:4326'):
+    """
+    Convert Pandas objcet to GeoDataFrame
+    Inputs:
+        pandas_dataframe : the pandas object to spatialise
+        xcoord_name : (String) the column name of the x coordinate.
+        ycoord_name : (String) the column name of the y coordinate. 
+        srs : (String) the source referencing system in EPSG code.
+                e.g. epsg:4326 .
+    """
+    data = pandas_dataframe
+    data['geometry'] = data.apply(lambda z : Point(z[xcoord_name], z[ycoord_name]), axis=1)
+    #data['geometry'] = data.apply(lambda z : Point(z.LON, z.LAT), axis=1)
+
+    new_data = gpd.GeoDataFrame(data)
+    new_data.crs = {'init':'epsg:4326'}
+    return new_data
+
+
+
 
 ###############
 ## Cell-wise: strategies 
@@ -43,12 +69,14 @@ def getEnvironmentAndRichnessFromListOfCells(list_of_cells,taxonomic_level_name,
             vars : (list) name of the environmental layers. By default select all layers.
             taxonomic_level_name : (String) the name of the taxonomic level to which take the richness from.
 
-    Returns : A dataframe 
+    Returns : A spatial dataframe (geopandas) 
     
     """
     env = getEnvironmentalCovariatesFromListOfCells(list_of_cells, vars)
     rich = getRichnessPerListOfCells(list_of_cells, taxonomic_level_name)
-    return pd.concat([rich,env],axis =1)
+    data = pd.concat([rich,env],axis =1)
+    data = toGeoDataFrame(data, 'Longitude', 'Latitude')
+    return data
 
 def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
     """
@@ -76,7 +104,7 @@ def getRichnessPerListOfCells(list_of_cells,taxonomic_level_name,with_centroids=
     
     """    
     rs = map(lambda cell : cell.getRichnessOf(taxonomic_level_name),list_of_cells)
-    richness = pd.DataFrame({'n.'+taxonomic_level_name : rs })
+    richness = pd.DataFrame({'n_'+taxonomic_level_name : rs })
     if with_centroids:
         coords = getCentroidsFromListofCells(list_of_cells, asDataFrame=True)
         return pd.concat([richness,coords],axis=1)
@@ -103,24 +131,7 @@ def getCentroidsFromListofCells(list_of_cells,asDataFrame=True):
 ## Treewise Strategies
 ###############
 
-def UniformRandomSampleForest(cell_list,size=100):
-    """
-    Obtains a random sample of size 'size; of  Trees corresponding to a uniform random subsets of cells given a list of cells 
-    Returns an iterator. Cast a list to obtain the result
-    """
-    n = len(cell_list)
-    
-    sampleids = lambda size : np.random.randint(0,n,size)
-    logger.debug("Random list creates")
-    # get cells
-    #givecell = lambda i : cell_list[i]
-    givecells = lambda size : imap(lambda i : cell_list[i] ,sampleids(size))
-    logger.debug("Random cells selected")
-    #cells = [ cell_list[i] for i in sampleids(n)]
-    getTrees = lambda size : imap(lambda cell : TreeNeo(cell.occurrencesHere()),givecells(size))
 
-    trees = getTrees(size)
-    return trees
 
 
 sumTrees = lambda tree_list : reduce(lambda a,b : a + b , tree_list)

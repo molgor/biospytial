@@ -276,8 +276,8 @@ class TreeNode(GraphObject):
     
     parent_link = RelatedTo("TreeNode",TAXDESCEND)
     children_link = RelatedTo("TreeNode",TAXASCEND)
-    is_in = RelatedTo("Cell",ISIN)
-    
+    #is_in = Related("Cell",ISIN)
+    is_in  = RelatedTo(BOTTOMSCALE_CLASSNODE,ISIN)
     has_events = RelatedTo("Occurrence",HASEVENT)
 
     localoccurrences = []
@@ -513,32 +513,45 @@ class TreeNode(GraphObject):
 class Kingdom(TreeNode):
     __primarylabel__  ='Kingdom'
     __primarykey__ = "id"
+    #parent_link = RelatedTo("TreeNode",TAXDESCEND)
+    children_link = RelatedTo("Phylum",TAXASCEND)
 
 class Phylum(TreeNode):
     __primarylabel__  ='Phylum'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Kingdom",TAXDESCEND)
+    children_link = RelatedTo("Class_",TAXASCEND)
    
 class Class_(TreeNode):
     __primarylabel__  ='Class'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Phylum",TAXDESCEND)
+    children_link = RelatedTo("Order",TAXASCEND)
 
 class Order(TreeNode):
     __primarylabel__  ='Order'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Class_",TAXDESCEND)
+    children_link = RelatedTo("Family",TAXASCEND)
    
 class Family(TreeNode):
     __primarylabel__ = 'Family'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Order",TAXDESCEND)
+    children_link = RelatedTo("Genus",TAXASCEND)
     #__property_label__ ='Family'
 
 class Genus(TreeNode):
     __primarylabel__  ='Genus'
-    __primarykey__ = "id" 
+    __primarykey__ = "id"
+    parent_link = RelatedTo("Family",TAXDESCEND)
+    children_link = RelatedTo("Specie",TAXASCEND) 
 
 class Specie(TreeNode):
     __primarylabel__  ='Specie'
     __primarykey__ = "id"
-   
+    parent_link = RelatedTo("Genus",TAXDESCEND)
+    children_link = RelatedTo("Occurrence",TAXASCEND)   
    
 
 
@@ -552,7 +565,7 @@ class Cell(GraphObject):
     
     __primarykey__ = 'id'
     __primarylabel__ = 'Cell'
-    __property_label__ ='Cell'
+    #__property_label__ ='Cell'
     name = Property()
     longitude = Property()
     latitude = Property()
@@ -567,7 +580,7 @@ class Cell(GraphObject):
 
     #Occurrences = RelatedFrom(Occurrence, ISIN)
     
-    #LocalTree  = RelatedFrom(TreeNode, ISIN)
+    LocalTree  = RelatedFrom(TreeNode, ISIN)
     #Families = RelatedFrom("Family",ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
@@ -660,7 +673,9 @@ class Cell(GraphObject):
         """
         Filter the list of occurrences.
         """
-        occs = filter(lambda l : l.pk,self.Occurrences)
+        #occs = filter(lambda l : l.pk,self.Occurrences)
+        occs = filter(lambda l : l.pk, self.has_occurrences)
+
         return occs        
 
 
@@ -833,7 +848,9 @@ class Mex4km(Cell):
         """
         Filter the list of occurrences.
         """
-        occs = filter(lambda l : l.pk,self.Occurrences)
+        logger.debug("[Developer]: check that the Occurrences are the same that in the has_occurrences method")
+        #occs = filter(lambda l : l.pk,self.Occurrences)
+        occs = filter(lambda l : l.pk, self.has_occurrences)
         return occs   
 
 

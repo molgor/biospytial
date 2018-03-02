@@ -566,8 +566,8 @@ class LocalTree(object):
 
     def countNodesFrequenciesOnList(self,list_of_trees):
         """
-        Checks if every node in the tree is in how many members of the list.
-        This is used for checking how many nodes of a tree are contained in an arbitrary list of trees.
+        Counts the number of times a node in the tree (self) has appeared in the list_of_trees.
+        This is used for checking how many nodes of a tree are contained in any given list of trees.
         Returns:
             list of nodes
             
@@ -600,7 +600,7 @@ class TreeNeo(LocalTree):
     A prototype for reading taxonomic trees stored in the Neo4J database.
     """
 
-    def __init__(self,list_occurrences,cell_objects=''):
+    def __init__(self,list_occurrences,cell_objects=[]):
         """
         THIS IS A PROTOTYPE.
         For now it need a list of node occurrences. Use the function extractOccurrencesFromTaxonomies

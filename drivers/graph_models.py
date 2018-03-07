@@ -26,6 +26,7 @@ from itertools import groupby, imap
 from biospytial import settings
 from raster_api.tools import RasterData
 from raster_api.models import raster_models_dic,raster_models
+import networkx as nt
 
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
@@ -159,7 +160,7 @@ class Occurrence(GraphObject):
     #is_in  = RelatedTo("Cell",ISIN)
     is_in  = RelatedTo(BOTTOMSCALE_CLASSNODE,ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")
-    parent_link = RelatedTo("TreeNode",TAXDESCEND)
+    parent_link = RelatedTo("Specie",TAXDESCEND)
     children_link = RelatedTo("TreeNode",TAXASCEND)
     has_event = RelatedFrom("TreeNode",HASEVENT)
     
@@ -315,6 +316,8 @@ class TreeNode(GraphObject):
         """
         return iter(self.is_in)
         #return self.is_in
+
+
     
     def giveNCells(self,k=10):
         """
@@ -353,6 +356,52 @@ class TreeNode(GraphObject):
         #siblings = filter(lambda node : node != self,siblings)
         return siblings
     
+    def getAncestors(self):
+        """
+        Given the parameter depth it walks through the Subgraph Taxonomy
+        Starting from the Occurrence Node to the depth specified.
+        Remember that there is a loop in the LUCA node therefore.
+        
+        Returns a networkx.Graph object
+        """
+            
+        
+        G = nt.Graph()
+        this_node = self
+        while not isinstance(this_node,Root):
+            next_node = this_node.getParent()
+            G.add_edge(this_node, next_node)
+            this_node = next_node
+        return G
+
+    def mergeLinageWithNode(self,other_node):
+        """
+        Merges the linages (ancestors) between the current node and another.
+        Parameters:
+            other_node : A TreeNode instance.
+        Returns:
+            a Networkx.Graph instance
+        """
+        this_ancestors = self.getAncestors()
+        other_ancestors = other_node.getAncestors() 
+        new_graph = nt.compose(this_ancestors, other_ancestors)
+        return new_graph
+
+
+    def taxonomicDistanceTo(self,other_node,depth=8):
+        """
+        Calculates the taxonomic distance (simple) between this node and another.
+        Parameters:
+            other_node : A TreeNode instance.
+        Returns:
+            Distance : Integer
+            
+        note: It is possible to use an extra argument in the shortestpath method.
+        Select a given attribute as weight. See documentation.   
+        """
+        merged = self.mergeLinageWithNode(other_node)
+        return nt.shortest_path_length(merged,source=self,target=other_node)
+        
     def _isOccurrence(self):
         if self.level == 999:
             return True
@@ -508,12 +557,18 @@ class TreeNode(GraphObject):
         return levels
             
 
+class Root(TreeNode):
+    __primarylabel__  ='Root'
+    __primarykey__ = "id"
+    parent_link = RelatedTo("Root",TAXDESCEND)
+    children_link = RelatedTo("Kingdom",TAXASCEND)
+    #parent_link = None
     
 
 class Kingdom(TreeNode):
     __primarylabel__  ='Kingdom'
     __primarykey__ = "id"
-    #parent_link = RelatedTo("TreeNode",TAXDESCEND)
+    parent_link = RelatedTo("Root",TAXDESCEND)
     children_link = RelatedTo("Phylum",TAXASCEND)
 
 class Phylum(TreeNode):

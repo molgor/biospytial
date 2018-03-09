@@ -97,6 +97,7 @@ def embedTaxonomyInGrid(biosphere,mesh,upper_level_grid_id=0,generate_tree_now=F
         cells = mesh.values('id','cell').all()
         try:
             biomes_mesh = map(lambda cell : (biosphere.filter(geom__intersects=cell['cell']),cell['cell'],cell['id']),cells)
+        
         except:
             logger.error("[biospytial.gbif.taxonomy.embedTaxonomyinGrid] biosphere is not a Geoquery instance model of GBIF")
         taxs_list = map(lambda biome: Taxonomy(biome[0],geometry=biome[1],id=biome[2],build_tree_now=generate_tree_now,grid_label_name=grid_name), biomes_mesh )

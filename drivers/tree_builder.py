@@ -109,11 +109,26 @@ class LocalTree(object):
         Converts to a Networkx object.
         note: It extracts the Node (TreeNode) not LocalTree
         """
-        node = self
+        def _getattrdic(node):
+            nodeatr = {
+                       'level' : node.level,
+                       'richness' : node.richness,
+                       'freq' : node.n_presences_in_list,
+                       }            
+            return nodeatr
+        
+        if isinstance(self, TreeNeo):
+            node = self.node
+        else:
+            node = self
         level_i += 1
-        for child in self.children:            
+        nodeattr = _getattrdic(node)
+        graph.add_node(node.node,attr_dict=nodeattr)
+        for child in self.children:
+            childattr = _getattrdic(child)
             #graph.add_edge(node,child,weight=node.richness)
-            graph.add_edge(node.node,child.node,attr_dict={'weight' : node.richness,'freq':node.n_presences_in_list})
+            graph.add_node(child.node,attr_dict=childattr)
+            graph.add_edge(node.node,child.node,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
             if level_i < depth_level:
                 try:
                     graph = child.getGraph(graph,level_i=level_i,depth_level=depth_level)

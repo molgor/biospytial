@@ -84,8 +84,9 @@ class GDALRasterExtended(GDALRaster):
         """
         A = numpy.array(self.geotransform).reshape(2,3)
         ## Create the coordinates in the matrix coordinate systems
+        ijs = [ numpy.array((1,i,j)) for i in range(self.width) for j in range(self.height)]
 
-        ijs = [ numpy.array((1,i,j)) for i in range(self.height) for j in range(self.width)]
+        #ijs = [ numpy.array((1,i,j)) for i in range(self.height) for j in range(self.width)]
         coords = map(lambda v : A.dot(v),ijs)
         return coords
         

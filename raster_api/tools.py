@@ -405,6 +405,23 @@ class RasterData(object):
         bands = self.toNumpyArray()
         total = reduce(lambda a,b : a+b ,bands)
         return total * (1/float(len(bands)))
+
+
+    def rescale(self,scalexy):
+        """
+        Rescakes the raster according to the scale parameter.
+        
+                    
+        Returns : A GDALRaster
+        """
+
+        aggregate = aggregates_dict['Rescale']
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,scalexy=scalexy))
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        self.rasterdata = raster
+        
+        return raster
+
     
     
 meses = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}

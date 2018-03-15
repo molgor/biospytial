@@ -200,6 +200,33 @@ class SummaryStats(Aggregate):
             output_field = TextField(),
             **extra
       )
+
+class Rescale(Aggregate):
+    """
+        Aggregation method for adjusting only its scale or pixel size.
+        Uses Potgis ST_Rescale
+        ST_Rescale — Resample a raster by adjusting only its scale (or pixel size). New pixel values are computed using the NearestNeighbor (english or american spelling), Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor
+    """  
+    function = 'ST_Rescale(ST_Clip(ST_Union'
+    template = '%(function)s(%(expressions)s'
+    
+    
+    def __init__(self,expression,**extra):
+        geometry = extra.pop('geometry')
+        scalexy = extra.pop('scalexy')
+        srid = geometry.srid
+        #import ipdb; ipdb.set_trace()
+        textpoly = '\'' + str(geometry.wkt) + '\''
+        geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
+        self.template += '),' + geomtext + '),' + str(scalexy) + ')'
+        super(Rescale,self).__init__(
+            expression,
+            output_field = RasterField(),
+            **extra
+      )
+
+
+
         
 aggregates_dict = { 'Original' : Union,
                     'Slope' : Slope,
@@ -207,6 +234,7 @@ aggregates_dict = { 'Original' : Union,
                     'SummaryStats' : SummaryStats,
                     'Aspect' : Aspect,
                     'getValue' : getValue,
+                    'Rescale' : Rescale,
                    }
 
        

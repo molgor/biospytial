@@ -374,7 +374,8 @@ class RasterData(object):
         bands = map(lambda b : b.data(),self.rasterdata.bands)
         nodataval = self.rasterdata.allBandStatistics()['nodata']
         bands = map(lambda b : masked_equal(b,nodataval),bands)
-        return bands
+        
+        return numpy.ma.array(bands)
 
 
     def getCoordinates(self):
@@ -387,12 +388,16 @@ class RasterData(object):
         
         return data 
 
-    def toPandasDataFrame(self):
+    def toPandasDataFrame(self,aggregate_with_mean=False):
         """
         Returns the values of the raster as a pandas DataFrame with spatial column coordinates
+        
+        Parameters: 
+            aggregate_with_mean : (Boolean) Will return the mean value of all the bands per pixel 
         """
         coords = self.getCoordinates()
         array_data = self.toNumpyArray()
+        ## iterate according to numpy standard leftmost axis
         dataframes = map(lambda band : pd.DataFrame(band.flatten()),array_data)
         dataframes.append(coords)
         data = pd.concat(dataframes,axis=1)
@@ -402,15 +407,17 @@ class RasterData(object):
         """
         Returns a single layer (Matrix nxm) that represents the cellwise average value  
         """
-        bands = self.toNumpyArray()
-        total = reduce(lambda a,b : a+b ,bands)
-        return total * (1/float(len(bands)))
+        datacube = self.toNumpyArray()
+        layer = numpy.mean(datacube, axis=0)
+        return layer
 
 
-    def rescale(self,scalexy):
+    def rescale(self,scalexy,inplace=True):
         """
-        Rescakes the raster according to the scale parameter.
-        
+        Scales the raster according to the scale parameter.
+        Parameters:
+            scalexy : pixelsize to scale the raster
+            inplace : assigns the returned object to the current rasterdata attribute
                     
         Returns : A GDALRaster
         """
@@ -418,8 +425,9 @@ class RasterData(object):
         aggregate = aggregates_dict['Rescale']
         agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,scalexy=scalexy))
         raster = aggregateDictToRaster(aggregate_dic=agg_dic)
-        self.rasterdata = raster
-        
+        if inplace:
+            self.rasterdata = raster
+            
         return raster
 
     

@@ -455,7 +455,7 @@ OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','lat
 
 PATH_IMAGES = '/Users/juan/git_projects/biospytial/static/trees/'
 
-PATH_OUTPUT = '/outputs'
+PATH_OUTPUT = '/outputs/'
 
 RASTERNODATAVALUE = -9999
 

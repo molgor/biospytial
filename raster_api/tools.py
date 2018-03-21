@@ -94,6 +94,7 @@ class GDALRasterExtended(GDALRaster):
 
 def aggregateDictToRaster(aggregate_dic):
     """
+    FOR POSTGIS data retrieval only.
     Convert the input aggregate based on an aggregation of raster data in postgis (aggregate_dic)
      into a fully functional raster datatype.
     """
@@ -105,111 +106,17 @@ def aggregateDictToRaster(aggregate_dic):
         logger.error("Could not extract Raster data from aggregation. The raster could not be defined in that area.")
         return None
 
-class RasterData(object):
+
+
+class Raster(object):
     """
-    This class provides an interface for processing and analysing raster data stored in a postgis database
+    Class that defines Raster Objects. 
+    This includes the prediction done by models, other external data not in the relational database and extensible to objects in the relational database.
     """
     
-    def __init__(self,rastermodelinstance,border,date='N.A'):
-        """
-        Parameters:
-            rastermodel :  Is a django.contrib.db.spystats instance . An ORM in raster_data.spystats
-            border : A polygon geometry. The border geometry that defines the interior of the raster.
-            date : string for date. Important for matching nodes with date
-        """
-        self.model = rastermodelinstance.objects.filter(rast__intersect_with=border)
-        self.geometry = border
-        self.rasterdata = ''
-        self.neo_label_name = rastermodelinstance.neo_label_name
-        self.number_bands = rastermodelinstance.number_bands
-        self.aggregatedmodel = ''
-        self.eventdate = date
-        
-    def getRaster(self,**bandnumber):
-        """
-        Returns : A GDALRaster
-        """
-        # First filter by border
-        #self.model = self.model.filter(rast__intersect_with=self.geometry)
-        try:
-            agg_dic = self.model.aggregate(raster=Union('rast',geometry=self.geometry,**bandnumber))
-        except IndexError :
-            return None
-        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
-        self.rasterdata = raster
-        return raster
+    def __init__(self,rasterdata=''):
+        self.rasterdata = rasterdata
     
-    
-    def processDEM(self,option=1):
-        """
-        Processes different products using a DEM as input.
-        Currently implements:
-            Parameters : 
-                option : integer
-                    1 : Raw DEM (Elevation)
-                    2 : Slope (angle 0 - 90) 
-                    3 : Aspect Orientation of facet (0, 360) 
-                    4 : Hillshade (for visualising)
-                    
-        Returns : A GDALRaster
-        """
-        options = {2 : 'Slope', 4:'Hillshade', 1:'Original', 3:'Aspect'}
-        key_opt = options[option]
-        self.neo_label_name += ('-' + key_opt) 
-        # First filter by border
-        #self.model = self.model.filter(rast__intersect_with=self.geometry)
-        aggregate = aggregates_dict[key_opt]
-        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
-        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
-        self.rasterdata = raster
-        
-        return raster
-
-    def getValue(self,point,**bandnumber):
-        """
-        Returns the value in the coordinates given by the point.
-        """
-        band = bandnumber.get('band')
-        if band:
-            Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,**bandnumber))
-            z = Z['Z']
-            if z == None:
-                z = settings.RASTERNODATAVALUE
-            return z
-        else:
-            nbands = self.number_bands
-            zs = []
-            for i in range(1,nbands + 1):
-                Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,band=i))
-                zi = Z['Z']
-                if zi == None:
-                    zi = settings.RASTERNODATAVALUE
-                zs.append(zi)
-            return zs
-
-
-    def getSummaryStats(self,**bandnumber):
-        """
-        Returns the summary statistics given by the function ST_SummaryStats over a ST_UNion of the blobs within the geometry.
-        """
-        if self.geometry.dims > 0:
-        #self.model = self.model.filter(rast__intersect_with=self.geometry)
-            agg_dic = self.model.aggregate(raster=SummaryStats('rast',geometry=self.geometry,**bandnumber))
-            summary_str = agg_dic['raster']
-            summary_str = summary_str.replace('(','').replace(')','')
-            summary = summary_str.split(',')
-            uniqueid = str(self.geometry.ewkt) + '-' + str(self.eventdate)
-            dic_sum = {'uniqueid':uniqueid,'count':int(summary[0]),'sum':float(summary[1]),'mean':float(summary[2]),'stddev':float(summary[3]),'min':float(summary[4]),'max':float(summary[5])}        
-        else:
-            # It's a point.
-            z = self.getValue(self.geometry,**bandnumber)
-            uniqueid = str(self.geometry.ewkt) + '-' + str(self.eventdate)
-            dic_sum = {'value' : z,'uniqueid':uniqueid}
-            
-        return dic_sum
-
-
-
     def exportToGeoTiff(self,filename,path=settings.PATH_OUTPUT):
         """
         Exports the raster data to a GeoTiff standard format. For use in any GIS for analysing or visualizing.
@@ -233,8 +140,8 @@ class RasterData(object):
                 return None
             data = self.rasterdata.bands
         
-
-        NoData_value = self.rasterdata.bands[0].nodata_value
+        b1 = self.rasterdata.bands[0]
+        NoData_value = b1.nodata_value
         proj_str = str(self.rasterdata.srs.wkt)
         driver = gdal.GetDriverByName('GTiff')
         geotransform = self.rasterdata.geotransform
@@ -253,8 +160,8 @@ class RasterData(object):
 
                 
         
-        output = driver.Create(file_,xsize,ysize,nbands,gdal.GDT_Int16)
-                
+        #output = driver.Create(file_,xsize,ysize,nbands,gdal.GDT_Int16)
+        output = driver.Create(file_,xsize,ysize,nbands,b1.datatype())        
         for i in range(nbands):
             outband = output.GetRasterBand(i+1)
             outband.WriteArray(data[i])
@@ -281,33 +188,7 @@ class RasterData(object):
         return None
 
 
-        
-    def getNode(self,writeDB=False,month='',**bands):
-        """
-        Returns a Node data structure that can be put into Neo4j
-        """
-        class_name = self.neo_label_name
-        properties = self.getSummaryStats(**bands)
-        if month:
-            try:
-                #Get summary uses the point data and therefore returns the value attribute
-                properties['reg.val'] = self.getSummaryStats(band=month)['value']
-            except:
-                # In the case the data has only one band and we are ingesting the data without care
-                properties['reg.val'] = self.getSummaryStats(band=1)['value']
-                logger.warn("Band number selected (%s) doesn't exist. Using band one instead."%month)
-        
-        n0 = Node(class_name,**properties)
-        #old_node = graph.find_one(class_name,property_key="uniqueid",property_value=properties['uniqueid'])
-        old_node = node_selector.select(class_name,uniqueid=properties['uniqueid']).first()
 
-        if old_node:
-            return old_node
-        else:
-            if writeDB:
-                graph.create(n0)
-            return n0
-        
      
 
     
@@ -317,7 +198,7 @@ class RasterData(object):
         try:
             matrix = self.rasterdata.bands[band - 1].data()
         except:
-            logger.error("No raster data associated with specified band. Run getRaster or processDEM first")
+            logger.error("No raster data associated with specified band")
             return None
         if stats_dir == 'default':
             stats_dir = self.rasterdata.allBandStatistics()
@@ -412,6 +293,118 @@ class RasterData(object):
         return layer
 
 
+
+
+
+
+class RasterData(Raster):
+    """
+    This class provides an interface for processing and analysing raster data stored in a postgis database
+    
+    FOR USE in POSTGIS
+    """
+    
+    def __init__(self,rastermodelinstance,border,date='N.A'):
+        """
+        Parameters:
+            rastermodel :  Is a django.contrib.db.spystats instance . An ORM in raster_data.spystats
+            border : A polygon geometry. The border geometry that defines the interior of the raster.
+            date : string for date. Important for matching nodes with date
+        """
+        super(RasterData,self).__init__(rasterdata='')
+        self.model = rastermodelinstance.objects.filter(rast__intersect_with=border)
+        self.geometry = border
+        #self.rasterdata = ''
+        self.neo_label_name = rastermodelinstance.neo_label_name
+        self.number_bands = rastermodelinstance.number_bands
+        self.aggregatedmodel = ''
+        self.eventdate = date
+        
+    def getRaster(self,**bandnumber):
+        """
+        Returns : A GDALRaster
+        """
+        # First filter by border
+        #self.model = self.model.filter(rast__intersect_with=self.geometry)
+        try:
+            agg_dic = self.model.aggregate(raster=Union('rast',geometry=self.geometry,**bandnumber))
+        except IndexError :
+            return None
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        self.rasterdata = raster
+        return raster
+    
+    
+    def processDEM(self,option=1):
+        """
+        Processes different products using a DEM as input.
+        Currently implements:
+            Parameters : 
+                option : integer
+                    1 : Raw DEM (Elevation)
+                    2 : Slope (angle 0 - 90) 
+                    3 : Aspect Orientation of facet (0, 360) 
+                    4 : Hillshade (for visualising)
+                    
+        Returns : A GDALRaster
+        """
+        options = {2 : 'Slope', 4:'Hillshade', 1:'Original', 3:'Aspect'}
+        key_opt = options[option]
+        self.neo_label_name += ('-' + key_opt) 
+        # First filter by border
+        #self.model = self.model.filter(rast__intersect_with=self.geometry)
+        aggregate = aggregates_dict[key_opt]
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        self.rasterdata = raster
+        
+        return raster
+
+    def getValue(self,point,**bandnumber):
+        """
+        Returns the value in the coordinates given by the point.
+        """
+        band = bandnumber.get('band')
+        if band:
+            Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,**bandnumber))
+            z = Z['Z']
+            if z == None:
+                z = settings.RASTERNODATAVALUE
+            return z
+        else:
+            nbands = self.number_bands
+            zs = []
+            for i in range(1,nbands + 1):
+                Z = self.model.filter(rast__intersect_with=point).aggregate(Z=aggregates_dict['getValue']('rast',geometry=point,band=i))
+                zi = Z['Z']
+                if zi == None:
+                    zi = settings.RASTERNODATAVALUE
+                zs.append(zi)
+            return zs
+
+
+    def getSummaryStats(self,**bandnumber):
+        """
+        Returns the summary statistics given by the function ST_SummaryStats over a ST_UNion of the blobs within the geometry.
+        """
+        if self.geometry.dims > 0:
+        #self.model = self.model.filter(rast__intersect_with=self.geometry)
+            agg_dic = self.model.aggregate(raster=SummaryStats('rast',geometry=self.geometry,**bandnumber))
+            summary_str = agg_dic['raster']
+            summary_str = summary_str.replace('(','').replace(')','')
+            summary = summary_str.split(',')
+            uniqueid = str(self.geometry.ewkt) + '-' + str(self.eventdate)
+            dic_sum = {'uniqueid':uniqueid,'count':int(summary[0]),'sum':float(summary[1]),'mean':float(summary[2]),'stddev':float(summary[3]),'min':float(summary[4]),'max':float(summary[5])}        
+        else:
+            # It's a point.
+            z = self.getValue(self.geometry,**bandnumber)
+            uniqueid = str(self.geometry.ewkt) + '-' + str(self.eventdate)
+            dic_sum = {'value' : z,'uniqueid':uniqueid}
+            
+        return dic_sum
+
+
+
     def rescale(self,scalexy,inplace=True):
         """
         Scales the raster according to the scale parameter.
@@ -430,7 +423,103 @@ class RasterData(object):
             
         return raster
 
+        
+    def getNode(self,writeDB=False,month='',**bands):
+        """
+        Returns a Node data structure that can be put into Neo4j
+        """
+        class_name = self.neo_label_name
+        properties = self.getSummaryStats(**bands)
+        if month:
+            try:
+                #Get summary uses the point data and therefore returns the value attribute
+                properties['reg.val'] = self.getSummaryStats(band=month)['value']
+            except:
+                # In the case the data has only one band and we are ingesting the data without care
+                properties['reg.val'] = self.getSummaryStats(band=1)['value']
+                logger.warn("Band number selected (%s) doesn't exist. Using band one instead."%month)
+        
+        n0 = Node(class_name,**properties)
+        #old_node = graph.find_one(class_name,property_key="uniqueid",property_value=properties['uniqueid'])
+        old_node = node_selector.select(class_name,uniqueid=properties['uniqueid']).first()
+
+        if old_node:
+            return old_node
+        else:
+            if writeDB:
+                graph.create(n0)
+            return n0
+        
+
+
+
+class RasterContainer(Raster):
+    """
+    This class instantiates a full geospatial raster data structure (GDAL).
+    It needs a numpy matrix and metadata obtained from a RasterData object. 
+    The instance is built on this metadata and the given numpy narray.
+    """
     
+    def __init__(self,data,use_metadata_from=''):
+        """
+        Parameters:
+            data : (numpy narray) The data to be used for the raster.
+            use_metadata_from_this_band : (GDALRaster Band) the metadata of the GDAL Raster are going to be set by this object.
+        """
+        super(RasterContainer,self).__init__(rasterdata='')
+        self.metadatamodel = use_metadata_from
+        self.rasterdata = self.buildRasterData(data)
+
+    def buildRasterData(self,data,with_exponential=True):
+        """
+        Returns a GDAL Raster object (Extended).
+        if with_exponential (Bool) it includes the exponential of the raster in band number 2.
+        Useful if modelling Poisson process.
+        """
+        import numpy as np
+        m = self.metadatamodel
+        geotransform = m.geotransform
+        band = m.bands[0]
+        if with_exponential:
+            bands = [{'data':data.flatten(),
+                                                 'size': (band.width, band.height),
+                                                 'nodata_value': band.nodata_value,
+                                                 },
+                                                {'data':np.exp(data.flatten()),
+                                                 'size': (band.width, band.height),
+                                                 'nodata_value':np.exp(band.nodata_value),
+                                                 }
+                                                ]
+        
+        else:
+            bands = [{'data':data.flatten(),
+                                                 'size': (band.width, band.height),
+                                                 'nodata_value': band.nodata_value,
+                                                 }]
+       
+        rst = GDALRasterExtended({'srid': m.srid,
+                                                    'width': m.width,
+                                                    'height': m.height,
+                                                    'datatype': 7,
+                                                    'origin' : m.origin,
+                                                    'scale' : m.scale,
+                                                    'bands': bands })
+        return rst
+    
+
+    def display_field(self, stats_dir='default', title='', band=1, **kwargs):
+        """
+        Override method for displaying field. 
+        Has to be done in order to display correctly the fields.
+        """
+        b = self.rasterdata.bands[band - 1]
+        stats_dir = {'max': b.max,
+                            'mean': b.min,
+                            'min': b.min,
+                            'nodata': b.nodata_value}
+        
+        return Raster.display_field(self, stats_dir=stats_dir, title=title, band=band, **kwargs)
+
     
 meses = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
 #mex.exportToJPG('0'+name,s,title=month,band=int(name),cmap=plt.cm.inferno)

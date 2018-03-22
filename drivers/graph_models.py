@@ -318,6 +318,28 @@ class TreeNode(GraphObject):
         #return self.is_in
 
 
+    def getCellsById(self):
+        """
+        Get's the associated cells by Id. 
+        Optimized with a Cypher query to be very fast.
+        It will return a list of ids that can be used in the sampling method.
+        """
+        from pandas import DataFrame as df
+        cell_node_type = self.is_in.related_class
+        cypher_str = "MATCH (b:%s {id:%s})-[r:IS_IN]->(c:%s) Return c.id"%(self.__primarylabel__,self.id,cell_node_type.__primarylabel__)
+        try:
+            n = graph.data(cypher_str)
+            ids = [o['c.id'] for o in n]
+            #selection_of_cells = cell_node_type.select(graph).where("_.id IN  %s "%ids)
+            return ids
+    
+
+        except AttributeError:
+            logger.error("Not a Node Object defined in the Graph Database")
+            raise
+
+
+
     
     def giveNCells(self,k=10):
         """

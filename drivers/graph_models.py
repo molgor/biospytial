@@ -921,67 +921,13 @@ class Mex4km(Cell):
         rn.append(self)
         return rn
         
-    def occurrencesHere(self):
-        """
-        Filter the list of occurrences.
-        """
-        logger.debug("[Developer]: check that the Occurrences are the same that in the has_occurrences method")
-        #occs = filter(lambda l : l.pk,self.Occurrences)
-        occs = filter(lambda l : l.pk, self.has_occurrences)
-        return occs   
-
-
-
-
-
-
-# class Mex4km(GraphObject):
-#     
-#     __primarykey__ = 'id'
-#     __primarylabel__ = 'mex4km'
-#     name = Property()
-#     longitude = Property()
-#     latitude = Property()
-#     cell = Property()
-#     id = Property()
-#        
-#     
-#     
-#     connected_to = RelatedTo("Mex4km", ISNEIGHBOUR)
-#     #contained_in = RelatedTo("Cell",ISCONTAINED)
-#     contained_in = RelatedTo("GridLevel10",ISCONTAINED)
-#     Occurrences = RelatedFrom(Occurrence, ISIN)
-#     
-#     #LocalTree  = RelatedFrom(TreeNode, ISIN)
-#     #families = RelatedFrom("Family",ISIN)
-#     #families = RelatedFrom("Family", "HAS_EVENT")    
-# 
-#     @property
-#     def centroid(self):
-#         pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
-#         point = GEOSGeometry(pointstr)
-#         return point
-#     
-#     @property
-#     def polygon(self):
-#         polygon = GEOSGeometry(self.cell)
-#         return polygon
-# 
-# 
-# 
-# 
-#     def getNeighbours(self):
-#         #ln = [n for n in self.connected_from]
-#         rn = [n for n in self.connected_to]
-#         # testing thingy
-#         rn.append(self)
-#         return rn
-#         
 #     def occurrencesHere(self):
 #         """
 #         Filter the list of occurrences.
 #         """
-#         occs = filter(lambda l : l.pk,self.Occurrences)
+#         logger.debug("[Developer]: check that the Occurrences are the same that in the has_occurrences method")
+#         #occs = filter(lambda l : l.pk,self.Occurrences)
+#         occs = filter(lambda l : l.pk, self.has_occurrences)
 #         return occs   
 
 

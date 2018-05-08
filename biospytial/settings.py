@@ -465,6 +465,8 @@ NOTEBOOK_ARGUMENTS = [
     '--port=8888',
     # disables the browser
     '--no-browser',
+    '--allow-root',
+    '--config=ipython_config.py',
 ]
 
 
@@ -473,7 +475,7 @@ IPYTHON_ARGUMENTS = [
     '--ext', 'biospytial',
 ]
 
-NOTEBOOK_ARGUMENTS = [
-    '--config=ipython_config.py',
-]
+#NOTEBOOK_ARGUMENTS = [
+#    '--config=ipython_config.py',
+#]
 

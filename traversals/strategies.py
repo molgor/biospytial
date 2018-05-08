@@ -3,7 +3,7 @@
 """
 
 Strategies
-======
+==========
 ..
 This module implements different strategies for retrieving information in the shape of Graphs.
 
@@ -78,7 +78,8 @@ def getEnvironmentAndRichnessFromListOfCells(list_of_cells,taxonomic_level_name,
     data = toGeoDataFrame(data, 'Longitude', 'Latitude')
     return data
 
-def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
+def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature',
+'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_coordinates=True):
     """
     Parameters :
         vars (list) name of the environmental layers. By default select all layers.
@@ -89,7 +90,12 @@ def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','M
     
     getdata = lambda cell : cell.getEnvironmentalData(vars)
     rdata = map(getdata,list_of_cells)
-    return pd.DataFrame(rdata)
+    if not with_coordinates:
+        return pd.DataFrame(rdata)
+    else:
+        coords = getCentroidsFromListofCells(list_of_cells)
+        data = pd.DataFrame(rdata)
+        return pd.concat([data,coords],axis=1)
 
 def getRichnessPerListOfCells(list_of_cells,taxonomic_level_name,with_centroids=True):
     """

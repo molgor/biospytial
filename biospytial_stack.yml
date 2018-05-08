@@ -53,8 +53,8 @@ services:
   # For interactive mode
   stdin_open: true
   tty: true
-  entrypoint: /root/entrypoint.sh
-  #entrypoint: /bin/bash
+  #entrypoint: /root/entrypoint.sh
+  entrypoint: /bin/bash
   
 
 ### Postgis container

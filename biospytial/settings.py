@@ -383,7 +383,7 @@ TAXONOMY_PREFIX = 'tax'
 GBIF_DATATABLE = "gbif_occurrence_csv"
         # Local table name
         #db_table = "mexico_gbif_subset"
- 
+ECOREGIONS_DATATABLE = "terreco"
 # Mesh table settings. provisional. expected to have it's on config file
 BRAZ_SCALES = { 8 : 'mesh\".\"braz_grid8a',
           9 : 'mesh\".\"braz_grid16a',
@@ -456,6 +456,7 @@ OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','lat
 PATH_IMAGES = '/Users/juan/git_projects/biospytial/static/trees/'
 
 PATH_OUTPUT = '/outputs/'
+PATH_RAWDATASOURCES = '/mnt/data1/maps/'
 
 RASTERNODATAVALUE = -9999
 

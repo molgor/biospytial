@@ -12,6 +12,7 @@ encoding//drivers/populate.py=utf-8
 encoding//drivers/test_neotree.py=utf-8
 encoding//drivers/tests.py=utf-8
 encoding//drivers/views.py=utf-8
+encoding//ecoregions/load_shapefiles.py=utf-8
 encoding//ecoregions/migrations/biodiversity/__init__.py=utf-8
 encoding//external_plugins/DjangoFIA/load_shp_into_db.py=utf-8
 encoding//external_plugins/DjangoFIA/models.py=utf-8

@@ -34,7 +34,7 @@ import numpy
 from django.contrib.gis.db.models.fields import RasterField
 from raster_api.models import intersectWith
 import pandas as pd
-
+from scipy.special import expit
 
 # register the new lookup
 RasterField.register_lookup(intersectWith)
@@ -460,43 +460,69 @@ class RasterContainer(Raster):
     The instance is built on this metadata and the given numpy narray.
     """
     
-    def __init__(self,data,use_metadata_from=''):
+    def __init__(self,data,use_metadata_from='', exponential_fam="Identity"):
         """
         Parameters:
             data : (numpy narray) The data to be used for the raster.
             use_metadata_from_this_band : (GDALRaster Band) the metadata of the GDAL Raster are going to be set by this object.
+        
+           exponential_fam : (String) The type of link function used (GLM).
+           Current implemented choices are:
+            "Identity", (default)
+            "Poisson",
+            "Logit"
+        If the family is different from Identity it will add the transformed layer as
         """
         super(RasterContainer,self).__init__(rasterdata='')
         self.metadatamodel = use_metadata_from
-        self.rasterdata = self.buildRasterData(data)
+        self.rasterdata = self.buildRasterData(data,exponential_fam = exponential_fam)
 
-    def buildRasterData(self,data,with_exponential=True):
+    def buildRasterData(self,data,exponential_fam="Identity"):
         """
         Returns a GDAL Raster object (Extended).
-        if with_exponential (Bool) it includes the exponential of the raster in band number 2.
-        Useful if modelling Poisson process.
+        Parameters: 
+           exponential_fam : (String) The type of link function used (GLM).
+           Current implemented choices are:
+            "Identity", (default)
+            "Poisson",
+            "Logit"
+        If the family is different from Identity it will add the transformed layer as
+        another band,
         """
         import numpy as np
         m = self.metadatamodel
         geotransform = m.geotransform
         band = m.bands[0]
-        if with_exponential:
+        if exponential_fam == "Identity":
+            tdata = data.flatten()
+        elif exponential_fam == "Poisson" :
+            tdata = np.exp(data.flatten())
+            nodatav = np.exp(band.nodata_value)
+        elif exponential_fam == "Bernoulli" :
+            tdata = expit(data.flatten())
+            nodatav = expit(band.nodata_value)
+        else:
+            raise ValueError("Incorrect parameter in: exponential_fam. Use options described in documentation ")
+            
+
+        if exponential_fam == "Identity":
             bands = [{'data':data.flatten(),
-                                                 'size': (band.width, band.height),
-                                                 'nodata_value': band.nodata_value,
-                                                 },
-                                                {'data':np.exp(data.flatten()),
-                                                 'size': (band.width, band.height),
-                                                 'nodata_value':np.exp(band.nodata_value),
-                                                 }
-                                                ]
-        
+                     'size': (band.width, band.height),
+                     'nodata_value': band.nodata_value,
+                     }]
+            
+            
         else:
             bands = [{'data':data.flatten(),
-                                                 'size': (band.width, band.height),
-                                                 'nodata_value': band.nodata_value,
-                                                 }]
-       
+                     'size': (band.width, band.height),
+                     'nodata_value': band.nodata_value,
+                      },
+                      {'data' : tdata,
+                       'size': (band.width, band.height),
+                       'nodata_value':np.exp(band.nodata_value),
+                      }
+                    ]
+        
         rst = GDALRasterExtended({'srid': m.srid,
                                                     'width': m.width,
                                                     'height': m.height,

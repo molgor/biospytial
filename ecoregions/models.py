@@ -1,5 +1,6 @@
 # This is an auto-generated Django model module created by ogrinspect.
 from django.contrib.gis.db import models
+from biospytial import settings
 
 class Ecoregion(models.Model):
     id = models.AutoField(primary_key=True, db_column="gid")
@@ -66,6 +67,41 @@ class InegiIV(models.Model):
         c = '<LandUse: instance %s :: %s >' %(self.id,self.name.encode('utf8'))
         return c
     
+
+# This is an auto-generated Django model module created by ogrinspect.
+
+class TerrEcoregions(models.Model):
+    id = models.AutoField(primary_key=True, db_column="gid")
+    eco_id_u = models.IntegerField()
+    eco_code = models.CharField(max_length=16)
+    eco_name = models.CharField(max_length=100)
+    eco_num = models.IntegerField()
+    ecode_name = models.CharField(max_length=120)
+    cls_code = models.IntegerField()
+    eco_notes = models.CharField(max_length=250)
+    wwf_realm = models.CharField(max_length=2)
+    wwf_realm2 = models.CharField(max_length=15)
+    wwf_mhtnum = models.IntegerField()
+    wwf_mhtnam = models.CharField(max_length=70)
+    realmmht = models.CharField(max_length=4)
+    er_update = models.CharField(max_length=15)
+    er_date_u = models.CharField(max_length=12)
+    er_ration = models.CharField(max_length=100)
+    sourcedata = models.CharField(max_length=50)
+    geom = models.MultiPolygonField(srid=4326)
+
+    class Meta:
+        #managed = False
+        db_table = settings.ECOREGIONS_DATATABLE
+
+    def __repr__(self):
+        c = '<Terr.Ecoregion: instance %s :: %s >' %(self.id,self.eco_name.encode('utf8'))
+        return c
+    
+    
+    def __str__(self):
+        c = '<Terr.Ecoregion %s :: %s >' %(self.id,self.name.encode('utf8'))
+        return c
 
 
 

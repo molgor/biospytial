@@ -1,96 +1,32 @@
 from raster_api import aggregates
 from django.contrib.gis.db import models
-from compiler.ast import Function
 from django.contrib.gis.db.models import RasterField
 from django.contrib.gis.gdal import GDALRaster
 from django.db.models import TextField
+from django.db.models import Lookup
+
+
+### Class for looking-up geometries. This is auxiliary but very important.
+class intersectWith(Lookup):
+    lookup_name = 'intersect_with'
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        # was hard to found this, anyway
+        #import ipdb
+        polygon = rhs_params[0]
+        srid = polygon.srid
+        textpoly = '\'' + str(polygon.wkt) + '\''
+        geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
+        #rhs_params[0] = geomtext
+        params = lhs_params + rhs_params
+        things = (str(lhs), str(geomtext))
+        return 'ST_Intersects( %s ,  %s  )' % things, params
+
 # Create your spystats here.
-class Test(models.Model):
-    """
-    ..
-    Only a test for raster data.
-    
-    Attributes
-    ==========
-    I'll us the default attributes given by the raster2pgsql
-    id : int Unique primary key
-        This is the identification number of each element in the mesh.
-    
-    """
-    id = models.AutoField(primary_key=True, db_column="rid")
-    rast = models.RasterField()
-    objects = models.GeoManager()
-    neo_label_name = 'test_viirs'
-    
-    class Meta:
-        managed = False
-        db_table = 'testviirs'
-        
-
-
-class ETOPO1(models.Model):
-    """
-    ..
-    Digital Elevation Model for the World
-    Scale 1 arc Sec.
-    
-    Attributes
-    ==========
-    Default attributes given by the raster2pgsql
-    id : int Unique primary key
-        This is the identification number of each element in the mesh.
-    
-    """
-    id = models.AutoField(primary_key=True, db_column="rid")
-    rast = models.RasterField()
-    objects = models.GeoManager()
-    number_bands = 1
-    neo_label_name = 'ETOPO1'
-    link_type_name = 'HAS_ELEVATION'
-    properties = {'units' : 'arc-secs' ,
-                  'resolution' : '1', 
-    }
-    
-    class Meta:
-        managed = False
-        db_table = 'etopo1_ice_c_geotiff'
-
-
-
-
-
-
-
-class DemMex(models.Model):
-    """
-    ..
-    Digital Elevation Model for Mexico
-    Scale 15m.
-    
-    Attributes
-    ==========
-    I'll us the default attributes given by the raster2pgsql
-    id : int Unique primary key
-        This is the identification number of each element in the mesh.
-    
-    """
-    id = models.AutoField(primary_key=True, db_column="rid")
-    rast = models.RasterField()
-    objects = models.GeoManager()
-    number_bands = 1
-    neo_label_name = 'DEM_12'
-    link_type_name = 'Elevation'
-    properties = {'units' : 'meters' ,
-                  'resolution' : '12 m', 
-    }
-    
-    class Meta:
-        managed = False
-        db_table = 'demmex'
-        
-
-
-
+## Old models, consider errasing them
 class DemMexLow(models.Model):
     """
     ..
@@ -103,27 +39,19 @@ class DemMexLow(models.Model):
     id : int Unique primary key
         This is the identification number of each element in the mesh.
     
+    Note: Deprecated, use GenericRaster instead.
     """
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
     objects = models.GeoManager()
     neo_label_name = 'DEM_120'
-    
-
-        
-    
     class Meta:
         managed = False
         db_table = 'demmex120'
         
-
-
-
-
     def __str__(self):
         c = "< Digital Elevation Model: %s >"
         return c
-
 
 class CheseaMeanTemperature(models.Model):
     """
@@ -136,7 +64,7 @@ class CheseaMeanTemperature(models.Model):
     I'll us the default attributes given by the raster2pgsql
     id : int Unique primary key
         This is the identification number of each element in the mesh.
-    
+    Note: Deprecated, use GenericRaster instead.    
     """
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
@@ -157,9 +85,77 @@ class CheseaMeanTemperature(models.Model):
         return c
 
 
+## New GenericRaster model. Parent of the rest.
+class GenericRaster(models.Model):
+    """
+    A generic class for Raster objects. 
+    The attributes are the one specified in a default configuration of the raster2psql
+    function. 
+    Attributes
+    ==========
+    I'll us the default attributes given by the raster2pgsql
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    id = models.AutoField(primary_key=True, db_column="rid")
+    rast = models.RasterField()
+    objects = models.GeoManager()
+    
+    class Meta:
+        abstract = True
+        managed = False
+         
+    def __str__(self):
+        c = "< GenericRaster Data: %s >"
+        return c        
+              
+class DemMex(GenericRaster):
+    """
+    ..
+    Concrete model for the ElevationModel.
+    In (meters).
+    """
 
+    units = '(meters)'
+    number_bands = 1
+    neo_label_name = 'DEM_12'
+    link_type_name = 'Elevation'
+    properties = {'units' : 'meters' ,
+                  'resolution' : '12 m', 
+                  }
+                      
+    class Meta:
+        db_table = 'demmex'
+        managed = False
 
-class BioClimModel(models.Model):
+    def __str__(self):
+        c = "< ElevationMexico: %s  >"%self.units
+        return c     
+  
+class ETOPO1(GenericRaster):
+    """
+    ..
+    Concrete model for the ElevationModel.
+    ETOPO
+    In (meters).
+    """
+    number_bands = 1
+    neo_label_name = 'ETOPO1'
+    link_type_name = 'HAS_ELEVATION'
+    properties = {'units' : 'arc-secs' ,
+                  'resolution' : '1', 
+    }
+    
+    class Meta:
+        managed = False
+        db_table = 'etopo1_ice_c_geotiff'
+
+    def __str__(self):
+        c = "< ElevationETOPO1: %s  >"%self.properties['units']
+        return c     
+
+class BioClimModel(GenericRaster):
     """
     ..
     Abstract model for all the BioClim variables
@@ -171,23 +167,14 @@ class BioClimModel(models.Model):
         This is the identification number of each element in the mesh.
     
     """
-    id = models.AutoField(primary_key=True, db_column="rid")
-    rast = models.RasterField()
-    band = models.TextField( db_column="filename")
     number_bands = 12
-    objects = models.GeoManager()
-        
     class Meta:
         managed = False
-        abstract = True
-        #db_table = 'bioclim\".\"tmean_30s'
-        
-        #b_table = 'bioclim\".\"tmean_30s'
-        
+        abstract = True     
+    
     def __str__(self):
         c = "< Raster Data: %s >"
         return c
-
 
 class Precipitation(BioClimModel):
     """
@@ -208,7 +195,6 @@ class Precipitation(BioClimModel):
         c = "< Precipitation: %s  >"%self.units
         return c
 
-
 class SolarRadiation(BioClimModel):
     """
     Concrete model for Solar Radiation.
@@ -228,8 +214,6 @@ class SolarRadiation(BioClimModel):
     def __str__(self):
         c = "< Solar Radiation: %s>"%self.units
         return c
-
-
 
 class MeanTemperature(BioClimModel):
     """
@@ -324,33 +308,48 @@ class WindSpeed(BioClimModel):
 
     def __str__(self):
         c = "< WindSpeed: %s>"%self.units
-        return c      
-
-
+        return c
     
-from django.db.models import Lookup
-
-
-
-class intersectWith(Lookup):
-    lookup_name = 'intersect_with'
-
-    def as_sql(self, compiler, connection):
-        lhs, lhs_params = self.process_lhs(compiler, connection)
-        
-        rhs, rhs_params = self.process_rhs(compiler, connection)
-        # was hard to found this, anyway
-        #import ipdb
-        polygon = rhs_params[0]
-        srid = polygon.srid
-        textpoly = '\'' + str(polygon.wkt) + '\''
-        geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
-        #rhs_params[0] = geomtext
-        params = lhs_params + rhs_params
-        things = (str(lhs), str(geomtext))
-        return 'ST_Intersects( %s ,  %s  )' % things, params
+class WorldPopulation(GenericRaster):
+    """
+    ..
+    Abstract model for all the Worldpobpulation datasource.
     
+    Attributes
+    ==========
+    I'll us the default attributes given by the raster2pgsql
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
     
+    """
+    number_bands = 1
+    class Meta:
+        managed = False
+        abstract = True     
+    
+    def __str__(self):
+        c = "< WorldPop Raster Data: %s >"
+        return c
+    
+class WorldPopLatam2010(WorldPopulation):
+    """
+    Concrete model for World Population data for Latin America.
+    In (C).
+     Monthly data
+    """
+    #number_bands = 12
+    neo_label_name = 'worldpop-latam'
+    link_type_name = 'HAS_POPULATION_OF'
+    units = '(persons/km2)'
+    
+    class Meta:
+        db_table = 'lac_ppp_2010_adj_v2'
+        managed = False
+
+    def __str__(self):
+        c = "<WorldPop-Latam: %s>"%self.units
+        return c 
+## SOme aux variables available to import within module.    
 raster_models = [ETOPO1,Precipitation,SolarRadiation,MeanTemperature,MinTemperature,MaxTemperature,VaporPressure,WindSpeed]
 
 raster_models_dic = {

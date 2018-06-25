@@ -405,18 +405,19 @@ class RasterData(Raster):
 
 
 
-    def rescale(self,scalexy,inplace=True):
+    def rescale(self,scalexy,inplace=True,algorithm='NearestNeighbour'):
         """
         Scales the raster according to the scale parameter.
         Parameters:
             scalexy : pixelsize to scale the raster
             inplace : assigns the returned object to the current rasterdata attribute
-                    
+            algorithm: resampling algorithm to use, 
+            options are: NearestNeighbour,Bilinear, Cubic, CubicSpline or Lanczos         
         Returns : A GDALRaster
         """
 
         aggregate = aggregates_dict['Rescale']
-        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,scalexy=scalexy))
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,scalexy=scalexy,algorithm=algorithm))
         raster = aggregateDictToRaster(aggregate_dic=agg_dic)
         if inplace:
             self.rasterdata = raster

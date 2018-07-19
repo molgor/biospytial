@@ -227,6 +227,43 @@ class Rescale(Aggregate):
       )
 
 
+class PixelAsPolygons(Aggregate):
+    """
+        Aggregation method for extracting polygons defined by pixel
+        IT's not working. NEED TO REFACTOR.
+    """  
+    function = 'ST_PixelAsPolygons(ST_Clip(ST_Union'
+    template = '%(function)s(%(expressions)s' #Note the missing parenthesis
+    
+    
+    def __init__(self,expression,**extra):
+        
+        geometry = extra.pop('geometry')
+        srid = geometry.srid
+        #import ipdb; ipdb.set_trace()
+        textpoly = '\'' + str(geometry.wkt) + '\''
+        geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
+
+        try:
+            band = extra.pop('band')
+        except:
+            band = None
+        if band:
+            ## The request is multiband the query should match this: double precision ST_Value(raster rast, integer band, geometry pt, boolean exclude_nodata_value=true);
+            stband =  str(band)
+            self.template += ',' + stband + ')' # Here I close parenthesis (is for summoning the band) 
+            self.template += ',' + geomtext + ')'  # Proceed normally           
+            self.template += ')' ## Close the pixel as polygon func
+        else:        
+            self.template += '),' + geomtext + ')'        
+            self.template += ')' ## Close the pixel as polygon func
+            
+        super(PixelAsPolygons,self).__init__(
+            expression,
+            output_field = RasterField(),
+            **extra
+      )
+
 
         
 aggregates_dict = { 'Original' : Union,
@@ -236,6 +273,7 @@ aggregates_dict = { 'Original' : Union,
                     'Aspect' : Aspect,
                     'getValue' : getValue,
                     'Rescale' : Rescale,
+                    'PixelAsPolygons' : PixelAsPolygons,
                    }
 
        

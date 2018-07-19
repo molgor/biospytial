@@ -69,5 +69,37 @@ class Country(models.Model):
     def __unicode__(self):
         return u'<Country instance: %s >'%(self.name)
 
+# This is an auto-generated Django model module created by ogrinspect.
+
+from django.contrib.gis.db import models
+
+class MexRoads(models.Model): 
+    id =  models.AutoField(primary_key=True, db_column="gid")
+    fnode_field = models.BigIntegerField(db_column="fnode_") 
+    tnode_field = models.BigIntegerField(db_column="tnode_") 
+    lpoly_field = models.BigIntegerField(db_column="lpoly_") 
+    rpoly_field = models.BigIntegerField(db_column="rpoly_") 
+    length = models.FloatField() 
+    cov_field = models.BigIntegerField(db_column="cov_") 
+    cov_id = models.BigIntegerField() 
+    geom = models.MultiLineStringField(srid=4326)
+    
+    class Meta:
+        managed = False
+        db_table = 'public\".\"mexroads'
+        
+    def __unicode__(self):
+        return u'<Road Layer instance: %s >'%(self.lpoly_field)
+# Auto-generated `LayerMapping` dictionary for MexRoads model
+
+mexroads_mapping = { 'fnode_field' : 'FNODE_',
+'tnode_field' : 'TNODE_', 
+'lpoly_field' : 'LPOLY_', 
+'rpoly_field' : 'RPOLY_', 
+'length' : 'LENGTH', 
+'cov_field' : 'COV_', 
+'cov_id' : 'COV_ID',
+'geom' : 'MULTILINESTRING', }
+
 
 # Create your spystats here.

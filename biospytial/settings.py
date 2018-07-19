@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os,sys
+from numpy import nan as npnan
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 CONDA_PREFIX = '/home/juan/miniconda2/envs/biospytial'
@@ -443,6 +444,7 @@ MESH_TABLENAMESPACE = MEX_SCALES
 
 #MESH_TABLENAMESPACE = BRAZ_SCALES
 
+CELL_SRID = 4326
 
 GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'
 
@@ -458,7 +460,7 @@ PATH_IMAGES = '/Users/juan/git_projects/biospytial/static/trees/'
 PATH_OUTPUT = '/outputs/'
 PATH_RAWDATASOURCES = '/mnt/data1/maps/'
 
-RASTERNODATAVALUE = -9999
+RASTERNODATAVALUE = npnan
 
 NOTEBOOK_ARGUMENTS = [
     # exposes IP and port

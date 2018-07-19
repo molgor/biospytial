@@ -15,6 +15,11 @@ from mesh.models import initMesh
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
+from drivers.graph_models import Cell,Mex4km,graph
+import logging
+import numpy as np
+from itertools import imap, chain
+import networkx as nx
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2017, JEM"
@@ -25,12 +30,9 @@ __email__ ="molgor@gmail.com"
 __status__ = "Prototype"
 
 
-import logging
 
 logger = logging.getLogger('biospytial.traversals')
 
-import numpy as np
-from itertools import imap, chain
 
 ####
 ## Multifunc
@@ -132,13 +134,43 @@ def getCentroidsFromListofCells(list_of_cells,asDataFrame=True):
     else:
         return itercentroid
 
+def CoordinatesDataFrameToPointsGeometry(coordinate_df,srid=4326):
+    """
+    Returns the geometric interpretation (GEOS) of the points in coordinate_df 
+    """
+    toPoint = lambda array :'POINT(%s %s)'%(array[0],array[1])
+    points = map(lambda p :GEOSGeometry(p,srid=srid), map(toPoint,coordinate_df.values))
+    return points
+
+
+
+def idsToCells(list_of_ids,cell_type=Mex4km):
+    """
+    Given a list of indices (primary values), returns the corresponding object (OGM).
+    Parameters :
+        list_of_is : (List) a list with integers defining the pk values of the objects to obtain.
+        cell_type : The class name or object to query from (default Mex4km) 
+    """
+    logger.info("Compiling Query and asking the Graph Database")
+    look4 = str(list_of_ids)
+    selection_of_cells = cell_type.select(graph).where("_.id IN  %s "%look4)
+    return selection_of_cells
+
+
+def LatticeToNetworkx(list_of_cells):
+    """
+    Returns a Networkx Graph Object given by the cells and it's neighbours
+    """
+    G = nx.Graph()
+    node_edges = zip(list_of_cells,map(lambda cell : cell.getNeighbours(),list_of_cells))
+    map(lambda (center, neighbours) : map(lambda n : G.add_edge(center,n),neighbours),node_edges)
+    return G    
+
+
 
 ###############
 ## Treewise Strategies
 ###############
-
-
-
 
 sumTrees = lambda tree_list : reduce(lambda a,b : a + b , tree_list)
 

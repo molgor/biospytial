@@ -35,6 +35,7 @@ from django.contrib.gis.db.models.fields import RasterField
 from raster_api.models import intersectWith
 import pandas as pd
 from scipy.special import expit
+from django.contrib.gis.geos import GEOSGeometry
 
 # register the new lookup
 RasterField.register_lookup(intersectWith)
@@ -265,9 +266,18 @@ class Raster(object):
         Translates it into a pandas object for better manipulation
         """
         data = pd.DataFrame(self.rasterdata.getCentroidCoordinates())
-        data.columns = ['Longitude','Latitude']
-        
-        return data 
+        data.columns = ['Longitude','Latitude']  
+        return data
+    
+    def getCoordinatesAsGeometricPoints(self,srid=4326):
+        """
+        Returns a list of point geometries. Useful for functions that need geometries and not wkt or numpy array.
+        Parameters: (Integer) EPSG code
+        """ 
+        coords = self.getCoordinates()
+        toPoint = lambda array :'POINT(%s %s)'%(array[0],array[1])
+        points = map(lambda p :GEOSGeometry(p,srid=srid), map(toPoint,coords.values))
+        return points
 
     def toPandasDataFrame(self,aggregate_with_mean=False):
         """
@@ -450,7 +460,16 @@ class RasterData(Raster):
             if writeDB:
                 graph.create(n0)
             return n0
+
+    def PixelAsPolygons(self):
+        """
+        Returns a list of polygons (Testing) 
+        """
         
+        aggregate = aggregates_dict['PixelAsPolygons']
+        cosa = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
+        #raster = aggregateDictToRaster(aggregate_dic=agg_dic) 
+        return cosa        
 
 
 

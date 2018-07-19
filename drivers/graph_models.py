@@ -648,7 +648,9 @@ class Cell(GraphObject):
     latitude = Property()
     cell = Property()
     id = Property()
-       
+    
+    ## Default Referencing System
+    srid = settings.CELL_SRID
     
     
     connected_to = RelatedTo("Cell", ISNEIGHBOUR)
@@ -726,26 +728,29 @@ class Cell(GraphObject):
     @property
     def centroid(self):
         pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
-        point = GEOSGeometry(pointstr)
+        point = GEOSGeometry(pointstr,srid=self.srid)
         return point
     
     @property
     def polygon(self):
-        polygon = GEOSGeometry(self.cell)
+        polygon = GEOSGeometry(self.cell,srid=self.srid)
         return polygon
 
     @property
     def upperCell(self):
         return iter(self.contained_in)
         
-        
-    def getNeighbours(self):
-        #ln = [n for n in self.connected_from]
+    def getNeighbours(self,with_center=False):
+        """
+        Returns the associated neighbours.
+        parameters : 
+            with_center : (Boolean) adds the given cell to the list of neighbours.
+        """
         rn = [n for n in self.connected_to]
-        # testing thingy
-        rn.append(self)
+        if with_center:
+            rn.append(self)
         return rn
-        
+       
     def occurrencesHere(self):
         """
         Filter the list of occurrences.
@@ -900,26 +905,21 @@ class Mex4km(Cell):
     #Families = RelatedFrom(Family,ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
-    @property
-    def centroid(self):
-        pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
-        point = GEOSGeometry(pointstr)
-        return point
-    
-    @property
-    def polygon(self):
-        polygon = GEOSGeometry(self.cell)
-        return polygon
+#    @property
+#    def centroid(self):
+#        pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
+#        point = GEOSGeometry(pointstr)
+#        return point
+#    
+#    @property
+#    def polygon(self):
+#        polygon = GEOSGeometry(self.cell)
+#        return polygon
+#
+#
 
 
 
-
-    def getNeighbours(self):
-        #ln = [n for n in self.connected_from]
-        rn = [n for n in self.connected_to]
-        # testing thingy
-        rn.append(self)
-        return rn
         
 #     def occurrencesHere(self):
 #         """

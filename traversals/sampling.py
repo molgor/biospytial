@@ -7,6 +7,7 @@ Sampling
 This module implements different sampling methods for nodes in the knowledge graph.
 
 """
+from traversals.strategies import idsToCells
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2018, JEM"
@@ -23,6 +24,7 @@ from drivers.graph_models import countObjectsOf
 from drivers.graph_models import logger, graph
 from itertools import imap, chain
 from drivers.tree_builder import TreeNeo
+from traversals.strategies import idsToCells
 
 
 def UniformRandomCellSample(list_of_cell_ids,CellNodeClass,sample_size=100,with_replacement=False,random_seed=''):
@@ -44,11 +46,9 @@ def UniformRandomCellSample(list_of_cell_ids,CellNodeClass,sample_size=100,with_
     idxchoices = np.random.choice(range(1,n),sample_size,replace=with_replacement)
     cells = pd.DataFrame(list_of_cell_ids,columns=['pk'])
     choices = list(cells.loc[idxchoices].pk)
-    ## This will stringify the id list to get the selected cells.
-    logger.info("Compiling Query and asking the Graph Database")
-    look4 = str(list(choices))
-    selection_of_cells = CellNodeClass.select(graph).where("_.id IN  %s "%look4)
-    
+    ## If something is broken check the code in idsToCells.
+    #look4 = str(list(choices))
+    selection_of_cells = idsToCells(choices)
     return selection_of_cells
 
 

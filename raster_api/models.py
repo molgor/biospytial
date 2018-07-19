@@ -349,8 +349,39 @@ class WorldPopLatam2010(WorldPopulation):
     def __str__(self):
         c = "<WorldPop-Latam: %s>"%self.units
         return c 
+
+class DistanceToRoadMex(GenericRaster):
+    """
+    ..
+    Abstract model for all the Distance to Road datasource.
+    
+    Attributes
+    ==========
+    I'll us the default attributes given by the raster2pgsql
+    id : int Unique primary key
+        This is the identification number of each element in the mesh.
+    
+    """
+    number_bands = 1
+    neo_label_name = 'Dist_to_road_mex'
+    link_type_name = 'HAS_A_DISTANCE_OF'
+    units = '(meters)'
+ 
+    class Meta:
+        managed = False
+        db_table = 'dist_map_wgs84_clip'
+    
+    def __str__(self):
+        c = "< Distance to Road Raster Data: %s >"
+        return c
+ 
+
+
+
 ## SOme aux variables available to import within module.    
-raster_models = [ETOPO1,Precipitation,SolarRadiation,MeanTemperature,MinTemperature,MaxTemperature,VaporPressure,WindSpeed]
+raster_models = [ETOPO1,Precipitation,SolarRadiation,MeanTemperature,
+        MinTemperature,MaxTemperature,VaporPressure,
+        WindSpeed,WorldPopLatam2010,DistanceToRoadMex]
 
 raster_models_dic = {
 'WindSpeed' : raster_models[7],
@@ -360,7 +391,9 @@ raster_models_dic = {
 'MinTemperature' : raster_models[4] ,
 'MeanTemperature' : raster_models[3] ,
 'SolarRadiation' : raster_models[2], 
-'Precipitation' : raster_models[1] 
+'Precipitation' : raster_models[1], 
+'WorldPopLatam2010' : raster_models[8] ,
+'DistanceToRoadMex' : raster_models[9],
 }
 
 #raster_models.pop(0)

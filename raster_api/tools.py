@@ -225,8 +225,9 @@ class Raster(object):
         plt.show()
         return None
     
-    def exportToJPG(self,filename,stats_dir,path=settings.PATH_OUTPUT,title='',unitstitle='',band=1,**kwargs):
-
+    def exportToJPG(self,filename,stats_dir='default',path=settings.PATH_OUTPUT,title='',unitstitle='',band=1,**kwargs):
+        if stats_dir == 'default':
+            stats_dir = self.rasterdata.allBandStatistics()
         p = self.plotField(stats_dir, band=band,xlabel=unitstitle,**kwargs)
         p.title(title)
         file_ = path + filename + '.png'
@@ -345,7 +346,7 @@ class RasterData(Raster):
         return raster
     
     
-    def processDEM(self,option=1):
+    def processDEM(self,option=1,**extra):
         """
         Processes different products using a DEM as input.
         Currently implements:
@@ -358,17 +359,21 @@ class RasterData(Raster):
                     
         Returns : A GDALRaster
         """
-        options = {2 : 'Slope', 4:'Hillshade', 1:'Original', 3:'Aspect'}
+        logger.info("For calculating these products it is necessary to provide a valid \
+        SRID (projection). This is due to the fact that the map values and \
+        the coordinates need to be in the same units.")
+        options = {2 : 'Slope', 4:'Hillshade', 1:'Elevation', 3:'Aspect'}
         key_opt = options[option]
         self.neo_label_name += ('-' + key_opt) 
         # First filter by border
         #self.model = self.model.filter(rast__intersect_with=self.geometry)
         aggregate = aggregates_dict[key_opt]
-        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,**extra))
         raster = aggregateDictToRaster(aggregate_dic=agg_dic)
-        self.rasterdata = raster
-        
-        return raster
+        # Add the product 
+        Ras = Raster(rasterdata=raster)
+        setattr(self,options[option],Ras) 
+        return Ras 
 
     def getValue(self,point,**bandnumber):
         """
@@ -433,6 +438,27 @@ class RasterData(Raster):
             self.rasterdata = raster
             
         return raster
+
+    def transform(self,to_srid,inplace=True,algorithm='NearestNeighbour'):
+        """
+        Extracts the selected raster and reprojects it into the specified srid.
+        Parameters:
+            to_srid : (Int) The projection srid to transform to.
+            inplace : assigns the returned object to the current rasterdata attribute
+            algorithm: resampling algorithm to use, 
+            options are: NearestNeighbour,Bilinear, Cubic, CubicSpline or Lanczos         
+        Returns : A GDALRaster
+        """
+
+        aggregate = aggregates_dict['Transform']
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,to_srid=to_srid,algorithm=algorithm))
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        if inplace:
+            self.rasterdata = raster
+            
+        return raster
+
+
 
         
     def getNode(self,writeDB=False,month='',**bands):

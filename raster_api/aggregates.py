@@ -101,43 +101,78 @@ class Union(Aggregate):
       )
 
 
+#class Aspect(Aggregate):
+#    """
+#        Aggregation method for calculating Aspect on DEM
+#    """        
+#    function = 'ST_Clip(ST_Aspect(ST_Union'
+#    template = '%(function)s(%(expressions)s))'
+#    
+#    
+#    def __init__(self,expression,**extra):
+#        geometry = extra.pop('geometry')
+#        srid = geometry.srid
+#        #import ipdb; ipdb.set_trace()
+#        textpoly = '\'' + str(geometry.wkt) + '\''
+#        geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
+#        self.template += ',' + geomtext + ')'
+#        super(Aspect,self).__init__(
+#            expression,
+#            output_field = RasterField(),
+#            **extra
+#      )
+#        
 class Aspect(Aggregate):
     """
         Aggregation method for calculating Aspect on DEM
-    """        
-    function = 'ST_Clip(ST_Aspect(ST_Union'
-    template = '%(function)s(%(expressions)s))'
+    """          
+    function = 'ST_Aspect(ST_Transform(ST_Clip(ST_Union'
+    template = '%(function)s(%(expressions)s'
     
     
     def __init__(self,expression,**extra):
         geometry = extra.pop('geometry')
+        to_srid = extra.pop('to_srid')
+        try:
+            algorithm = extra.pop('algorithm')
+        except:
+            algorithm = 'NearestNeighbour'
         srid = geometry.srid
         #import ipdb; ipdb.set_trace()
         textpoly = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
-        self.template += ',' + geomtext + ')'
+        self.template += '),' + geomtext + '),' + str(to_srid) +',\''+str(algorithm)+ '\')'
+        self.template += ')'
+
         super(Aspect,self).__init__(
             expression,
             output_field = RasterField(),
             **extra
       )
-        
-        
+
+       
 class Slope(Aggregate):
     """
         Aggregation method for calculating SLope on DEM
     """          
-    function = 'ST_Clip(ST_Slope(ST_Union'
-    template = '%(function)s(%(expressions)s))'
+    function = 'ST_Slope(ST_Transform(ST_Clip(ST_Union'
+    template = '%(function)s(%(expressions)s'
     
     
     def __init__(self,expression,**extra):
         geometry = extra.pop('geometry')
+        to_srid = extra.pop('to_srid')
+        try:
+            algorithm = extra.pop('algorithm')
+        except:
+            algorithm = 'NearestNeighbour'
         srid = geometry.srid
         #import ipdb; ipdb.set_trace()
         textpoly = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
-        self.template += ',' + geomtext + ')'
+        self.template += '),' + geomtext + '),' + str(to_srid) +',\''+str(algorithm)+ '\')'
+        self.template += ')'
+
         super(Slope,self).__init__(
             expression,
             output_field = RasterField(),
@@ -145,27 +180,57 @@ class Slope(Aggregate):
       )
 
 
+#class Hillshade(Aggregate):
+#    """
+#        Aggregation method for calculating hillshade (standard parameters)
+#    """  
+#    function = 'ST_Clip(ST_Hillshade(ST_Union'
+#    template = '%(function)s(%(expressions)s))'
+#    
+#    
+#    def __init__(self,expression,**extra):
+#        geometry = extra.pop('geometry')
+#        srid = geometry.srid
+#        #import ipdb; ipdb.set_trace()
+#        textpoly = '\'' + str(geometry.wkt) + '\''
+#        geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
+#        self.template += ',' + geomtext + ')'
+#        super(Hillshade,self).__init__(
+#            expression,
+#            output_field = RasterField(),
+#            **extra
+#      )
+#
 class Hillshade(Aggregate):
     """
-        Aggregation method for calculating hillshade (standard parameters)
-    """  
-    function = 'ST_Clip(ST_Hillshade(ST_Union'
-    template = '%(function)s(%(expressions)s))'
+        Aggregation method for calculating Hillshade on (standard parameters).
+    """          
+    function = 'ST_Hillshade(ST_Transform(ST_Clip(ST_Union'
+    template = '%(function)s(%(expressions)s'
     
     
     def __init__(self,expression,**extra):
         geometry = extra.pop('geometry')
+        to_srid = extra.pop('to_srid')
+        try:
+            algorithm = extra.pop('algorithm')
+        except:
+            algorithm = 'NearestNeighbour'
         srid = geometry.srid
         #import ipdb; ipdb.set_trace()
         textpoly = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
-        self.template += ',' + geomtext + ')'
+        self.template += '),' + geomtext + '),' + str(to_srid) +',\''+str(algorithm)+ '\')'
+        self.template += ')'
+
         super(Hillshade,self).__init__(
             expression,
             output_field = RasterField(),
             **extra
       )
-        
+
+
+
 class SummaryStats(Aggregate):
     """
      Aggregation method for calculating summary statistics.
@@ -226,6 +291,35 @@ class Rescale(Aggregate):
             **extra
       )
 
+class Transform(Aggregate):
+    """
+        Reproject the selected raster data into a valid SRID. Returns a new raster
+        data with the specified projection (int SRID).
+        Uses Potgis ST_Transform
+        New pixel values are computed using the NearestNeighbour, Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor
+    """  
+    function = 'ST_Transform(ST_Clip(ST_Union'
+    template = '%(function)s(%(expressions)s'
+    
+    
+    def __init__(self,expression,**extra):
+        geometry = extra.pop('geometry')
+        to_srid = extra.pop('to_srid')
+        algorithm = extra.pop('algorithm')
+        srid = geometry.srid
+        #import ipdb; ipdb.set_trace()
+        textpoly = '\'' + str(geometry.wkt) + '\''
+        geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
+        self.template += '),' + geomtext + '),' + str(to_srid) +',\''+str(algorithm)+ '\')'
+        super(Transform,self).__init__(
+            expression,
+            output_field = RasterField(),
+            **extra
+      )
+
+
+
+
 
 class PixelAsPolygons(Aggregate):
     """
@@ -274,6 +368,7 @@ aggregates_dict = { 'Original' : Union,
                     'getValue' : getValue,
                     'Rescale' : Rescale,
                     'PixelAsPolygons' : PixelAsPolygons,
+                    'Transform' : Transform
                    }
 
        

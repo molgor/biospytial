@@ -92,12 +92,12 @@ services:
   
   
 ### The Redis message and key:value store
- redis:
-  ports:
-   - 6379:6379
-  volumes:
-   - '/home/juan/DataVolumesBank/redis:/data'
-  image: redis
+# redis:
+#  ports:
+#   - 6379:6379
+#  volumes:
+#   - '/home/juan/DataVolumesBank/redis:/data'
+#  image: redis
   
 
 

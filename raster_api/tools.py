@@ -115,9 +115,10 @@ class Raster(object):
     This includes the prediction done by models, other external data not in the relational database and extensible to objects in the relational database.
     """
     
-    def __init__(self,rasterdata=''):
+    def __init__(self,rasterdata='',name='no_name'):
         self.rasterdata = rasterdata
-    
+        self.name = name
+
     def exportToGeoTiff(self,filename,path=settings.PATH_OUTPUT):
         """
         Exports the raster data to a GeoTiff standard format. For use in any GIS for analysing or visualizing.
@@ -280,7 +281,7 @@ class Raster(object):
         points = map(lambda p :GEOSGeometry(p,srid=srid), map(toPoint,coords.values))
         return points
 
-    def toPandasDataFrame(self,aggregate_with_mean=False):
+    def toPandasDataFrame(self,aggregate_with_mean=True):
         """
         Returns the values of the raster as a pandas DataFrame with spatial column coordinates
         
@@ -288,11 +289,19 @@ class Raster(object):
             aggregate_with_mean : (Boolean) Will return the mean value of all the bands per pixel 
         """
         coords = self.getCoordinates()
+        
         array_data = self.toNumpyArray()
+        #array_data = numpy.mean(self.toNumpyArray(),axis=0)
         ## iterate according to numpy standard leftmost axis
-        dataframes = map(lambda band : pd.DataFrame(band.flatten()),array_data)
-        dataframes.append(coords)
-        data = pd.concat(dataframes,axis=1)
+        dataframe = pd.concat(map(lambda band :
+            pd.DataFrame(band.flatten()),array_data),axis=1)
+        names = map(lambda i : '%s_%s'%(i,self.name), range(len(dataframe.columns)))
+        dataframe.columns = names
+
+        if aggregate_with_mean:
+            dataframe = pd.DataFrame({self.name+'_m':dataframe.mean(axis=1)})
+        
+        data = pd.concat([dataframe,coords],axis=1)
         return data
         
     def meanLayer(self):
@@ -324,6 +333,7 @@ class RasterData(Raster):
         """
         super(RasterData,self).__init__(rasterdata='')
         self.model = rastermodelinstance.objects.filter(rast__intersect_with=border)
+        self.name = rastermodelinstance.name
         self.geometry = border
         #self.rasterdata = ''
         self.neo_label_name = rastermodelinstance.neo_label_name
@@ -439,6 +449,27 @@ class RasterData(Raster):
             
         return raster
 
+    def resize(self,width,height,inplace=True,algorithm='NearestNeighbour'):
+        """
+        Returns a rescaled version of a rasterdata with given width and height
+        Parameters:
+            inplace : assigns the returned object to the current rasterdata attribute
+            algorithm: resampling algorithm to use, 
+            options are: NearestNeighbour,Bilinear, Cubic, CubicSpline or Lanczos         
+        Returns : A GDALRaster
+        """
+
+        aggregate = aggregates_dict['Resize']
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,width=width,height=height,algorithm=algorithm))
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        if inplace:
+            self.rasterdata = raster
+            
+        return raster
+
+
+
+
     def transform(self,to_srid,inplace=True,algorithm='NearestNeighbour'):
         """
         Extracts the selected raster and reprojects it into the specified srid.
@@ -506,7 +537,8 @@ class RasterContainer(Raster):
     The instance is built on this metadata and the given numpy narray.
     """
     
-    def __init__(self,data,use_metadata_from='', exponential_fam="Identity"):
+    def __init__(self,data,use_metadata_from='',
+            exponential_fam="Identity",name='model_raster'):
         """
         Parameters:
             data : (numpy narray) The data to be used for the raster.
@@ -519,7 +551,7 @@ class RasterContainer(Raster):
             "Logit"
         If the family is different from Identity it will add the transformed layer as
         """
-        super(RasterContainer,self).__init__(rasterdata='')
+        super(RasterContainer,self).__init__(rasterdata='',name=name)
         self.metadatamodel = use_metadata_from
         self.rasterdata = self.buildRasterData(data,exponential_fam = exponential_fam)
 

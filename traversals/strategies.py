@@ -37,7 +37,7 @@ logger = logging.getLogger('biospytial.traversals')
 ####
 ## Multifunc
 ## These are function for handling dataframes and creating subsets.
-def toGeoDataFrame(pandas_dataframe,xcoord_name,ycoord_name,srs = 'epsg:4326'):
+def toGeoDataFrame(pandas_dataframe,xcoord_name='Longitude',ycoord_name='Latitude',srs = 'epsg:4326'):
     """
     Convert Pandas objcet to GeoDataFrame
     Inputs:
@@ -48,6 +48,9 @@ def toGeoDataFrame(pandas_dataframe,xcoord_name,ycoord_name,srs = 'epsg:4326'):
                 e.g. epsg:4326 .
     """
     data = pandas_dataframe
+    #import ipdb; ipdb.set_trace()
+    data[xcoord_name] = pd.to_numeric(data[xcoord_name])
+    data[ycoord_name] = pd.to_numeric(data[ycoord_name])
     data['geometry'] = data.apply(lambda z : Point(z[xcoord_name], z[ycoord_name]), axis=1)
     #data['geometry'] = data.apply(lambda z : Point(z.LON, z.LAT), axis=1)
 

@@ -1,3 +1,25 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+"""
+Raster Models 
+=============
+..  
+Data Models for comunicating the raster datasets stored in the RDBMS 
+
+
+"""
+
+
+__author__ = "Juan Escamilla Mólgora"
+__copyright__ = "Copyright 2017, JEM"
+__license__ = "GPL"
+__version__ = "3.2.1"
+__mantainer__ = "Juan"
+__email__ ="molgor@gmail.com"
+__status__ = "Beta"
+
+
+
 from raster_api import aggregates
 from django.contrib.gis.db import models
 from django.contrib.gis.db.models import RasterField
@@ -45,6 +67,7 @@ class DemMexLow(models.Model):
     rast = models.RasterField()
     objects = models.GeoManager()
     neo_label_name = 'DEM_120'
+    name = 'DEM_120'
     class Meta:
         managed = False
         db_table = 'demmex120'
@@ -72,7 +95,7 @@ class CheseaMeanTemperature(models.Model):
     number_bands = 12
     objects = models.GeoManager()
     neo_label_name = 'MeanTemp-30s'
-        
+    name = 'MeanTemp'
     class Meta:
         managed = False
         
@@ -101,7 +124,7 @@ class GenericRaster(models.Model):
     id = models.AutoField(primary_key=True, db_column="rid")
     rast = models.RasterField()
     objects = models.GeoManager()
-    
+    name = 'GenericRaster'
     class Meta:
         abstract = True
         managed = False
@@ -119,6 +142,7 @@ class DemMex(GenericRaster):
 
     units = '(meters)'
     number_bands = 1
+    name = 'Elevation'
     neo_label_name = 'DEM_12'
     link_type_name = 'Elevation'
     properties = {'units' : 'meters' ,
@@ -141,6 +165,7 @@ class ETOPO1(GenericRaster):
     In (meters).
     """
     number_bands = 1
+    name = 'Elevation'
     neo_label_name = 'ETOPO1'
     link_type_name = 'HAS_ELEVATION'
     properties = {'units' : 'arc-secs' ,
@@ -182,6 +207,7 @@ class Precipitation(BioClimModel):
     In (mm). Monthly data
     """
     #number_bands = 12
+    name = 'Precipitation'
     neo_label_name = 'Prec-30s'
     link_type_name = 'Precipitation'
     units = '(mm)'
@@ -202,6 +228,7 @@ class SolarRadiation(BioClimModel):
      Monthly data
     """
     #number_bands = 12
+    name = 'SolarRadiation'
     neo_label_name = 'SlrRad-30s'
     link_type_name = 'SolarRadiation'
     units = '(KJ m^-2 day^-1)'
@@ -222,6 +249,7 @@ class MeanTemperature(BioClimModel):
      Monthly data
     """
     #number_bands = 12
+    name = 'MeanTemp'
     neo_label_name = 'MeanTemp-30s'
     link_type_name = 'MeanTemperature'
     units = '(C)'
@@ -241,6 +269,7 @@ class MaxTemperature(BioClimModel):
      Monthly data
     """
     #number_bands = 12
+    name = 'MaxTemp'   
     neo_label_name = 'MaxTemp-30s'
     link_type_name = 'MaxTemperature'
     units = '(C)'
@@ -260,6 +289,7 @@ class MinTemperature(BioClimModel):
      Monthly data
     """
     #number_bands = 12
+    name = 'MinTemp'
     neo_label_name = 'MinTemp-30s'
     link_type_name = 'MinTemperature'
     units = '(C)'
@@ -279,6 +309,7 @@ class VaporPressure(BioClimModel):
      Monthly data
     """
     #number_bands = 12
+    name = 'VaporPres'
     neo_label_name = 'Vapor-30s'
     link_type_name = 'Vapor'
     units = 'kPa'
@@ -298,6 +329,7 @@ class WindSpeed(BioClimModel):
      Monthly data
     """
     #number_bands = 12
+    name = 'WindSp'
     neo_label_name = 'WindSpeed-30s'
     link_type_name = 'WindSpeed'
     units = '(m/s)'
@@ -322,6 +354,7 @@ class WorldPopulation(GenericRaster):
         This is the identification number of each element in the mesh.
     
     """
+    name = 'Population'
     number_bands = 1
     class Meta:
         managed = False
@@ -362,6 +395,7 @@ class DistanceToRoadMex(GenericRaster):
         This is the identification number of each element in the mesh.
     
     """
+    name = 'Dist.to.road'
     number_bands = 1
     neo_label_name = 'Dist_to_road_mex'
     link_type_name = 'HAS_A_DISTANCE_OF'

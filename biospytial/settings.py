@@ -308,6 +308,11 @@ LOGGING = {
             'propagate': False
             
         },
+        'biospytial.datapipelines':{
+             'handlers': ['console'],
+             'level' : 'DEBUG',         
+         },
+ 
 },
 }
 

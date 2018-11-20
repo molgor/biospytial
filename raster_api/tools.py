@@ -281,14 +281,13 @@ class Raster(object):
         points = map(lambda p :GEOSGeometry(p,srid=srid), map(toPoint,coords.values))
         return points
 
-    def toPandasDataFrame(self,aggregate_with_mean=True):
+    def toPandasDataFrame(self,aggregate_with_mean=True,with_coordinates=True):
         """
         Returns the values of the raster as a pandas DataFrame with spatial column coordinates
         
         Parameters: 
             aggregate_with_mean : (Boolean) Will return the mean value of all the bands per pixel 
         """
-        coords = self.getCoordinates()
         
         array_data = self.toNumpyArray()
         #array_data = numpy.mean(self.toNumpyArray(),axis=0)
@@ -300,8 +299,11 @@ class Raster(object):
 
         if aggregate_with_mean:
             dataframe = pd.DataFrame({self.name+'_m':dataframe.mean(axis=1)})
-        
-        data = pd.concat([dataframe,coords],axis=1)
+        if with_coordinates:
+            coords = self.getCoordinates()
+            data = pd.concat([dataframe,coords],axis=1)
+        else:
+            data = pd.concat([dataframe],axis=1)
         return data
         
     def meanLayer(self):

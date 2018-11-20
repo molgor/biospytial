@@ -280,7 +280,8 @@ class Resize(Aggregate):
         Uses Potgis ST_Resize
         ST_Resize — Resize a raster by adjusting only its scale (or pixel size). New pixel values are computed using the NearestNeighbour, Bilinear, Cubic, CubicSpline or Lanczos resampling algorithm. Default is NearestNeighbor
     """  
-    function = 'ST_Clip(ST_Resize(ST_Union'
+    #function = 'ST_Clip(ST_Resize(ST_Union'
+    function = 'ST_Resize(ST_Clip(ST_Union'
     template = '%(function)s(%(expressions)s'
     
     
@@ -290,10 +291,9 @@ class Resize(Aggregate):
         height = extra.pop('height')
         algorithm = extra.pop('algorithm')
         srid = geometry.srid
-        #import ipdb; ipdb.set_trace()
         textpoly = '\'' + str(geometry.wkt) + '\''
         geomtext = "ST_GeomFromText(%s , %s)" %(textpoly,srid)
-        self.template += '),' + str(width) +',' + str(height) +',\''+str(algorithm)+ '\'),' + geomtext + ')' 
+        self.template += '),' + geomtext + '),' + str(width) +',' + str(height) +',\''+str(algorithm)+ '\')'  
         super(Resize,self).__init__(
             expression,
             output_field = RasterField(),

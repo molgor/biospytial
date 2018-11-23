@@ -794,17 +794,18 @@ class Cell(GraphObject):
         df = {}
         for variable in vars:
             raster = self.getAssociatedRasterAreaData(variable)
+            varname = raster.name
             try:
                 statistics = raster.rasterdata.allBandStatistics()
             except:
                 #import ipdb; ipdb.set_trace()
                 statistics = {'mean':'N.A.','mean_std':'N.A'}
             mean_env = statistics['mean']
-            df[variable + '_mean'] = mean_env
+            df[varname + '_m'] = mean_env
             
             if with_std:
                 std_env = statistics['mean_std']
-                df[variable + '_std' ] = std_env
+                df[varname + '_std' ] = std_env
         return df
 
 ###########EXPERIMENTAL 

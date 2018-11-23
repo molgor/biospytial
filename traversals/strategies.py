@@ -20,7 +20,7 @@ import logging
 import numpy as np
 from itertools import imap, chain
 import networkx as nx
-
+from utilities import data_extraction as de
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2017, JEM"
 __license__ = "GPL"
@@ -37,30 +37,30 @@ logger = logging.getLogger('biospytial.traversals')
 ####
 ## Multifunc
 ## These are function for handling dataframes and creating subsets.
-def toGeoDataFrame(pandas_dataframe,xcoord_name='Longitude',ycoord_name='Latitude',srs = 'epsg:4326'):
-    """
-    Convert Pandas objcet to GeoDataFrame
-    Inputs:
-        pandas_dataframe : the pandas object to spatialise
-        xcoord_name : (String) the column name of the x coordinate.
-        ycoord_name : (String) the column name of the y coordinate. 
-        srs : (String) the source referencing system in EPSG code.
-                e.g. epsg:4326 .
-    """
-    data = pandas_dataframe
-    #import ipdb; ipdb.set_trace()
-    data[xcoord_name] = pd.to_numeric(data[xcoord_name])
-    data[ycoord_name] = pd.to_numeric(data[ycoord_name])
-    data['geometry'] = data.apply(lambda z : Point(z[xcoord_name], z[ycoord_name]), axis=1)
-    #data['geometry'] = data.apply(lambda z : Point(z.LON, z.LAT), axis=1)
-
-    new_data = gpd.GeoDataFrame(data)
-    new_data.crs = {'init':'epsg:4326'}
-    return new_data
-
-
-
-
+#def toGeoDataFrame(pandas_dataframe,xcoord_name='Longitude',ycoord_name='Latitude',srs = 'epsg:4326'):
+#    """
+#    Convert Pandas objcet to GeoDataFrame
+#    Inputs:
+#        pandas_dataframe : the pandas object to spatialise
+#        xcoord_name : (String) the column name of the x coordinate.
+#        ycoord_name : (String) the column name of the y coordinate. 
+#        srs : (String) the source referencing system in EPSG code.
+#                e.g. epsg:4326 .
+#    """
+#    data = pandas_dataframe
+#    #import ipdb; ipdb.set_trace()
+#    data[xcoord_name] = pd.to_numeric(data[xcoord_name])
+#    data[ycoord_name] = pd.to_numeric(data[ycoord_name])
+#    data['geometry'] = data.apply(lambda z : Point(z[xcoord_name], z[ycoord_name]), axis=1)
+#    #data['geometry'] = data.apply(lambda z : Point(z.LON, z.LAT), axis=1)
+#
+#    new_data = gpd.GeoDataFrame(data)
+#    new_data.crs = {'init':'epsg:4326'}
+#    return new_data
+#
+#
+# to allow retrocompatibility
+toGeoDataFrame = de.toGeoDataFrame
 ###############
 ## Cell-wise: strategies 
 ###############
@@ -80,7 +80,7 @@ def getEnvironmentAndRichnessFromListOfCells(list_of_cells,taxonomic_level_name,
     env = getEnvironmentalCovariatesFromListOfCells(list_of_cells, vars)
     rich = getRichnessPerListOfCells(list_of_cells, taxonomic_level_name)
     data = pd.concat([rich,env],axis =1)
-    data = toGeoDataFrame(data, 'Longitude', 'Latitude')
+    data = de.toGeoDataFrame(data, 'Longitude', 'Latitude')
     return data
 
 def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature',
@@ -248,4 +248,4 @@ def getCentroidsFromListofTrees(list_of_trees):
 
 
     
-    
+

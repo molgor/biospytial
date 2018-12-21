@@ -1,12 +1,56 @@
-﻿BiosPytial
-==========
-*An interactive / command-line modeller's suite for analyzing biodiversity across scales and space.*
+﻿# BiosPytial
+
+> An interactive / command-line modeller's suite for analyzing biodiversity across scales and space.*
 Biospytial is a set of tools written in the Python programming language
 that allows the identification of biodiversity patterns in space.
 It uses the GBIF database, the biggest repository of species records in the world.
 
-Datasource
-----------
+## A Computer tool for modelling biodiversity patterns in space and time.
+#### Juan Escamilla Mólgora 
+#### Last modified: 28/11/2018
+
+
+## Installation
+The suite is currently installed in a Docker container. (molgor/biospytial)
+It uses a ne4j and a postgis backend that can be found in the molgor reprositoryin the Docker Hub.
+
+## Running the container using docker 
+> docker stack deploy -c biospytial_stack.yml biospytial up
+
+
+## Stop container stack
+> docker stack rm biospytial
+
+## Visualize server
+> docker run -it -d -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock dockersamples/visualizer
+
+Visit [host]:8080
+
+
+
+### Instantiate a cluster
+> docker swarm init --advertise-addr <MANAGER-IP>
+
+#### [Optional] Label it to assign services to specific nodes
+> docker node update --label-add manager [hostname1]
+
+> docker node update --label-add worker1 [hostname2]
+
+### To create a new node and add it to the swarm do:
+If you don’t have the command available, you can run the following command on a manager node to retrieve the join command for a worker:
+
+> $ docker swarm join-token worker 
+	To add a worker to this swarm, run the following command:
+
+#### Example:
+
+>    docker swarm join \
+    --token SWMTKN-1-49nj1cmql0jkz5s954yi3oex3nedyz0fb0xx14ie39trti4wxv-8vxv8rssmk743ojnwacrr2e7c \
+    192.168.99.100:2377> 
+
+
+
+## Datasource
 
 
 
@@ -41,15 +85,7 @@ Currently the entire GBIF database is mirrored
 
 Bios`py`tial uses the Django framework to build complex object representation of
  biological occurrences.
-## 
-# Biospytial
-## A Computer tool for modelling biodiversity patterns in space and time.
-## Juan Escamilla Mólgora 
-## Last modified: 29/01/2017
 
-## Installation
-The suite is currently installed in a Docker container. (molgor/biospytial)
-It uses a ne4j and a postgis backend that can be found in the molgor reprositoryin the Docker Hub.
 
 ## Run postgis backend container
 ## Use the following command to run the Postgis backend.

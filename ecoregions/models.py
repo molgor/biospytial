@@ -104,6 +104,35 @@ class TerrEcoregions(models.Model):
         return c
 
 
+# This is an auto-generated Django model module created by ogrinspect.
+
+class LandUseConabio(models.Model):
+    id = models.AutoField(primary_key=True, db_column="gid")
+    area = models.FloatField()
+    perimeter = models.FloatField()
+    cov_field = models.BigIntegerField()
+    cov_id = models.BigIntegerField()
+    agrupado = models.CharField(max_length=40)
+    tipos = models.CharField(max_length=80)
+    geom = models.MultiPolygonField(srid=4326)
+
+    class Meta:
+        managed = False
+        db_table = 'public\".\"luconabio'
+        
+    def __unicode__(self):
+        return u'<LandUse Layer instance: %s >'%(self.cov_id)
+
+# Auto-generated `LayerMapping` dictionary for LandUseConabio model
+landuseconabio_mapping = {
+    'area' : 'AREA',
+    'perimeter' : 'PERIMETER',
+    'cov_field' : 'COV_',
+    'cov_id' : 'COV_ID',
+    'agrupado' : 'AGRUPADO',
+    'tipos' : 'TIPOS',
+    'geom' : 'MULTIPOLYGON',
+}
 
 
 

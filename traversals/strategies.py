@@ -160,14 +160,41 @@ def idsToCells(list_of_ids,cell_type=Mex4km):
     return selection_of_cells
 
 
-def LatticeToNetworkx(list_of_cells):
+def LatticeToNetworkx(list_of_cells,intrinsic_graph=True,use_only_ids=True):
     """
     Returns a Networkx Graph Object given by the cells and it's neighbours
+    Parameters : 
+        list_of_cells (list) : List of Cell objects 
+        intrinsic_graph (Boolean) : If true returns a graph with exactly the nodes
+        given in the list of cells (i.e. excluding neighbouring nodes that are not in the
+        list_of_cells)
+        use_only_ids (Boolean) : If true each node will be an integer (corresponding
+        id) otherwise each node is a Cell object.
+        it is usefull if the graph is going to be pickled.
     """
+    def insert_nodes((center,neighbours)):
+        # if the neighbour is empty insert the node
+        if neighbours:
+            map(lambda n : G.add_edge(center,n),neighbours)
+        else:
+            G.add_node(center)
+
+    neighbours = map(lambda cell : cell.getNeighbours(),list_of_cells)
+
     G = nx.Graph()
-    node_edges = zip(list_of_cells,map(lambda cell : cell.getNeighbours(),list_of_cells))
-    map(lambda (center, neighbours) : map(lambda n : G.add_edge(center,n),neighbours),node_edges)
-    return G    
+    if use_only_ids:
+        list_of_cells = map(lambda c : c.id, list_of_cells)
+        neighbours = map(lambda nl : map(lambda n : n.id,nl),neighbours)
+    
+    node_edges = zip(list_of_cells,neighbours)
+    map(insert_nodes,node_edges)
+    # Excluding neighbouring nodes
+    if intrinsic_graph:
+        cells_s = set(list_of_cells)
+        nodes_s = set(G.nodes())
+        extra = filter(lambda n : n not in cells_s,nodes_s)
+        map(lambda x : G.remove_node(x),extra)
+    return G
 
 
 

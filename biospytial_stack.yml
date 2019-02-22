@@ -30,7 +30,11 @@ services:
    - '/tmp:/tmp'
    - '${HOME}/.Xauthority:/root/.Xauthority'
   deploy:
-   mode: global
+   placement:
+    constraints:
+     - node.role == manager
+#   replicas: 2   
+#   mode: global
    resources:
     limits:
      memory: 25g
@@ -54,7 +58,7 @@ services:
   stdin_open: true
   tty: true
   entrypoint: /root/entrypoint.sh
-  #entrypoint: /bin/bash
+#  entrypoint: /bin/bash
   
 
 ### Postgis container
@@ -62,7 +66,10 @@ services:
   ports:
    - 5432:5432
   deploy:
-   replicas: 2
+   #replicas: 2
+   placement:
+    constraints:
+     - node.role == manager
    update_config:
     parallelism: 1
     delay: 10s
@@ -81,7 +88,10 @@ services:
    - 7687:7687
    - 1337:1337
   deploy:
-   replicas: 2
+   #replicas: 2   
+   placement:
+    constraints:
+     - node.role == manager
    update_config:
     parallelism: 1
     delay: 10s
@@ -95,11 +105,19 @@ services:
  redis:
   ports:
    - 6379:6379
+  deploy:
+   placement:
+    constraints:
+     - node.role == manager
   volumes:
    - '/home/juan/DataVolumesBank/redis:/data'
   image: redis
-  
-
-
+  command: [
+      "bash", "-c",
+      '
+       docker-entrypoint.sh
+       --requirepass "biospytial."
+      '
+    ] 
 
   

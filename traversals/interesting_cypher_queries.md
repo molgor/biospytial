@@ -71,5 +71,24 @@ MATCH (o:`MinTemp-30s`) DETACH DELETE o;
 MATCH (o:DEM_12) DETACH DELETE o;
 
 
+# Distances
+## To get the shortest path route between two nodes
+MATCH path=shortestPath((n:Genus{name: 'Ursus'})-[:IS_PARENT_OF*]-(p:Genus{name: 'Romerolagus'})) Return path
 
+This uses the relation 'IS_PARENT_OF'. To use any other relation 'r' do:
+
+MATCH path=shortestPath((n:Genus{name: 'Ursus'})-[:r*]-(p:Genus{name: 'Romerolagus'})) Return path
+
+
+MATCH path1=(oso: Genus{name: 'Ursus'})-[: IS_A_MEMBER_OF*]->(root)
+
+MATCH path2 = (cone: Genus{name: 'Romerolagus'}) -[: IS_A_MEMBER_OF*]->(root)
+
+MATCH path1=((oso: Genus{name: 'Ursus'})-[: IS_A_MEMBER_OF*]->(osos))
+
+MATCH path2=(cone: Genus{name: 'Romerolagus'}) -[: IS_A_MEMBER_OF*]->(cones)
+
+UNWIND nodes(path1) as np1
+
+RETURN collect(NOT(np1 IN nodes(path2)))
 

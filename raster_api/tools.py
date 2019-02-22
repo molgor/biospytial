@@ -34,7 +34,8 @@ import numpy
 from django.contrib.gis.db.models.fields import RasterField
 from raster_api.models import intersectWith
 import pandas as pd
-
+from scipy.special import expit
+from django.contrib.gis.geos import GEOSGeometry
 
 # register the new lookup
 RasterField.register_lookup(intersectWith)
@@ -84,8 +85,9 @@ class GDALRasterExtended(GDALRaster):
         """
         A = numpy.array(self.geotransform).reshape(2,3)
         ## Create the coordinates in the matrix coordinate systems
+        ijs = [ numpy.array((1,j,i)) for i in range(self.height) for j in range(self.width)]
 
-        ijs = [ numpy.array((1,i,j)) for i in range(self.height) for j in range(self.width)]
+        #ijs = [ numpy.array((1,i,j)) for i in range(self.height) for j in range(self.width)]
         coords = map(lambda v : A.dot(v),ijs)
         return coords
         
@@ -93,6 +95,7 @@ class GDALRasterExtended(GDALRaster):
 
 def aggregateDictToRaster(aggregate_dic):
     """
+    FOR POSTGIS data retrieval only.
     Convert the input aggregate based on an aggregation of raster data in postgis (aggregate_dic)
      into a fully functional raster datatype.
     """
@@ -104,9 +107,223 @@ def aggregateDictToRaster(aggregate_dic):
         logger.error("Could not extract Raster data from aggregation. The raster could not be defined in that area.")
         return None
 
-class RasterData(object):
+
+
+class Raster(object):
+    """
+    Class that defines Raster Objects. 
+    This includes the prediction done by models, other external data not in the relational database and extensible to objects in the relational database.
+    """
+    
+    def __init__(self,rasterdata='',name='no_name'):
+        self.rasterdata = rasterdata
+        self.name = name
+
+    def exportToGeoTiff(self,filename,path=settings.PATH_OUTPUT):
+        """
+        Exports the raster data to a GeoTiff standard format. For use in any GIS for analysing or visualizing.
+        
+        Parameters : 
+        
+            filename : the filename to the output geotiff image. not necessary to add .tif
+            path : the path to store the output. By default it uses the PATH_OUTPUT variable in settings
+        
+        """
+        
+        file_ = path + filename +'.tif'
+        try:
+            data = self.rasterdata.bands
+        except AttributeError:
+            logger.warning("No data defined. Loading data from the server this can take some time.")
+            try:
+                self.getRaster()
+            except:
+                logger.error("Unexpected Error. There was a problem with the server or this object's geographical extension")
+                return None
+            data = self.rasterdata.bands
+        
+        b1 = self.rasterdata.bands[0]
+        NoData_value = b1.nodata_value
+        proj_str = str(self.rasterdata.srs.wkt)
+        driver = gdal.GetDriverByName('GTiff')
+        geotransform = self.rasterdata.geotransform
+        
+        ## converting data to numpy n-array    
+        data = map(lambda b : b.data(),data)
+        data = numpy.array(data)
+        
+        ## Verifying structure 
+        dim = len(data.shape)
+        if dim == 3:
+            nbands, ysize, xsize = data.shape
+        else:
+            ysize,xsize = data.shape
+            nbands = 1 
+
+                
+        
+        #output = driver.Create(file_,xsize,ysize,nbands,gdal.GDT_Int16)
+        output = driver.Create(file_,xsize,ysize,nbands,b1.datatype())        
+        for i in range(nbands):
+            outband = output.GetRasterBand(i+1)
+            outband.WriteArray(data[i])
+        
+        output.SetProjection(proj_str)
+        outband.SetNoDataValue(NoData_value)
+        output.SetGeoTransform(geotransform)
+        output.FlushCache()
+        
+        
+        #outband.SetRasterColorInterpretation(gdal.GCI_PaletteIndex)  
+        #ct = gdal.ColorTable()
+        # Some examples 
+        #ct.CreateColorRamp(0,(0,0,0),127,(255,0,0))
+        #ct.CreateColorRamp(0,(0,0,255),255,(255,0,0))
+        #import ipdb; ipdb.set_trace()
+        #ct.SetColorEntry( 0, (0, 0, 0, 255) )
+        #ct.SetColorEntry( 20, (0, 255, 0, 255) )
+        #ct.SetColorEntry( 40, (255, 0, 0, 255) )
+        #ct.SetColorEntry( 60, (255, 0, 255, 255) )
+        # Set the color table for your band
+        #import ipdb; ipdb.set_trace()
+        #outband.SetColorTable(ct)    
+        return None
+
+
+
+     
+
+    
+    def plotField(self,stats_dir='default',band=1,xlabel='Temperatura Promedio (C)',**kwargs):
+        """
+        """
+        try:
+            matrix = self.rasterdata.bands[band - 1].data()
+        except:
+            logger.error("No raster data associated with specified band")
+            return None
+        if stats_dir == 'default':
+            stats_dir = self.rasterdata.allBandStatistics()
+        # Mask data 
+        nodataval = stats_dir['nodata']
+        matrix = masked_where(matrix == nodataval, matrix)
+        f, ax = plt.subplots()
+
+        plt.imshow(matrix,clim=(stats_dir['min'],stats_dir['max']),**kwargs)
+        plt.text(0.2,-0.6,'Made with BiosPYtial: -Biodiversity Informatics-',horizontalalignment='center',verticalalignment='bottom',transform=ax.transAxes,fontsize=10)
+
+        cbar = plt.colorbar(orientation='horizontal',shrink=0.8) 
+        cbar.set_label(xlabel,size=12)
+        # access to cbar tick labels:
+        #cbar.ax.tick_params(labelsize=5) 
+        plt.axis('off')
+        #plt.show()
+        return plt         
+    
+    def display_field(self,stats_dir='default',title='',band=1,**kwargs):
+        p = self.plotField(stats_dir, band=band,xlabel=title+' Month',**kwargs)
+        p.title(title)
+        plt.show()
+        return None
+    
+    def exportToJPG(self,filename,stats_dir='default',path=settings.PATH_OUTPUT,title='',unitstitle='',band=1,**kwargs):
+        if stats_dir == 'default':
+            stats_dir = self.rasterdata.allBandStatistics()
+        p = self.plotField(stats_dir, band=band,xlabel=unitstitle,**kwargs)
+        p.title(title)
+        file_ = path + filename + '.png'
+        plt.savefig(file_)
+
+        return None 
+
+    def exportMonthlyStack(self,prefix,stats_dict,path=settings.PATH_OUTPUT,prefixtitle='',unitstitle='',lang='eng',**kwargs):
+        """
+        Export layer stack
+        """
+        #stats_dict = self.rasterdata.allBandStatistics()
+        if lang == 'esp':
+            months = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
+        else:
+            months = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'}
+        
+        for i,name in months.items():
+            self.exportToJPG(i+prefix, stats_dict, path=path, title=prefixtitle+name,unitstitle=unitstitle, band=int(i),**kwargs)
+        
+
+
+    def toNumpyArray(self):
+        """
+        Returns a narray
+        """
+        bands = map(lambda b : b.data(),self.rasterdata.bands)
+        nodataval = self.rasterdata.allBandStatistics()['nodata']
+        bands = map(lambda b : masked_equal(b,nodataval),bands)
+        
+        return numpy.ma.array(bands)
+
+
+    def getCoordinates(self):
+        """
+        Returns array of coordinates for each pixel a wrapper.
+        Translates it into a pandas object for better manipulation
+        """
+        data = pd.DataFrame(self.rasterdata.getCentroidCoordinates())
+        data.columns = ['Longitude','Latitude']  
+        return data
+    
+    def getCoordinatesAsGeometricPoints(self,srid=4326):
+        """
+        Returns a list of point geometries. Useful for functions that need geometries and not wkt or numpy array.
+        Parameters: (Integer) EPSG code
+        """ 
+        coords = self.getCoordinates()
+        toPoint = lambda array :'POINT(%s %s)'%(array[0],array[1])
+        points = map(lambda p :GEOSGeometry(p,srid=srid), map(toPoint,coords.values))
+        return points
+
+    def toPandasDataFrame(self,aggregate_with_mean=True,with_coordinates=True):
+        """
+        Returns the values of the raster as a pandas DataFrame with spatial column coordinates
+        
+        Parameters: 
+            aggregate_with_mean : (Boolean) Will return the mean value of all the bands per pixel 
+        """
+        
+        array_data = self.toNumpyArray()
+        #array_data = numpy.mean(self.toNumpyArray(),axis=0)
+        ## iterate according to numpy standard leftmost axis
+        dataframe = pd.concat(map(lambda band :
+            pd.DataFrame(band.flatten()),array_data),axis=1)
+        names = map(lambda i : '%s_%s'%(i,self.name), range(len(dataframe.columns)))
+        dataframe.columns = names
+
+        if aggregate_with_mean:
+            dataframe = pd.DataFrame({self.name+'_m':dataframe.mean(axis=1)})
+        if with_coordinates:
+            coords = self.getCoordinates()
+            data = pd.concat([dataframe,coords],axis=1)
+        else:
+            data = pd.concat([dataframe],axis=1)
+        return data
+        
+    def meanLayer(self):
+        """
+        Returns a single layer (Matrix nxm) that represents the cellwise average value  
+        """
+        datacube = self.toNumpyArray()
+        layer = numpy.mean(datacube, axis=0)
+        return layer
+
+
+
+
+
+
+class RasterData(Raster):
     """
     This class provides an interface for processing and analysing raster data stored in a postgis database
+    
+    FOR USE in POSTGIS
     """
     
     def __init__(self,rastermodelinstance,border,date='N.A'):
@@ -116,9 +333,11 @@ class RasterData(object):
             border : A polygon geometry. The border geometry that defines the interior of the raster.
             date : string for date. Important for matching nodes with date
         """
+        super(RasterData,self).__init__(rasterdata='')
         self.model = rastermodelinstance.objects.filter(rast__intersect_with=border)
+        self.name = rastermodelinstance.name
         self.geometry = border
-        self.rasterdata = ''
+        #self.rasterdata = ''
         self.neo_label_name = rastermodelinstance.neo_label_name
         self.number_bands = rastermodelinstance.number_bands
         self.aggregatedmodel = ''
@@ -139,7 +358,7 @@ class RasterData(object):
         return raster
     
     
-    def processDEM(self,option=1):
+    def processDEM(self,option=1,**extra):
         """
         Processes different products using a DEM as input.
         Currently implements:
@@ -152,17 +371,21 @@ class RasterData(object):
                     
         Returns : A GDALRaster
         """
-        options = {2 : 'Slope', 4:'Hillshade', 1:'Original', 3:'Aspect'}
+        logger.info("For calculating these products it is necessary to provide a valid \
+        SRID (projection). This is due to the fact that the map values and \
+        the coordinates need to be in the same units.")
+        options = {2 : 'Slope', 4:'Hillshade', 1:'Elevation', 3:'Aspect'}
         key_opt = options[option]
         self.neo_label_name += ('-' + key_opt) 
         # First filter by border
         #self.model = self.model.filter(rast__intersect_with=self.geometry)
         aggregate = aggregates_dict[key_opt]
-        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,**extra))
         raster = aggregateDictToRaster(aggregate_dic=agg_dic)
-        self.rasterdata = raster
-        
-        return raster
+        # Add the product 
+        Ras = Raster(rasterdata=raster)
+        setattr(self,options[option],Ras) 
+        return Ras 
 
     def getValue(self,point,**bandnumber):
         """
@@ -209,75 +432,65 @@ class RasterData(object):
 
 
 
-    def exportToGeoTiff(self,filename,path=settings.PATH_OUTPUT):
+    def rescale(self,scalexy,inplace=True,algorithm='NearestNeighbour'):
         """
-        Exports the raster data to a GeoTiff standard format. For use in any GIS for analysing or visualizing.
-        
-        Parameters : 
-        
-            filename : the filename to the output geotiff image. not necessary to add .tif
-            path : the path to store the output. By default it uses the PATH_OUTPUT variable in settings
-        
+        Scales the raster according to the scale parameter.
+        Parameters:
+            scalexy : pixelsize to scale the raster
+            inplace : assigns the returned object to the current rasterdata attribute
+            algorithm: resampling algorithm to use, 
+            options are: NearestNeighbour,Bilinear, Cubic, CubicSpline or Lanczos         
+        Returns : A GDALRaster
         """
-        
-        file_ = path + filename +'.tif'
-        try:
-            data = self.rasterdata.bands
-        except AttributeError:
-            logger.warning("No data defined. Loading data from the server this can take some time.")
-            try:
-                self.getRaster()
-            except:
-                logger.error("Unexpected Error. There was a problem with the server or this object's geographical extension")
-                return None
-            data = self.rasterdata.bands
-        
 
-        NoData_value = self.rasterdata.bands[0].nodata_value
-        proj_str = str(self.rasterdata.srs.wkt)
-        driver = gdal.GetDriverByName('GTiff')
-        geotransform = self.rasterdata.geotransform
-        
-        ## converting data to numpy n-array    
-        data = map(lambda b : b.data(),data)
-        data = numpy.array(data)
-        
-        ## Verifying structure 
-        dim = len(data.shape)
-        if dim == 3:
-            nbands, ysize, xsize = data.shape
-        else:
-            ysize,xsize = data.shape
-            nbands = 1 
+        aggregate = aggregates_dict['Rescale']
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,scalexy=scalexy,algorithm=algorithm))
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        if inplace:
+            self.rasterdata = raster
+            
+        return raster
 
-                
-        
-        output = driver.Create(file_,xsize,ysize,nbands,gdal.GDT_Int16)
-                
-        for i in range(nbands):
-            outband = output.GetRasterBand(i+1)
-            outband.WriteArray(data[i])
-        
-        output.SetProjection(proj_str)
-        outband.SetNoDataValue(NoData_value)
-        output.SetGeoTransform(geotransform)
-        output.FlushCache()
-        
-        
-        #outband.SetRasterColorInterpretation(gdal.GCI_PaletteIndex)  
-        #ct = gdal.ColorTable()
-        # Some examples 
-        #ct.CreateColorRamp(0,(0,0,0),127,(255,0,0))
-        #ct.CreateColorRamp(0,(0,0,255),255,(255,0,0))
-        #import ipdb; ipdb.set_trace()
-        #ct.SetColorEntry( 0, (0, 0, 0, 255) )
-        #ct.SetColorEntry( 20, (0, 255, 0, 255) )
-        #ct.SetColorEntry( 40, (255, 0, 0, 255) )
-        #ct.SetColorEntry( 60, (255, 0, 255, 255) )
-        # Set the color table for your band
-        #import ipdb; ipdb.set_trace()
-        #outband.SetColorTable(ct)    
-        return None
+    def resize(self,width,height,inplace=True,algorithm='NearestNeighbour'):
+        """
+        Returns a rescaled version of a rasterdata with given width and height
+        Parameters:
+            inplace : assigns the returned object to the current rasterdata attribute
+            algorithm: resampling algorithm to use, 
+            options are: NearestNeighbour,Bilinear, Cubic, CubicSpline or Lanczos         
+        Returns : A GDALRaster
+        """
+
+        aggregate = aggregates_dict['Resize']
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,width=width,height=height,algorithm=algorithm))
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        if inplace:
+            self.rasterdata = raster
+            
+        return raster
+
+
+
+
+    def transform(self,to_srid,inplace=True,algorithm='NearestNeighbour'):
+        """
+        Extracts the selected raster and reprojects it into the specified srid.
+        Parameters:
+            to_srid : (Int) The projection srid to transform to.
+            inplace : assigns the returned object to the current rasterdata attribute
+            algorithm: resampling algorithm to use, 
+            options are: NearestNeighbour,Bilinear, Cubic, CubicSpline or Lanczos         
+        Returns : A GDALRaster
+        """
+
+        aggregate = aggregates_dict['Transform']
+        agg_dic = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry,to_srid=to_srid,algorithm=algorithm))
+        raster = aggregateDictToRaster(aggregate_dic=agg_dic)
+        if inplace:
+            self.rasterdata = raster
+            
+        return raster
+
 
 
         
@@ -306,105 +519,113 @@ class RasterData(object):
             if writeDB:
                 graph.create(n0)
             return n0
+
+    def PixelAsPolygons(self):
+        """
+        Returns a list of polygons (Testing) 
+        """
         
-     
+        aggregate = aggregates_dict['PixelAsPolygons']
+        cosa = self.model.aggregate(raster=aggregate('rast',geometry=self.geometry))
+        #raster = aggregateDictToRaster(aggregate_dic=agg_dic) 
+        return cosa        
 
+
+
+class RasterContainer(Raster):
+    """
+    This class instantiates a full geospatial raster data structure (GDAL).
+    It needs a numpy matrix and metadata obtained from a RasterData object. 
+    The instance is built on this metadata and the given numpy narray.
+    """
     
-    def plotField(self,stats_dir='default',band=1,xlabel='Temperatura Promedio (C)',**kwargs):
+    def __init__(self,data,use_metadata_from='',
+            exponential_fam="Identity",name='model_raster'):
         """
+        Parameters:
+            data : (numpy narray) The data to be used for the raster.
+            use_metadata_from_this_band : (GDALRaster Band) the metadata of the GDAL Raster are going to be set by this object.
+        
+           exponential_fam : (String) The type of link function used (GLM).
+           Current implemented choices are:
+            "Identity", (default)
+            "Poisson",
+            "Logit"
+        If the family is different from Identity it will add the transformed layer as
         """
-        try:
-            matrix = self.rasterdata.bands[band - 1].data()
-        except:
-            logger.error("No raster data associated with specified band. Run getRaster or processDEM first")
-            return None
-        if stats_dir == 'default':
-            stats_dir = self.rasterdata.allBandStatistics()
-        # Mask data 
-        nodataval = stats_dir['nodata']
-        matrix = masked_where(matrix == nodataval, matrix)
-        f, ax = plt.subplots()
+        super(RasterContainer,self).__init__(rasterdata='',name=name)
+        self.metadatamodel = use_metadata_from
+        self.rasterdata = self.buildRasterData(data,exponential_fam = exponential_fam)
 
-        plt.imshow(matrix,clim=(stats_dir['min'],stats_dir['max']),**kwargs)
-        plt.text(0.2,-0.6,'Made with BiosPYtial: -Biodiversity Informatics-',horizontalalignment='center',verticalalignment='bottom',transform=ax.transAxes,fontsize=10)
-
-        cbar = plt.colorbar(orientation='horizontal',shrink=0.8) 
-        cbar.set_label(xlabel,size=12)
-        # access to cbar tick labels:
-        #cbar.ax.tick_params(labelsize=5) 
-        plt.axis('off')
-        #plt.show()
-        return plt         
-    
-    def display_field(self,stats_dir='default',title='',band=1,**kwargs):
-        p = self.plotField(stats_dir, band=band,xlabel=title+' Month',**kwargs)
-        p.title(title)
-        plt.show()
-        return None
-    
-    def exportToJPG(self,filename,stats_dir,path=settings.PATH_OUTPUT,title='',unitstitle='',band=1,**kwargs):
-
-        p = self.plotField(stats_dir, band=band,xlabel=unitstitle,**kwargs)
-        p.title(title)
-        file_ = path + filename + '.png'
-        plt.savefig(file_)
-
-        return None 
-
-    def exportMonthlyStack(self,prefix,stats_dict,path=settings.PATH_OUTPUT,prefixtitle='',unitstitle='',lang='eng',**kwargs):
+    def buildRasterData(self,data,exponential_fam="Identity"):
         """
-        Export layer stack
+        Returns a GDAL Raster object (Extended).
+        Parameters: 
+           exponential_fam : (String) The type of link function used (GLM).
+           Current implemented choices are:
+            "Identity", (default)
+            "Poisson",
+            "Logit"
+        If the family is different from Identity it will add the transformed layer as
+        another band,
         """
-        #stats_dict = self.rasterdata.allBandStatistics()
-        if lang == 'esp':
-            months = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
+        import numpy as np
+        m = self.metadatamodel
+        geotransform = m.geotransform
+        band = m.bands[0]
+        if exponential_fam == "Identity":
+            tdata = data.flatten()
+        elif exponential_fam == "Poisson" :
+            tdata = np.exp(data.flatten())
+            nodatav = np.exp(band.nodata_value)
+        elif exponential_fam == "Bernoulli" :
+            tdata = expit(data.flatten())
+            nodatav = expit(band.nodata_value)
         else:
-            months = {'01':'January','02':'February','03':'March','04':'April','05':'May','06':'June','07':'July','08':'August','09':'September','10':'October','11':'November','12':'December'}
+            raise ValueError("Incorrect parameter in: exponential_fam. Use options described in documentation ")
+            
+
+        if exponential_fam == "Identity":
+            bands = [{'data':data.flatten(),
+                     'size': (band.width, band.height),
+                     'nodata_value': band.nodata_value,
+                     }]
+            
+            
+        else:
+            bands = [{'data':data.flatten(),
+                     'size': (band.width, band.height),
+                     'nodata_value': band.nodata_value,
+                      },
+                      {'data' : tdata,
+                       'size': (band.width, band.height),
+                       'nodata_value':np.exp(band.nodata_value),
+                      }
+                    ]
         
-        for i,name in months.items():
-            self.exportToJPG(i+prefix, stats_dict, path=path, title=prefixtitle+name,unitstitle=unitstitle, band=int(i),**kwargs)
-        
-
-
-    def toNumpyArray(self):
-        """
-        Returns a narray
-        """
-        bands = map(lambda b : b.data(),self.rasterdata.bands)
-        nodataval = self.rasterdata.allBandStatistics()['nodata']
-        bands = map(lambda b : masked_equal(b,nodataval),bands)
-        return bands
-
-
-    def getCoordinates(self):
-        """
-        Returns array of coordinates for each pixel a wrapper.
-        Translates it into a pandas object for better manipulation
-        """
-        data = pd.DataFrame(self.rasterdata.getCentroidCoordinates())
-        data.columns = ['Longitude','Latitude']
-        
-        return data 
-
-    def toPandasDataFrame(self):
-        """
-        Returns the values of the raster as a pandas DataFrame with spatial column coordinates
-        """
-        coords = self.getCoordinates()
-        array_data = self.toNumpyArray()
-        dataframes = map(lambda band : pd.DataFrame(band.flatten()),array_data)
-        dataframes.append(coords)
-        data = pd.concat(dataframes,axis=1)
-        return data
-        
-    def meanLayer(self):
-        """
-        Returns a single layer (Matrix nxm) that represents the cellwise average value  
-        """
-        bands = self.toNumpyArray()
-        total = reduce(lambda a,b : a+b ,bands)
-        return total * (1/float(len(bands)))
+        rst = GDALRasterExtended({'srid': m.srid,
+                                                    'width': m.width,
+                                                    'height': m.height,
+                                                    'datatype': 7,
+                                                    'origin' : m.origin,
+                                                    'scale' : m.scale,
+                                                    'bands': bands })
+        return rst
     
+
+    def display_field(self, stats_dir='default', title='', band=1, **kwargs):
+        """
+        Override method for displaying field. 
+        Has to be done in order to display correctly the fields.
+        """
+        b = self.rasterdata.bands[band - 1]
+        stats_dir = {'max': b.max,
+                            'mean': b.min,
+                            'min': b.min,
+                            'nodata': b.nodata_value}
+        
+        return Raster.display_field(self, stats_dir=stats_dir, title=title, band=band, **kwargs)
+
     
 meses = {'01':'Enero','02':'Febrero','03':'Marzo','04':'Abril','05':'Mayo','06':'Junio','07':'Julio','08':'Agosto','09':'Septiembre','10':'Octubre','11':'Noviembre','12':'Diciembre'}
 #mex.exportToJPG('0'+name,s,title=month,band=int(name),cmap=plt.cm.inferno)

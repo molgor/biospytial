@@ -106,12 +106,29 @@ class LocalTree(object):
 
     def getGraph(self,graph,level_i=0,depth_level=100):
         """
-        Converts to a Networkx object
+        Converts to a Networkx object.
+        note: It extracts the Node (TreeNode) not LocalTree
         """
-        node = self
+        def _getattrdic(node):
+            nodeatr = {
+                       'level' : node.level,
+                       'richness' : node.richness,
+                       'freq' : node.n_presences_in_list,
+                       }            
+            return nodeatr
+        
+        if isinstance(self, TreeNeo):
+            node = self.node
+        else:
+            node = self
         level_i += 1
-        for child in self.children:            
-            graph.add_edge(node,child,weight=node.richness)
+        nodeattr = _getattrdic(node)
+        graph.add_node(node.node,attr_dict=nodeattr)
+        for child in self.children:
+            childattr = _getattrdic(child)
+            #graph.add_edge(node,child,weight=node.richness)
+            graph.add_node(child.node,attr_dict=childattr)
+            graph.add_edge(node.node,child.node,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
             if level_i < depth_level:
                 try:
                     graph = child.getGraph(graph,level_i=level_i,depth_level=depth_level)
@@ -566,8 +583,8 @@ class LocalTree(object):
 
     def countNodesFrequenciesOnList(self,list_of_trees):
         """
-        Checks if every node in the tree is in how many members of the list.
-        This is used for checking how many nodes of a tree are contained in an arbitrary list of trees.
+        Counts the number of times a node in the tree (self) has appeared in the list_of_trees.
+        This is used for checking how many nodes of a tree are contained in any given list of trees.
         Returns:
             list of nodes
             
@@ -600,7 +617,7 @@ class TreeNeo(LocalTree):
     A prototype for reading taxonomic trees stored in the Neo4J database.
     """
 
-    def __init__(self,list_occurrences,cell_objects=''):
+    def __init__(self,list_occurrences,cell_objects=[]):
         """
         THIS IS A PROTOTYPE.
         For now it need a list of node occurrences. Use the function extractOccurrencesFromTaxonomies
@@ -659,6 +676,7 @@ class TreeNeo(LocalTree):
         self.kingdoms = aggregator(self.phyla)
         root = aggregator(self.kingdoms).pop()
         # Reload Occurrences
+        #super(TreeNeo,self).__init__(root,root.children)
         super(TreeNeo,self).__init__(root,root.children)
         # Reload Occurrences
         self.setOccurrences()

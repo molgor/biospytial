@@ -26,6 +26,7 @@ from itertools import groupby, imap
 from biospytial import settings
 from raster_api.tools import RasterData
 from raster_api.models import raster_models_dic,raster_models
+import networkx as nt
 
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
@@ -159,7 +160,7 @@ class Occurrence(GraphObject):
     #is_in  = RelatedTo("Cell",ISIN)
     is_in  = RelatedTo(BOTTOMSCALE_CLASSNODE,ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")
-    parent_link = RelatedTo("TreeNode",TAXDESCEND)
+    parent_link = RelatedTo("Specie",TAXDESCEND)
     children_link = RelatedTo("TreeNode",TAXASCEND)
     has_event = RelatedFrom("TreeNode",HASEVENT)
     
@@ -276,8 +277,8 @@ class TreeNode(GraphObject):
     
     parent_link = RelatedTo("TreeNode",TAXDESCEND)
     children_link = RelatedTo("TreeNode",TAXASCEND)
-    is_in = RelatedTo("Cell",ISIN)
-    
+    #is_in = Related("Cell",ISIN)
+    is_in  = RelatedTo(BOTTOMSCALE_CLASSNODE,ISIN)
     has_events = RelatedTo("Occurrence",HASEVENT)
 
     localoccurrences = []
@@ -315,6 +316,30 @@ class TreeNode(GraphObject):
         """
         return iter(self.is_in)
         #return self.is_in
+
+
+    def getCellsById(self):
+        """
+        Get's the associated cells by Id. 
+        Optimized with a Cypher query to be very fast.
+        It will return a list of ids that can be used in the sampling method.
+        """
+        from pandas import DataFrame as df
+        cell_node_type = self.is_in.related_class
+        cypher_str = "MATCH (b:%s {id:%s})-[r:IS_IN]->(c:%s) Return c.id"%(self.__primarylabel__,self.id,cell_node_type.__primarylabel__)
+        try:
+            n = graph.data(cypher_str)
+            ids = [o['c.id'] for o in n]
+            #selection_of_cells = cell_node_type.select(graph).where("_.id IN  %s "%ids)
+            return ids
+    
+
+        except AttributeError:
+            logger.error("Not a Node Object defined in the Graph Database")
+            raise
+
+
+
     
     def giveNCells(self,k=10):
         """
@@ -353,6 +378,52 @@ class TreeNode(GraphObject):
         #siblings = filter(lambda node : node != self,siblings)
         return siblings
     
+    def getAncestors(self):
+        """
+        Given the parameter depth it walks through the Subgraph Taxonomy
+        Starting from the Occurrence Node to the depth specified.
+        Remember that there is a loop in the LUCA node therefore.
+        
+        Returns a networkx.Graph object
+        """
+            
+        
+        G = nt.Graph()
+        this_node = self
+        while not isinstance(this_node,Root):
+            next_node = this_node.getParent()
+            G.add_edge(this_node, next_node)
+            this_node = next_node
+        return G
+
+    def mergeLinageWithNode(self,other_node):
+        """
+        Merges the linages (ancestors) between the current node and another.
+        Parameters:
+            other_node : A TreeNode instance.
+        Returns:
+            a Networkx.Graph instance
+        """
+        this_ancestors = self.getAncestors()
+        other_ancestors = other_node.getAncestors() 
+        new_graph = nt.compose(this_ancestors, other_ancestors)
+        return new_graph
+
+
+    def taxonomicDistanceTo(self,other_node,depth=8):
+        """
+        Calculates the taxonomic distance (simple) between this node and another.
+        Parameters:
+            other_node : A TreeNode instance.
+        Returns:
+            Distance : Integer
+            
+        note: It is possible to use an extra argument in the shortestpath method.
+        Select a given attribute as weight. See documentation.   
+        """
+        merged = self.mergeLinageWithNode(other_node)
+        return nt.shortest_path_length(merged,source=self,target=other_node)
+        
     def _isOccurrence(self):
         if self.level == 999:
             return True
@@ -508,37 +579,56 @@ class TreeNode(GraphObject):
         return levels
             
 
+class Root(TreeNode):
+    __primarylabel__  ='Root'
+    __primarykey__ = "id"
+    parent_link = RelatedTo("Root",TAXDESCEND)
+    children_link = RelatedTo("Kingdom",TAXASCEND)
+    #parent_link = None
     
 
 class Kingdom(TreeNode):
     __primarylabel__  ='Kingdom'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Root",TAXDESCEND)
+    children_link = RelatedTo("Phylum",TAXASCEND)
 
 class Phylum(TreeNode):
     __primarylabel__  ='Phylum'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Kingdom",TAXDESCEND)
+    children_link = RelatedTo("Class_",TAXASCEND)
    
 class Class_(TreeNode):
     __primarylabel__  ='Class'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Phylum",TAXDESCEND)
+    children_link = RelatedTo("Order",TAXASCEND)
 
 class Order(TreeNode):
     __primarylabel__  ='Order'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Class_",TAXDESCEND)
+    children_link = RelatedTo("Family",TAXASCEND)
    
 class Family(TreeNode):
     __primarylabel__ = 'Family'
     __primarykey__ = "id"
+    parent_link = RelatedTo("Order",TAXDESCEND)
+    children_link = RelatedTo("Genus",TAXASCEND)
     #__property_label__ ='Family'
 
 class Genus(TreeNode):
     __primarylabel__  ='Genus'
-    __primarykey__ = "id" 
+    __primarykey__ = "id"
+    parent_link = RelatedTo("Family",TAXDESCEND)
+    children_link = RelatedTo("Specie",TAXASCEND) 
 
 class Specie(TreeNode):
     __primarylabel__  ='Specie'
     __primarykey__ = "id"
-   
+    parent_link = RelatedTo("Genus",TAXDESCEND)
+    children_link = RelatedTo("Occurrence",TAXASCEND)   
    
 
 
@@ -552,13 +642,15 @@ class Cell(GraphObject):
     
     __primarykey__ = 'id'
     __primarylabel__ = 'Cell'
-    __property_label__ ='Cell'
+    #__property_label__ ='Cell'
     name = Property()
     longitude = Property()
     latitude = Property()
     cell = Property()
     id = Property()
-       
+    
+    ## Default Referencing System
+    srid = settings.CELL_SRID
     
     
     connected_to = RelatedTo("Cell", ISNEIGHBOUR)
@@ -567,7 +659,7 @@ class Cell(GraphObject):
 
     #Occurrences = RelatedFrom(Occurrence, ISIN)
     
-    #LocalTree  = RelatedFrom(TreeNode, ISIN)
+    LocalTree  = RelatedFrom(TreeNode, ISIN)
     #Families = RelatedFrom("Family",ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
@@ -636,31 +728,36 @@ class Cell(GraphObject):
     @property
     def centroid(self):
         pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
-        point = GEOSGeometry(pointstr)
+        point = GEOSGeometry(pointstr,srid=self.srid)
         return point
     
     @property
     def polygon(self):
-        polygon = GEOSGeometry(self.cell)
+        polygon = GEOSGeometry(self.cell,srid=self.srid)
         return polygon
 
     @property
     def upperCell(self):
         return iter(self.contained_in)
         
-        
-    def getNeighbours(self):
-        #ln = [n for n in self.connected_from]
+    def getNeighbours(self,with_center=False):
+        """
+        Returns the associated neighbours.
+        parameters : 
+            with_center : (Boolean) adds the given cell to the list of neighbours.
+        """
         rn = [n for n in self.connected_to]
-        # testing thingy
-        rn.append(self)
+        if with_center:
+            rn.append(self)
         return rn
-        
+       
     def occurrencesHere(self):
         """
         Filter the list of occurrences.
         """
-        occs = filter(lambda l : l.pk,self.Occurrences)
+        #occs = filter(lambda l : l.pk,self.Occurrences)
+        occs = filter(lambda l : l.pk, self.has_occurrences)
+
         return occs        
 
 
@@ -697,17 +794,18 @@ class Cell(GraphObject):
         df = {}
         for variable in vars:
             raster = self.getAssociatedRasterAreaData(variable)
+            varname = raster.name
             try:
                 statistics = raster.rasterdata.allBandStatistics()
             except:
                 #import ipdb; ipdb.set_trace()
                 statistics = {'mean':'N.A.','mean_std':'N.A'}
             mean_env = statistics['mean']
-            df[variable + '_mean'] = mean_env
+            df[varname + '_m'] = mean_env
             
             if with_std:
                 std_env = statistics['mean_std']
-                df[variable + '_std' ] = std_env
+                df[varname + '_std' ] = std_env
         return df
 
 ###########EXPERIMENTAL 
@@ -808,86 +906,29 @@ class Mex4km(Cell):
     #Families = RelatedFrom(Family,ISIN)
     #families = RelatedFrom("Family", "HAS_EVENT")    
 
-    @property
-    def centroid(self):
-        pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
-        point = GEOSGeometry(pointstr)
-        return point
-    
-    @property
-    def polygon(self):
-        polygon = GEOSGeometry(self.cell)
-        return polygon
+#    @property
+#    def centroid(self):
+#        pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
+#        point = GEOSGeometry(pointstr)
+#        return point
+#    
+#    @property
+#    def polygon(self):
+#        polygon = GEOSGeometry(self.cell)
+#        return polygon
+#
+#
 
 
 
-
-    def getNeighbours(self):
-        #ln = [n for n in self.connected_from]
-        rn = [n for n in self.connected_to]
-        # testing thingy
-        rn.append(self)
-        return rn
         
-    def occurrencesHere(self):
-        """
-        Filter the list of occurrences.
-        """
-        occs = filter(lambda l : l.pk,self.Occurrences)
-        return occs   
-
-
-
-
-
-
-# class Mex4km(GraphObject):
-#     
-#     __primarykey__ = 'id'
-#     __primarylabel__ = 'mex4km'
-#     name = Property()
-#     longitude = Property()
-#     latitude = Property()
-#     cell = Property()
-#     id = Property()
-#        
-#     
-#     
-#     connected_to = RelatedTo("Mex4km", ISNEIGHBOUR)
-#     #contained_in = RelatedTo("Cell",ISCONTAINED)
-#     contained_in = RelatedTo("GridLevel10",ISCONTAINED)
-#     Occurrences = RelatedFrom(Occurrence, ISIN)
-#     
-#     #LocalTree  = RelatedFrom(TreeNode, ISIN)
-#     #families = RelatedFrom("Family",ISIN)
-#     #families = RelatedFrom("Family", "HAS_EVENT")    
-# 
-#     @property
-#     def centroid(self):
-#         pointstr = 'POINT(%s %s)'%(self.longitude,self.latitude)
-#         point = GEOSGeometry(pointstr)
-#         return point
-#     
-#     @property
-#     def polygon(self):
-#         polygon = GEOSGeometry(self.cell)
-#         return polygon
-# 
-# 
-# 
-# 
-#     def getNeighbours(self):
-#         #ln = [n for n in self.connected_from]
-#         rn = [n for n in self.connected_to]
-#         # testing thingy
-#         rn.append(self)
-#         return rn
-#         
 #     def occurrencesHere(self):
 #         """
 #         Filter the list of occurrences.
 #         """
-#         occs = filter(lambda l : l.pk,self.Occurrences)
+#         logger.debug("[Developer]: check that the Occurrences are the same that in the has_occurrences method")
+#         #occs = filter(lambda l : l.pk,self.Occurrences)
+#         occs = filter(lambda l : l.pk, self.has_occurrences)
 #         return occs   
 
 

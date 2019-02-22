@@ -7,3 +7,7 @@
 [submodule "external_plugins/spystats"]
 	path = external_plugins/spystats
 	url = https://github.com/molgor/spystats.git
+
+[submodule "external_plugins/CARBayeSDM"]
+	path = external_plugins/CARBayeSDM
+	url = https://github.com/molgor/CARBayeSDM.git

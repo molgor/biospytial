@@ -37,14 +37,16 @@ def plotTree(treeneo, depth=6,label_depth=5):
     Plot the graph using a circo layout
     """
     ## Some functions for visualising
-    extractNames = lambda graph : {k:v for (k,v) in map(lambda n : (n,n.node.name),graph.nodes())}
+    extractNames = lambda graph : {k:v for (k,v) in map(lambda n : (n,n.name),graph.nodes())}
     extractColors = lambda graph :  map(lambda n : n.level,graph.nodes())
-    extractfreqs = lambda graph :  np.array(map(lambda n : n.n_presences_in_list,graph.nodes()))
+    #extractfreqs = lambda graph :  np.array(map(lambda n : n.n_presences_in_list,graph.nodes()))
     gt = treeneo.toNetworkx(depth_level=depth)
     root = treeneo.node
     pos = graphviz_layout(gt,prog='circo',root=root.node.name)
     g_labels = treeneo.toNetworkx(depth_level=4)
-    x = nt.draw(gt,pos,labels=extractNames(g_labels),node_color=extractColors(gt),node_size=extractfreqs(gt)*500)
+    #x = nt.draw(gt,pos,labels=extractNames(g_labels),node_color=extractColors(gt),node_size=extractfreqs(gt)*500)
+    x = nt.draw(gt,pos,labels=extractNames(g_labels),node_color=extractColors(gt))
+
     return x
 
 

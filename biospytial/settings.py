@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os,sys
+from numpy import nan as npnan
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 CONDA_PREFIX = '/home/juan/miniconda2/envs/biospytial'
@@ -307,6 +308,11 @@ LOGGING = {
             'propagate': False
             
         },
+        'biospytial.datapipelines':{
+             'handlers': ['console'],
+             'level' : 'DEBUG',         
+         },
+ 
 },
 }
 
@@ -383,7 +389,7 @@ TAXONOMY_PREFIX = 'tax'
 GBIF_DATATABLE = "gbif_occurrence_csv"
         # Local table name
         #db_table = "mexico_gbif_subset"
- 
+ECOREGIONS_DATATABLE = "terreco"
 # Mesh table settings. provisional. expected to have it's on config file
 BRAZ_SCALES = { 8 : 'mesh\".\"braz_grid8a',
           9 : 'mesh\".\"braz_grid16a',
@@ -443,6 +449,7 @@ MESH_TABLENAMESPACE = MEX_SCALES
 
 #MESH_TABLENAMESPACE = BRAZ_SCALES
 
+CELL_SRID = 4326
 
 GDAL_LIBRARY_PATH = CONDA_PREFIX+'/lib/libgdal.so'
 
@@ -455,9 +462,10 @@ OCCURRENCE_KEYS_4NEO = ['species_id','scientific_name','year','month','day','lat
 
 PATH_IMAGES = '/Users/juan/git_projects/biospytial/static/trees/'
 
-PATH_OUTPUT = '/outputs'
+PATH_OUTPUT = '/outputs/'
+PATH_RAWDATASOURCES = '/mnt/data1/maps/'
 
-RASTERNODATAVALUE = -9999
+RASTERNODATAVALUE = npnan
 
 NOTEBOOK_ARGUMENTS = [
     # exposes IP and port
@@ -465,6 +473,8 @@ NOTEBOOK_ARGUMENTS = [
     '--port=8888',
     # disables the browser
     '--no-browser',
+    '--allow-root',
+    '--config=ipython_config.py',
 ]
 
 
@@ -473,7 +483,7 @@ IPYTHON_ARGUMENTS = [
     '--ext', 'biospytial',
 ]
 
-NOTEBOOK_ARGUMENTS = [
-    '--config=ipython_config.py',
-]
+#NOTEBOOK_ARGUMENTS = [
+#    '--config=ipython_config.py',
+#]
 

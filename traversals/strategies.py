@@ -3,7 +3,7 @@
 """
 
 Strategies
-======
+==========
 ..
 This module implements different strategies for retrieving information in the shape of Graphs.
 
@@ -15,7 +15,12 @@ from mesh.models import initMesh
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
-
+from drivers.graph_models import Cell,Mex4km,graph
+import logging
+import numpy as np
+from itertools import imap, chain
+import networkx as nx
+from utilities import data_extraction as de
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2017, JEM"
 __license__ = "GPL"
@@ -25,37 +30,37 @@ __email__ ="molgor@gmail.com"
 __status__ = "Prototype"
 
 
-import logging
 
 logger = logging.getLogger('biospytial.traversals')
 
-import numpy as np
-from itertools import imap, chain
 
 ####
 ## Multifunc
 ## These are function for handling dataframes and creating subsets.
-def toGeoDataFrame(pandas_dataframe,xcoord_name,ycoord_name,srs = 'epsg:4326'):
-    """
-    Convert Pandas objcet to GeoDataFrame
-    Inputs:
-        pandas_dataframe : the pandas object to spatialise
-        xcoord_name : (String) the column name of the x coordinate.
-        ycoord_name : (String) the column name of the y coordinate. 
-        srs : (String) the source referencing system in EPSG code.
-                e.g. epsg:4326 .
-    """
-    data = pandas_dataframe
-    data['geometry'] = data.apply(lambda z : Point(z[xcoord_name], z[ycoord_name]), axis=1)
-    #data['geometry'] = data.apply(lambda z : Point(z.LON, z.LAT), axis=1)
-
-    new_data = gpd.GeoDataFrame(data)
-    new_data.crs = {'init':'epsg:4326'}
-    return new_data
-
-
-
-
+#def toGeoDataFrame(pandas_dataframe,xcoord_name='Longitude',ycoord_name='Latitude',srs = 'epsg:4326'):
+#    """
+#    Convert Pandas objcet to GeoDataFrame
+#    Inputs:
+#        pandas_dataframe : the pandas object to spatialise
+#        xcoord_name : (String) the column name of the x coordinate.
+#        ycoord_name : (String) the column name of the y coordinate. 
+#        srs : (String) the source referencing system in EPSG code.
+#                e.g. epsg:4326 .
+#    """
+#    data = pandas_dataframe
+#    #import ipdb; ipdb.set_trace()
+#    data[xcoord_name] = pd.to_numeric(data[xcoord_name])
+#    data[ycoord_name] = pd.to_numeric(data[ycoord_name])
+#    data['geometry'] = data.apply(lambda z : Point(z[xcoord_name], z[ycoord_name]), axis=1)
+#    #data['geometry'] = data.apply(lambda z : Point(z.LON, z.LAT), axis=1)
+#
+#    new_data = gpd.GeoDataFrame(data)
+#    new_data.crs = {'init':'epsg:4326'}
+#    return new_data
+#
+#
+# to allow retrocompatibility
+toGeoDataFrame = de.toGeoDataFrame
 ###############
 ## Cell-wise: strategies 
 ###############
@@ -75,10 +80,11 @@ def getEnvironmentAndRichnessFromListOfCells(list_of_cells,taxonomic_level_name,
     env = getEnvironmentalCovariatesFromListOfCells(list_of_cells, vars)
     rich = getRichnessPerListOfCells(list_of_cells, taxonomic_level_name)
     data = pd.concat([rich,env],axis =1)
-    data = toGeoDataFrame(data, 'Longitude', 'Latitude')
+    data = de.toGeoDataFrame(data, 'Longitude', 'Latitude')
     return data
 
-def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed']):
+def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','MaxTemperature',
+'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_coordinates=True):
     """
     Parameters :
         vars (list) name of the environmental layers. By default select all layers.
@@ -89,7 +95,12 @@ def getEnvironmentalCovariatesFromListOfCells(list_of_cells,vars=['Elevation','M
     
     getdata = lambda cell : cell.getEnvironmentalData(vars)
     rdata = map(getdata,list_of_cells)
-    return pd.DataFrame(rdata)
+    if not with_coordinates:
+        return pd.DataFrame(rdata)
+    else:
+        coords = getCentroidsFromListofCells(list_of_cells)
+        data = pd.DataFrame(rdata)
+        return pd.concat([data,coords],axis=1)
 
 def getRichnessPerListOfCells(list_of_cells,taxonomic_level_name,with_centroids=True):
     """
@@ -126,13 +137,70 @@ def getCentroidsFromListofCells(list_of_cells,asDataFrame=True):
     else:
         return itercentroid
 
+def CoordinatesDataFrameToPointsGeometry(coordinate_df,srid=4326):
+    """
+    Returns the geometric interpretation (GEOS) of the points in coordinate_df 
+    """
+    toPoint = lambda array :'POINT(%s %s)'%(array[0],array[1])
+    points = map(lambda p :GEOSGeometry(p,srid=srid), map(toPoint,coordinate_df.values))
+    return points
+
+
+
+def idsToCells(list_of_ids,cell_type=Mex4km):
+    """
+    Given a list of indices (primary values), returns the corresponding object (OGM).
+    Parameters :
+        list_of_is : (List) a list with integers defining the pk values of the objects to obtain.
+        cell_type : The class name or object to query from (default Mex4km) 
+    """
+    logger.info("Compiling Query and asking the Graph Database")
+    look4 = str(list_of_ids)
+    selection_of_cells = cell_type.select(graph).where("_.id IN  %s "%look4)
+    return selection_of_cells
+
+
+def LatticeToNetworkx(list_of_cells,intrinsic_graph=True,use_only_ids=True):
+    """
+    Returns a Networkx Graph Object given by the cells and it's neighbours
+    Parameters : 
+        list_of_cells (list) : List of Cell objects 
+        intrinsic_graph (Boolean) : If true returns a graph with exactly the nodes
+        given in the list of cells (i.e. excluding neighbouring nodes that are not in the
+        list_of_cells)
+        use_only_ids (Boolean) : If true each node will be an integer (corresponding
+        id) otherwise each node is a Cell object.
+        it is usefull if the graph is going to be pickled.
+    """
+    def insert_nodes((center,neighbours)):
+        # if the neighbour is empty insert the node
+        if neighbours:
+            map(lambda n : G.add_edge(center,n),neighbours)
+        else:
+            G.add_node(center)
+
+    neighbours = map(lambda cell : cell.getNeighbours(),list_of_cells)
+
+    G = nx.Graph()
+    if use_only_ids:
+        list_of_cells = map(lambda c : c.id, list_of_cells)
+        neighbours = map(lambda nl : map(lambda n : n.id,nl),neighbours)
+    
+    node_edges = zip(list_of_cells,neighbours)
+    map(insert_nodes,node_edges)
+    # Excluding neighbouring nodes
+    if intrinsic_graph:
+        cells_s = set(list_of_cells)
+        nodes_s = set(G.nodes())
+        extra = filter(lambda n : n not in cells_s,nodes_s)
+        map(lambda x : G.remove_node(x),extra)
+    return G
+
+
 
 ###############
 ## Treewise Strategies
 ###############
-
-
-
 
 sumTrees = lambda tree_list : reduce(lambda a,b : a + b , tree_list)
 
@@ -207,4 +275,4 @@ def getCentroidsFromListofTrees(list_of_trees):
 
 
     
-    
+

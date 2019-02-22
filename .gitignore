@@ -31,4 +31,8 @@ thesis/template
 
 *.csv
 
-/test100_mtmp.tif
+*.tif
+ipython-notebooks/demos/SandBox/
+*.ipynb_checkpoints/
+*.RData
+*.Rhistory

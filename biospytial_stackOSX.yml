@@ -45,7 +45,8 @@ services:
   environment:
     #DISPLAY: '${DISPLAY}'
     DISPLAY: 'unix:0'
-  image: molgor/biospytial
+    #image: molgor/biospytial
+  image: molgor/biospytial:dev-updatedlibs-latest
   # For interactive mode
   stdin_open: true
   tty: true

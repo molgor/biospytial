@@ -11,3 +11,6 @@
 [submodule "external_plugins/CARBayeSDM"]
 	path = external_plugins/CARBayeSDM
 	url = https://github.com/molgor/CARBayeSDM.git
+[submodule "external_plugins/biospytial_rwrapper"]
+	path = external_plugins/biospytial_rwrapper
+	url = https://github.com/molgor/biospytial_rwrapper.git

@@ -37,7 +37,6 @@ from django.http import HttpResponse
 from gbif.models import Occurrence
 from mesh.models import initMesh
 from gbif.taxonomy import GriddedTaxonomy
-from ete2 import TreeStyle
 import logging
 logger = logging.getLogger('biospytial.gbif.views')
 
@@ -96,7 +95,7 @@ def showTreeInGrid(request):
         return None
     
     import os.path
-    
+    from ete2 import TreeStyle
     head_path = settings.PATH_IMAGES
     filename = "%s-%s-%s.png" %(grid_level,gid,taxonomic_level)
     file_ = head_path+filename
@@ -168,6 +167,8 @@ def showAllLevelsInTreeInGrid(request):
         return None
     
     import os.path
+    from ete2 import TreeStyle
+     
     tax_levels = ['sp','gns','fam','cls','ord','phy','kng']
     tax_keys = {'sp':'1.Species','gns':'2. Genera','fam':'3. Families','ord':'4. Orders','cls':'5. Classes','phy':'6. Phyla','kng':'7. Kingdoms'}
     rich_keys = { 'oc':'occurrences','sp' :'species','gns':'genera','fam':'families','cls':'classes','ord':'orders','phy':'phyla','kng':'kingdoms'}

@@ -14,6 +14,16 @@ It uses the GBIF database, the biggest repository of species records in the worl
 The suite is currently installed in a Docker container. (molgor/biospytial)
 It uses a ne4j and a postgis backend that can be found in the molgor reprositoryin the Docker Hub.
 
+## Accessing the system
+This new version includes an openssh serv er with X support. 
+To access this service,do:
+
+`ssh -p 2323 -X biospytial@[servername] `
+
+Password: biospytial.  
+
+happy coding :) 
+
 ## Running the container using docker 
 > docker stack deploy -c biospytial_stack.yml biospytial up
 

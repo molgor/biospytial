@@ -21,6 +21,7 @@ services:
   ports:
    - '8888:8888'
    - '8000:8000'
+   - '2323:2323'
   volumes:
    - '/Users/juan/Biospytial/gbif_data/RawDataCSV:/RawDataCSV'
    - '/Users/juan/Biospytial/outputs:/outputs'

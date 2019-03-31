@@ -45,9 +45,10 @@ services:
    - redis
   environment:
     #DISPLAY: '${DISPLAY}'
-    DISPLAY: 'unix:0'
+   - DISPLAY="host.docker.internal:0"
     #image: molgor/biospytial
-  image: molgor/biospytial:dev-updatedlibs-latest
+  image: molgor/biospytial:latest-beta
+  #image: molgor/biospytial:dev-updatedlibs-latest
   # For interactive mode
   stdin_open: true
   tty: true
@@ -60,7 +61,7 @@ services:
   ports:
    - 5432:5432
   deploy:
-   replicas: 2
+   replicas: 1 
    update_config:
     parallelism: 1
     delay: 10s
@@ -78,7 +79,7 @@ services:
    - 7687:7687
    - 1337:1337
   deploy:
-   replicas: 2
+   replicas: 1
    update_config:
     parallelism: 1
     delay: 10s

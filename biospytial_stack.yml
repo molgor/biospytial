@@ -57,7 +57,7 @@ services:
     DISPLAY: 'unix:0'
   shm_size: 1024M
   #  image: molgor/biospytial
-  image: molgor/biospytial:latest
+  image: molgor/biospytial:latest-beta
   # For interactive mode
   stdin_open: true
   tty: true

@@ -53,8 +53,9 @@ services:
    - neo4j
    - redis
   environment:
-    #DISPLAY: '${DISPLAY}'
-    DISPLAY: 'unix:0'
+   - DISPLAY="host.docker.internal:0"
+    #DISPLAY: 'unix:0'
+   - LANG="C.UTF-8"
   shm_size: 1024M
   #  image: molgor/biospytial
   image: molgor/biospytial:latest-beta

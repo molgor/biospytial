@@ -47,6 +47,7 @@ services:
     #DISPLAY: '${DISPLAY}'
    - DISPLAY="host.docker.internal:0"
     #image: molgor/biospytial
+   - LANG="C.UTF-8"
   image: molgor/biospytial:latest-beta
   #image: molgor/biospytial:dev-updatedlibs-latest
   # For interactive mode

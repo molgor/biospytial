@@ -11,6 +11,7 @@
 from raster_api.models import raster_models
 from raster_api.models import raster_models_dic
 from raster_api.tools import RasterData
+import biospytial.settings as setting
 import pandas
 import numpy
 
@@ -152,7 +153,8 @@ class RasterPointNodesList(object):
         pd['std_yr_val'] = std
         pd['date'] = dates
         pd['date'] = pandas.to_datetime(pd['date'],format='%Y-%m-%dT%H:%M:%S')
-        pd = pd.where(pd > -9999) # the no data value
+        #import ipdb; ipdb.set_trace()
+        pd.replace(setting.NULL_DATA_INTEGER,setting.RASTERNODATAVALUE,inplace=True)
         return pd
  
 

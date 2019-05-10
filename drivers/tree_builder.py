@@ -408,36 +408,12 @@ class LocalTree(object):
 
     def __and__(self,otherlocaltree):
         """
-        Operator Overloading for calculating difference of Trees!
-        In the search of the Monoid!
-        New version!
+        Intersection operation.
+        The intersection will act at the leaf level (occurrences).
         """
-        
-        # First, perform set operation on children.
-        this = set(self.children)
-        other = set(otherlocaltree.children)
-        new = this & other
-        # Now collapse occurrences (PROTOTYPE)
-        # First we need to take select it's proper structure, looking for the distinct occurrences even if they have same node.
-        idx_this = []
-        idx_other = []
-        for child in new:
-            try:
-                i = self.children.index(child)
-                idx_this.append(i)
-            except ValueError:
-                continue 
-            try:
-                i = otherlocaltree.children.index(child)
-                idx_other.append(i)
-            except ValueError:
-                continue
-                
-        occurrences_this = map(lambda i : self.children[i].occurrences,idx_this)
-        occurrences_other = map(lambda i : otherlocaltree.children[i].occurrences,idx_other)
-        new = occurrences_other + occurrences_this
-        # reduce into a single cell
-        new = reduce(lambda a,b : a+b , new)
+        thisocs = set(self.occurrences)
+        otherocs = set(otherlocaltree.occurrences)
+        new = thisocs & otherocs
         return TreeNeo(list_occurrences=new)     
 
 

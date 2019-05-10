@@ -737,6 +737,12 @@ class Cell(GraphObject):
         return polygon
 
     @property
+    def polygon_shapely(self):
+        from shapely import wkt
+        polyg = wkt.loads(self.polygon.wkt)
+        return polyg
+
+    @property
     def upperCell(self):
         return iter(self.contained_in)
         

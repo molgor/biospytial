@@ -4,7 +4,7 @@
 Raster Data Tool
 ================
 ..  
-Tools for converting, analysing and migrate to Neo4J
+Tools for converting, analysing and migration to the graph databe
 
 
 """
@@ -16,7 +16,7 @@ __license__ = "GPL"
 __version__ = "3.2.1"
 __mantainer__ = "Juan"
 __email__ ="molgor@gmail.com"
-__status__ = "Prototype"
+__status__ = "Semi-operational"
 
 
 
@@ -36,7 +36,8 @@ from raster_api.models import intersectWith
 import pandas as pd
 from scipy.special import expit
 from django.contrib.gis.geos import GEOSGeometry
-
+from xarray import DataArray
+import calendar
 # register the new lookup
 RasterField.register_lookup(intersectWith)
 
@@ -91,6 +92,20 @@ class GDALRasterExtended(GDALRaster):
         coords = map(lambda v : A.dot(v),ijs)
         return coords
         
+    def getLinearCoordinates(self):
+        """
+        Returns location for axes. 
+        As opposed to getCentroidCoordinates this function only returns the centroid
+        of a single axis. It also uses affine transformation
+        """
+        A = numpy.array(self.geotransform).reshape(2,3)
+
+        h = range(self.height)
+        w = range(self.width)
+        x = map(lambda j : A.dot(numpy.array((1,j,0)))[0],w)
+        y = map(lambda i : A.dot(numpy.array((1,0,i)))[1],h)
+        coords = {'x':x, 'y':y}      
+        return coords
         
 
 def aggregateDictToRaster(aggregate_dic):
@@ -261,6 +276,26 @@ class Raster(object):
         
         return numpy.ma.array(bands)
 
+    def toxArray(self):
+        """
+        Returns an xarray object that bundles geospatial and multiple band data.
+        Useful for ploting and analysis.
+        """
+
+        coords = self.rasterdata.getLinearCoordinates()
+        nbands = len(self.rasterdata.bands) 
+        if (nbands != 12) and (nbands != 1):
+            raise NotImplementedError('Currently only supporting uniband and monthly multibands')
+
+        elif nbands == 12:
+            months = map(lambda i : calendar.month_name[i],range(1,13)) 
+            dims = ['Month','Latitude','Longitude']
+        else:
+            months = [1]
+            dims = [self.name,'Latitude','Longitude']
+        data = self.toNumpyArray()
+        xarr = DataArray(data,coords=[months,coords['y'],coords['x']],dims=dims)
+        return xarr
 
     def getCoordinates(self):
         """
@@ -371,7 +406,7 @@ class RasterData(Raster):
                     
         Returns : A GDALRaster
         """
-        logger.info("For calculating these products it is necessary to provide a valid \
+        logger.debug("For calculating these products it is necessary to provide a valid \
         SRID (projection). This is due to the fact that the map values and \
         the coordinates need to be in the same units.")
         options = {2 : 'Slope', 4:'Hillshade', 1:'Elevation', 3:'Aspect'}

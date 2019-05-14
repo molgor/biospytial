@@ -46,7 +46,7 @@ class RasterCollection(object):
         coords = self.tree.getPointCoordinates()
         return coords
     
-    def getAssociatedRasterAreaData(self,string_selection,aggregated=True):
+    def getAssociatedRasterAreaData(self,string_selection,aggregated=True,refresh_cache=False):
         """
         Returns the associated RasterData type for each cell where the occurrence happened.
         Options:
@@ -58,11 +58,11 @@ class RasterCollection(object):
         
         raster_model = raster_models_dic[string_selection]
         if aggregated:
-            polygons = self.tree.mergeCells()
+            polygons = self.tree.mergeCells(refresh_cache=refresh_cache)
             rasters =  RasterData(raster_model,polygons)
             rasters.getRaster()
         else:
-            cells = self.tree.getExactCells()
+            cells = self.tree.getExactCells(refresh_cache=refresh_cache)
             polygons = map(lambda c : c.polygon,cells)
             rasters = map(lambda polygon : RasterData(raster_model,polygon),polygons)             
             map(lambda raster : raster.getRaster() , rasters)
@@ -71,8 +71,7 @@ class RasterCollection(object):
         setattr(self,prefix + string_selection, rasters)
         return rasters        
 
-
-    
+ 
 
     def getEnvironmentalVariablesPoints(self,vars=['MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_coordinates=True):
         """

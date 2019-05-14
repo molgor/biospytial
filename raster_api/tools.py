@@ -276,25 +276,27 @@ class Raster(object):
         
         return numpy.ma.array(bands)
 
-    def toxArray(self):
+    def to_xarray(self):
         """
         Returns an xarray object that bundles geospatial and multiple band data.
         Useful for ploting and analysis.
         """
 
         coords = self.rasterdata.getLinearCoordinates()
-        nbands = len(self.rasterdata.bands) 
+        nbands = len(self.rasterdata.bands)
+        data = self.toNumpyArray()
         if (nbands != 12) and (nbands != 1):
             raise NotImplementedError('Currently only supporting uniband and monthly multibands')
 
         elif nbands == 12:
-            months = map(lambda i : calendar.month_name[i],range(1,13)) 
-            dims = ['Month','Latitude','Longitude']
+            months = map(lambda i : calendar.month_name[i],range(1,13))
+            dims = ['Months','Latitude','Longitude']
+            coords_dic = {'Months':months,'Latitude':coords['y'],'Longitude':coords['x']}
         else:
-            months = [1]
-            dims = [self.name,'Latitude','Longitude']
-        data = self.toNumpyArray()
-        xarr = DataArray(data,coords=[months,coords['y'],coords['x']],dims=dims)
+            dims = ['Latitude','Longitude']
+            coords_dic = {'Longitude':coords['x'], 'Latitude':coords['y']}
+            data = data[0,:,:]
+        xarr = DataArray(data,coords=coords_dic,dims=dims,name=self.name)
         return xarr
 
     def getCoordinates(self):

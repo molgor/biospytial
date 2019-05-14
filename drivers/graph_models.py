@@ -746,7 +746,7 @@ class Cell(GraphObject):
     def upperCell(self):
         return iter(self.contained_in)
         
-    def getNeighbours(self,with_center=False):
+    def _getNeighbours(self,with_center=False):
         """
         Returns the associated neighbours.
         parameters : 
@@ -756,7 +756,23 @@ class Cell(GraphObject):
         if with_center:
             rn.append(self)
         return rn
-       
+
+
+    def getNeighbours(self,order = 1,with_center=False):
+        """
+        Return the associated neighbours with k order.
+        """
+        neighbours = self._getNeighbours(with_center=with_center)
+        cache = neighbours
+        for i in range(order -1):
+            neighbours = map(lambda cell : cell._getNeighbours(with_center=with_center),neighbours)
+            neighbours = reduce(lambda a,b : a+b ,neighbours)
+            neighbours = list(set(neighbours))
+            
+        return neighbours
+
+
+
     def occurrencesHere(self):
         """
         Filter the list of occurrences.

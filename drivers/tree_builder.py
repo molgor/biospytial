@@ -235,22 +235,29 @@ class LocalTree(object):
         points = map(lambda o : (o.longitude,o.latitude),self.occurrences)
         return points
 
-    def getExactCells(self):
+    def getExactCells(self,refresh_cache=False):
         """
         Returns the exact regions (cells) where the occurrences (leaf nodes)
         happened.
-        
+        Parameters :
+            refresh_cache : Boolean (if true it will calculate all the associated
+            cells, can take time because it will look them up in the database.
         """
-        if self.occurrences:
-            cells = map(lambda o : list(o.is_in),self.occurrences)
-            cells = reduce(lambda a,b : a+b , cells)
-            # take away repetition
-            cells =  list(set(cells))
-            self.involvedCells = list(set(cells + self.involvedCells))
+        if self.involvedCells and not refresh_cache:
+            logger.info('Using cached cells already calculated')
             return self.involvedCells
+
         else:
-            return self.involvedCells
-        
+            if self.occurrences:
+                cells = map(lambda o : list(o.is_in),self.occurrences)
+                cells = reduce(lambda a,b : a+b , cells)
+                # take away repetition
+                cells =  list(set(cells))
+                self.involvedCells = list(set(cells + self.involvedCells))
+                return self.involvedCells
+            else:
+                return self.involvedCells
+            
 
     def getNeighboringTrees(self,filter_central_cell=True,reduce_trees=False):
         """
@@ -323,11 +330,11 @@ class LocalTree(object):
         
 
 
-    def mergeCells(self):
+    def mergeCells(self,refresh_cache=False):
         """
         Returns a single polygon of all the interested cells.
         """
-        cells = self.getExactCells()
+        cells = self.getExactCells(refresh_cache=refresh_cache)
         polygons = map(lambda c : c.polygon, cells)
         polygon = reduce(lambda p1,p2 : p1 + p2, polygons )
         return polygon
@@ -577,7 +584,7 @@ class LocalTree(object):
                 ## Here experiment for getting relative frequencies
                 child.n_presences_in_list = len(subtrees_with_node) / float(len(list_of_trees))
                 n = child.countNodesFrequenciesOnList(list_of_trees) 
-                logger.info("Going deep %s"%n)
+                logger.debug("Going deep %s"%n)
             except:
                 subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
                 child.n_presences_in_list = len(subtrees_with_node)/ float(len(list_of_trees))

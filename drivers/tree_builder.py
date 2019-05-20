@@ -114,6 +114,7 @@ class LocalTree(object):
                        'level' : node.level,
                        'richness' : node.richness,
                        'freq' : node.n_presences_in_list,
+                       'name' : node.name.decode('utf8'),
                        }            
             return nodeatr
         
@@ -123,12 +124,17 @@ class LocalTree(object):
             node = self
         level_i += 1
         nodeattr = _getattrdic(node)
-        graph.add_node(node.node,attr_dict=nodeattr)
+        #graph.add_node(node.node,attr_dict=nodeattr)
+        noden = node.node.name
+        graph.add_node(noden,name=nodeattr['name'],freq=nodeattr['freq'],richness=nodeattr['richness'],level=nodeattr['level'])
         for child in self.children:
             childattr = _getattrdic(child)
+            childnoden = child.node.name
             #graph.add_edge(node,child,weight=node.richness)
-            graph.add_node(child.node,attr_dict=childattr)
-            graph.add_edge(node.node,child.node,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
+            #graph.add_node(child.node,attr_dict=childattr)
+            graph.add_node(childnoden,name=childattr['name'],freq=childattr['freq'],richness=childattr['richness'],level=childattr['level'])
+            graph.add_edge(noden,childnoden,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
+            #graph.add_edge(node.node,child.node,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
             if level_i < depth_level:
                 try:
                     graph = child.getGraph(graph,level_i=level_i,depth_level=depth_level)
@@ -244,7 +250,7 @@ class LocalTree(object):
             cells, can take time because it will look them up in the database.
         """
         if self.involvedCells and not refresh_cache:
-            logger.info('Using cached cells already calculated')
+            logger.debug('Using cached cells already calculated')
             return self.involvedCells
 
         else:

@@ -27,7 +27,7 @@ from biospytial import settings
 from raster_api.tools import RasterData
 from raster_api.models import raster_models_dic,raster_models
 import networkx as nt
-
+from shapely import wkt
 neoparams = settings.NEO4J_DATABASES['default']
 uri = "http://%(HOST)s:%(PORT)s%(ENDPOINT)s" % neoparams
 
@@ -738,7 +738,6 @@ class Cell(GraphObject):
 
     @property
     def polygon_shapely(self):
-        from shapely import wkt
         polyg = wkt.loads(self.polygon.wkt)
         return polyg
 

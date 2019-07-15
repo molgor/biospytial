@@ -9,7 +9,7 @@
  
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 import pandas
 import copy
 from itertools import groupby
@@ -91,8 +91,9 @@ class LocalTree(object):
     #self.graph = self.setGraph()
         # Experiment 1
         # this is a very good method for 
-        map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
+        #map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
         
+        map(lambda l : setattr(self,'to_'+l.name.replace(" ","_").replace(",",""),l), children)
         #self.setOccurrences()
 
     @property
@@ -167,10 +168,10 @@ class LocalTree(object):
 
     def __repr__(self):
         try:
-            cad = "<LocalTree | %s: %s - n.count : %s- | AF: %s >"%(self.levelname,str(self.name.encode('utf-8')),self.richness,self.n_presences_in_list)
+            cad = "<LocalTree | %s: %s - n.count : %s- | AF: %s>"%(self.levelname,self.name.encode('utf-8').decode('utf-8'),self.richness,self.n_presences_in_list)
         except:
             cad = "<LocalTree | %s: - n.count : %s- >"%('No record available',self.richness)
-        return cad.decode('utf-8')
+        return cad
 
     def setOccurrences(self):
         """
@@ -608,15 +609,10 @@ class TreeNeo(LocalTree):
 
     def __init__(self,list_occurrences,cell_objects=[]):
         """
-        THIS IS A PROTOTYPE.
         For now it need a list of node occurrences. Use the function extractOccurrencesFromTaxonomies
         AOI should be a polygon data structure.
         
         """
-        # First build list of nodes
-        # i.e. take all the occurrences, extract the node then put everything in a list
-        #self.occurrences = reduce( lambda one,two : one + two, [ map(lambda occurrence : occurrence.getNode(),occurrences )for occurrences in [ taxonomy.occurrences for taxonomy in list_taxonomies]])
-        #self.occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_taxonomies ]])
         if list_occurrences:
             self.occurrences = list_occurrences
             
@@ -633,8 +629,6 @@ class TreeNeo(LocalTree):
             self.associatedData = RasterCollection(self)
             self.levels = [self]
         
-            #return None
-            #super(TreeNeo,self).__init__(root,children)
             
     def __repr__(self):
         try:
@@ -665,7 +659,6 @@ class TreeNeo(LocalTree):
         self.kingdoms = aggregator(self.phyla)
         root = aggregator(self.kingdoms).pop()
         # Reload Occurrences
-        #super(TreeNeo,self).__init__(root,root.children)
         super(TreeNeo,self).__init__(root,root.children)
         # Reload Occurrences
         self.setOccurrences()
@@ -704,7 +697,6 @@ class TreeNeo(LocalTree):
         new_occs = list(set(new_occs))
         occs = copy.copy(new_occs)
         logger.info("Merging Trees")
-        ## This is experimental (if this still here is because it worked)
         ## Get this cell
         cells = self.getExactCells()
         other_cells = tree_neo.getExactCells()
@@ -728,8 +720,32 @@ class TreeNeo(LocalTree):
             return None
 
 
-
-
+    def describe(self):
+        """
+        Returns the counts of all taxa associated with this tree.
+        """
+        nsp = len(self.species)
+        ngn = len(self.genera)
+        nfm = len(self.families)
+        nord = len(self.orders)
+        ncls = len(self.classes)
+        nphy = len(self.phyla)
+        nkns = len(self.kingdoms)
+        c = """
+        --------------------\n
+        Number of Taxa
+        --------------------\n
+        - species:  %s      \n
+        - genera:   %s      \n
+        - families: %s      \n
+        - orders:   %s      \n
+        - classes:  %s      \n
+        - phyla:    %s      \n
+        - kingdoms: %s      \n
+        --------------------\n
+        """%(nsp,ngn,nfm,nord,ncls,nphy,nkns)
+        return(c)
+        
 class Neighbourhood(object):
     """
     Class that defines the neighbourhood object (Similar to gridded taxonomy)
@@ -798,7 +814,6 @@ class Neighbourhood(object):
 
             
         occurrences = map(lambda oc : oc.occurrencesHere(),cells)
-        ## prototyping
         duples = zip(occurrences,cells)
         trees = []
         for list_, cell in duples:

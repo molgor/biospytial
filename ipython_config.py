@@ -4,7 +4,8 @@
 import sys
 
 sys.path.append('/apps')
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 c = get_config()
 

@@ -1,0 +1,128 @@
+version: '3'
+
+#networks:
+#  default:
+#   external:
+#    name: 'biospytial_network_local'
+
+#docker network create \
+#  --driver=overlay \
+#  --subnet=10.0.9.0/24 \
+#  --attachable=true \
+#  biospytial_network_2
+
+####   #- '${HOME}/.Xauthority:/root/.Xauthority'
+
+      
+      
+services:
+
+ ## Biospytial client
+ client:
+  ports:
+   - '8888:8888'
+   - '8000:8000'
+   - '2323:2323'
+  volumes:
+   - '/mnt/data1/RawDataCSV:/RawDataCSV'
+   - '/mnt/data1/outputs:/outputs'
+   - '/mnt/data1/git-projects/biospytial:/apps'
+   - '/mnt/data1:/mnt/data1'
+   - '/tmp/.X11-unix:/tmp/.X11-unix'
+   - '/tmp:/tmp'
+   - '${HOME}/.Xauthority:/root/.Xauthority'
+
+  deploy:
+   placement:
+    constraints:
+     - node.role == manager
+#   replicas: 2   
+#   mode: global
+   resources:
+    limits:
+     memory: 25g
+   #replicas: 2
+   update_config:
+    parallelism: 1
+    delay: 10s
+  links:
+   - postgis
+   - neo4j
+  depends_on:
+   - postgis
+   - neo4j
+   - redis
+  environment:
+   - DISPLAY="host.docker.internal:0"
+    #DISPLAY: 'unix:0'
+   - LANG="C.UTF-8"
+  shm_size: 1024M
+  #  image: molgor/biospytial
+  image: molgor/biospytial:latest-beta
+  # For interactive mode
+  stdin_open: true
+  tty: true
+  entrypoint: /root/entrypoint.sh
+#  entrypoint: /bin/bash
+  
+
+### Postgis container
+ postgis:
+  ports:
+   - 5432:5432
+  deploy:
+   #replicas: 2
+   placement:
+    constraints:
+     - node.role == manager
+   update_config:
+    parallelism: 1
+    delay: 10s
+  volumes:
+   - '/home/juan/DataVolumesBank/postgis:/DataVolumes'
+   - '/mnt/data1:/mnt/data1'
+  image: molgor/postgis_biospytial
+  entrypoint: /bin/sh -c "/root/startPostgres"
+  
+### The Neo4j thing
+ neo4j:
+  environment:
+   NEO4J_AUTH: none
+  ports:
+   - 7474:7474
+   - 7687:7687
+   - 1337:1337
+  deploy:
+   #replicas: 2   
+   placement:
+    constraints:
+     - node.role == manager
+   update_config:
+    parallelism: 1
+    delay: 10s
+  volumes:
+   - '/opt/DataVolumesFast/neo4j/data:/data'
+   - '/opt/DataVolumesFast/neo4j/logs:/logs'
+  image: molgor/neo4j_biospytial:3.1.3   
+  
+  
+### The Redis message and key:value store
+ redis:
+  ports:
+   - 6379:6379
+  deploy:
+   placement:
+    constraints:
+     - node.role == manager
+  volumes:
+   - '/home/juan/DataVolumesBank/redis:/data'
+  image: redis
+  command: [
+      "bash", "-c",
+      '
+       docker-entrypoint.sh
+       --requirepass "biospytial."
+      '
+    ] 
+
+  

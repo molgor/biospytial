@@ -9,7 +9,7 @@
  
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 import pandas
 import copy
 from itertools import groupby
@@ -91,8 +91,9 @@ class LocalTree(object):
     #self.graph = self.setGraph()
         # Experiment 1
         # this is a very good method for 
-        map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
+        #map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
         
+        map(lambda l : setattr(self,'to_'+l.name.replace(" ","_").replace(",",""),l), children)
         #self.setOccurrences()
 
     @property
@@ -114,6 +115,7 @@ class LocalTree(object):
                        'level' : node.level,
                        'richness' : node.richness,
                        'freq' : node.n_presences_in_list,
+                       'name' : node.name.decode('utf8'),
                        }            
             return nodeatr
         
@@ -123,12 +125,17 @@ class LocalTree(object):
             node = self
         level_i += 1
         nodeattr = _getattrdic(node)
-        graph.add_node(node.node,attr_dict=nodeattr)
+        #graph.add_node(node.node,attr_dict=nodeattr)
+        noden = node.node.name
+        graph.add_node(noden,name=nodeattr['name'],freq=nodeattr['freq'],richness=nodeattr['richness'],level=nodeattr['level'])
         for child in self.children:
             childattr = _getattrdic(child)
+            childnoden = child.node.name
             #graph.add_edge(node,child,weight=node.richness)
-            graph.add_node(child.node,attr_dict=childattr)
-            graph.add_edge(node.node,child.node,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
+            #graph.add_node(child.node,attr_dict=childattr)
+            graph.add_node(childnoden,name=childattr['name'],freq=childattr['freq'],richness=childattr['richness'],level=childattr['level'])
+            graph.add_edge(noden,childnoden,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
+            #graph.add_edge(node.node,child.node,attr_dict={'richness' : node.richness,'freq':node.n_presences_in_list,'level':node.level})
             if level_i < depth_level:
                 try:
                     graph = child.getGraph(graph,level_i=level_i,depth_level=depth_level)
@@ -161,10 +168,10 @@ class LocalTree(object):
 
     def __repr__(self):
         try:
-            cad = "<LocalTree | %s: %s - n.count : %s- | AF: %s >"%(self.levelname,str(self.name.encode('utf-8')),self.richness,self.n_presences_in_list)
+            cad = "<LocalTree | %s: %s - n.count : %s- | AF: %s>"%(self.levelname,self.name.encode('utf-8').decode('utf-8'),self.richness,self.n_presences_in_list)
         except:
             cad = "<LocalTree | %s: - n.count : %s- >"%('No record available',self.richness)
-        return cad.decode('utf-8')
+        return cad
 
     def setOccurrences(self):
         """
@@ -235,22 +242,29 @@ class LocalTree(object):
         points = map(lambda o : (o.longitude,o.latitude),self.occurrences)
         return points
 
-    def getExactCells(self):
+    def getExactCells(self,refresh_cache=False):
         """
         Returns the exact regions (cells) where the occurrences (leaf nodes)
         happened.
-        
+        Parameters :
+            refresh_cache : Boolean (if true it will calculate all the associated
+            cells, can take time because it will look them up in the database.
         """
-        if self.occurrences:
-            cells = map(lambda o : list(o.is_in),self.occurrences)
-            cells = reduce(lambda a,b : a+b , cells)
-            # take away repetition
-            cells =  list(set(cells))
-            self.involvedCells = list(set(cells + self.involvedCells))
+        if self.involvedCells and not refresh_cache:
+            logger.debug('Using cached cells already calculated')
             return self.involvedCells
+
         else:
-            return self.involvedCells
-        
+            if self.occurrences:
+                cells = map(lambda o : list(o.is_in),self.occurrences)
+                cells = reduce(lambda a,b : a+b , cells)
+                # take away repetition
+                cells =  list(set(cells))
+                self.involvedCells = list(set(cells + self.involvedCells))
+                return self.involvedCells
+            else:
+                return self.involvedCells
+            
 
     def getNeighboringTrees(self,filter_central_cell=True,reduce_trees=False):
         """
@@ -323,11 +337,11 @@ class LocalTree(object):
         
 
 
-    def mergeCells(self):
+    def mergeCells(self,refresh_cache=False):
         """
         Returns a single polygon of all the interested cells.
         """
-        cells = self.getExactCells()
+        cells = self.getExactCells(refresh_cache=refresh_cache)
         polygons = map(lambda c : c.polygon, cells)
         polygon = reduce(lambda p1,p2 : p1 + p2, polygons )
         return polygon
@@ -408,36 +422,12 @@ class LocalTree(object):
 
     def __and__(self,otherlocaltree):
         """
-        Operator Overloading for calculating difference of Trees!
-        In the search of the Monoid!
-        New version!
+        Intersection operation.
+        The intersection will act at the leaf level (occurrences).
         """
-        
-        # First, perform set operation on children.
-        this = set(self.children)
-        other = set(otherlocaltree.children)
-        new = this & other
-        # Now collapse occurrences (PROTOTYPE)
-        # First we need to take select it's proper structure, looking for the distinct occurrences even if they have same node.
-        idx_this = []
-        idx_other = []
-        for child in new:
-            try:
-                i = self.children.index(child)
-                idx_this.append(i)
-            except ValueError:
-                continue 
-            try:
-                i = otherlocaltree.children.index(child)
-                idx_other.append(i)
-            except ValueError:
-                continue
-                
-        occurrences_this = map(lambda i : self.children[i].occurrences,idx_this)
-        occurrences_other = map(lambda i : otherlocaltree.children[i].occurrences,idx_other)
-        new = occurrences_other + occurrences_this
-        # reduce into a single cell
-        new = reduce(lambda a,b : a+b , new)
+        thisocs = set(self.occurrences)
+        otherocs = set(otherlocaltree.occurrences)
+        new = thisocs & otherocs
         return TreeNeo(list_occurrences=new)     
 
 
@@ -601,7 +591,7 @@ class LocalTree(object):
                 ## Here experiment for getting relative frequencies
                 child.n_presences_in_list = len(subtrees_with_node) / float(len(list_of_trees))
                 n = child.countNodesFrequenciesOnList(list_of_trees) 
-                logger.info("Going deep %s"%n)
+                logger.debug("Going deep %s"%n)
             except:
                 subtrees_with_node = filter(lambda tree : hasNode(child)(tree),list_of_trees) 
                 child.n_presences_in_list = len(subtrees_with_node)/ float(len(list_of_trees))
@@ -619,15 +609,10 @@ class TreeNeo(LocalTree):
 
     def __init__(self,list_occurrences,cell_objects=[]):
         """
-        THIS IS A PROTOTYPE.
         For now it need a list of node occurrences. Use the function extractOccurrencesFromTaxonomies
         AOI should be a polygon data structure.
         
         """
-        # First build list of nodes
-        # i.e. take all the occurrences, extract the node then put everything in a list
-        #self.occurrences = reduce( lambda one,two : one + two, [ map(lambda occurrence : occurrence.getNode(),occurrences )for occurrences in [ taxonomy.occurrences for taxonomy in list_taxonomies]])
-        #self.occurrences =  reduce( lambda one,two : one + two ,[ list(occurrence) for occurrence in [ taxonomy.occurrences for taxonomy in list_taxonomies ]])
         if list_occurrences:
             self.occurrences = list_occurrences
             
@@ -644,8 +629,6 @@ class TreeNeo(LocalTree):
             self.associatedData = RasterCollection(self)
             self.levels = [self]
         
-            #return None
-            #super(TreeNeo,self).__init__(root,children)
             
     def __repr__(self):
         try:
@@ -676,7 +659,6 @@ class TreeNeo(LocalTree):
         self.kingdoms = aggregator(self.phyla)
         root = aggregator(self.kingdoms).pop()
         # Reload Occurrences
-        #super(TreeNeo,self).__init__(root,root.children)
         super(TreeNeo,self).__init__(root,root.children)
         # Reload Occurrences
         self.setOccurrences()
@@ -715,7 +697,6 @@ class TreeNeo(LocalTree):
         new_occs = list(set(new_occs))
         occs = copy.copy(new_occs)
         logger.info("Merging Trees")
-        ## This is experimental (if this still here is because it worked)
         ## Get this cell
         cells = self.getExactCells()
         other_cells = tree_neo.getExactCells()
@@ -739,8 +720,32 @@ class TreeNeo(LocalTree):
             return None
 
 
-
-
+    def describe(self):
+        """
+        Returns the counts of all taxa associated with this tree.
+        """
+        nsp = len(self.species)
+        ngn = len(self.genera)
+        nfm = len(self.families)
+        nord = len(self.orders)
+        ncls = len(self.classes)
+        nphy = len(self.phyla)
+        nkns = len(self.kingdoms)
+        c = """
+        --------------------\n
+        Number of Taxa
+        --------------------\n
+        - species:  %s      \n
+        - genera:   %s      \n
+        - families: %s      \n
+        - orders:   %s      \n
+        - classes:  %s      \n
+        - phyla:    %s      \n
+        - kingdoms: %s      \n
+        --------------------\n
+        """%(nsp,ngn,nfm,nord,ncls,nphy,nkns)
+        return(c)
+        
 class Neighbourhood(object):
     """
     Class that defines the neighbourhood object (Similar to gridded taxonomy)
@@ -809,7 +814,6 @@ class Neighbourhood(object):
 
             
         occurrences = map(lambda oc : oc.occurrencesHere(),cells)
-        ## prototyping
         duples = zip(occurrences,cells)
         trees = []
         for list_, cell in duples:

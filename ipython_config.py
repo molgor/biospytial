@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 # ipython_config.py
-
 import sys
 
 sys.path.append('/apps')
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 c = get_config()
 
@@ -17,7 +17,6 @@ c.NotebookApp.port = 8888
 c.NotebookApp.open_browser = False
 
 #c.TerminalIPythonApp.display_banner = False 
-
 
 
 c.TerminalInteractiveShell.banner1 = u"""
@@ -32,7 +31,7 @@ Welcome to :
 ██████╔╝██║╚██████╔╝███████║██║        ██║      ██║   ██║██║  ██║███████╗
 ╚═════╝ ╚═╝ ╚═════╝ ╚══════╝╚═╝        ╚═╝      ╚═╝   ╚═╝╚═╝  ╚═╝╚══════╝                                                                                                                                           
                                                         -(2.C.I. 2017)-   
-                                                        
+
 A multipurpose opensource framework for modelling biodiversity in Earth                                                                                                                                                                                                                                            
 ----------------------------------------------------------------------------
 
@@ -50,7 +49,7 @@ Funded by: CONACYT (Mexico), Lancaster University (U.K), GBIF (Int.)
 
 """
 
-c.TerminalInteractiveShell.banner2 = """
+c.TerminalInteractiveShell.banner2 = u"""
    |             
    |.===.        
    {}o o{}       

@@ -274,5 +274,3 @@ def getCentroidsFromListofTrees(list_of_trees):
     return points
 
 
-    
-

@@ -1,9 +1,9 @@
-[submodule "external_plugins/iDivStuff"]
-	path = external_plugins/iDivStuff
-	url = https://github.com/MarinaGolivets/iDivSS2017_Group_Project_2.git
-[submodule "external_plugins/DjangoFIA"]
-	path = external_plugins/DjangoFIA
-	url = https://github.com/molgor/DjangoFIA.git
+#[submodule "external_plugins/iDivStuff"]
+#	path = external_plugins/iDivStuff
+#	url = https://github.com/MarinaGolivets/iDivSS2017_Group_Project_2.git
+#[submodule "external_plugins/DjangoFIA"]
+#	path = external_plugins/DjangoFIA
+#	url = https://github.com/molgor/DjangoFIA.git
 [submodule "external_plugins/spystats"]
 	path = external_plugins/spystats
 	url = https://github.com/molgor/spystats.git
@@ -11,3 +11,6 @@
 [submodule "external_plugins/CARBayeSDM"]
 	path = external_plugins/CARBayeSDM
 	url = https://github.com/molgor/CARBayeSDM.git
+[submodule "external_plugins/biospytial_rwrapper"]
+	path = external_plugins/biospytial_rwrapper
+	url = https://github.com/molgor/biospytial_rwrapper.git

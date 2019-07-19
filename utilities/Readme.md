@@ -4,5 +4,6 @@ A set of modules that includes automated tasks to ease the analysis and modellin
 
 Currently has implemented some data extraction pipelines.
 
+Including generation of DataFrames. 
 
 

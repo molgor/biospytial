@@ -255,7 +255,8 @@ class MeanTemperature(BioClimModel):
     units = '(C)'
     
     class Meta:
-        db_table = 'bioclim\".\"tavg'
+        #db_table = 'bioclim\".\"tavg'
+        db_table = 'bioclim\".\"world-tavg'
         managed = False
 
     def __str__(self):
@@ -295,7 +296,8 @@ class MinTemperature(BioClimModel):
     units = '(C)'
     
     class Meta:
-        db_table = 'bioclim\".\"tmin'
+        #db_table = 'bioclim\".\"tmin'
+        db_table = 'bioclim\".\"world-tmin'
         managed = False
 
     def __str__(self):
@@ -315,7 +317,8 @@ class VaporPressure(BioClimModel):
     units = 'kPa'
     
     class Meta:
-        db_table = 'bioclim\".\"vapr'
+        #db_table = 'bioclim\".\"vapr'
+        db_table = 'bioclim\".\"world-vapr'
         managed = False
 
     def __str__(self):
@@ -335,7 +338,8 @@ class WindSpeed(BioClimModel):
     units = '(m/s)'
     
     class Meta:
-        db_table = 'bioclim\".\"wind'
+        #db_table = 'bioclim\".\"wind'
+        db_table = 'bioclim\".\"world-wind'
         managed = False
 
     def __str__(self):

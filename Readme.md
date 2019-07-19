@@ -1,114 +1,112 @@
 ﻿# BiosPytial
 
+Biospytial is a modular open source knowledge engine designed to import, organise, analyse and visualise big spatial ecological datasets using the power of graph theory. 
+It handles species occurrences and their taxonomic classification for performing ecological analysis on biodiversity and species distributions.
+
+The engine uses a hybrid graph-relational approach to store and access information linked with relationships that are stored in a graph database,while tabular and geospatial (vector and raster) data are stored in a relational database management system (Postgis 9.x). 
+The graph data structure provides a scalable design that eases the problem of merging datasets from different sources.
+
+The linkage relationships use semantic structures (objects and predicates) to answer scientific questions represented as complex data structures stored in the graph database.
+
+Biospytial comprises three interconnected components:
+
+1. Geospatial Processing unit (GPU) supported by a RDBMS with geoprocessing capabilities
+2. Graph Storage and Querying Unit (supported by Neo4J)
+3. A graph-relational package, The Biospytial Computing Engine (BCE) that integrates all the system’s components. 
+
+It also includes tools like: interactive notebooks
+
+
 > An interactive / command-line modeller's suite for analyzing biodiversity across scales and space.*
-Biospytial is a set of tools written in the Python programming language
-that allows the identification of biodiversity patterns in space.
-It uses the GBIF database, the biggest repository of species records in the world.
-
-## A Computer tool for modelling biodiversity patterns in space and time.
-#### Juan Escamilla Mólgora 
-#### Last modified: 28/11/2018
-
 
 ## Installation
 The suite is currently installed in a Docker container. (molgor/biospytial)
-It uses a ne4j and a postgis backend that can be found in the molgor reprositoryin the Docker Hub.
+It uses a neo4j and a postgis backend that can be found in the molgor reprositoryin the Docker Hub.
 
-## Running the container using docker 
-> docker stack deploy -c biospytial_stack.yml biospytial up
+## Accessing the system
+This version includes an openssh server with X support. 
+You can access the system with ssh using the port 2323
 
+`ssh -p 2323 -X biospytial@[servername] `
 
-## Stop container stack
-> docker stack rm biospytial
-
-## Visualize server
-> docker run -it -d -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock dockersamples/visualizer
-
-Visit [host]:8080
+Upon installation the password is `biospytial.`  
+It is recommended to change it if working in production mode.
 
 
+Happy coding :happy-face:
 
-### Instantiate a cluster
-> docker swarm init --advertise-addr <MANAGER-IP>
+## Running the containers
+Use the docker-compose files located in: `container_files` folder.
 
-#### [Optional] Label it to assign services to specific nodes
-> docker node update --label-add manager [hostname1]
+```
+docker stack deploy -c biospytial_stack.yml biospytial up
+```
 
-> docker node update --label-add worker1 [hostname2]
+## Stop the system
+```
+docker stack rm biospytial
+```
+## Visualising the processes
+We can load a process visualizer to see if everything is working properly
 
-### To create a new node and add it to the swarm do:
-If you don’t have the command available, you can run the following command on a manager node to retrieve the join command for a worker:
+```
+docker run -it -d -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock dockersamples/visualizer
+```
+Visit the webpage [your_host]:8080
 
-> $ docker swarm join-token worker 
-	To add a worker to this swarm, run the following command:
+# Data for using the Biospytial Engine
 
-#### Example:
-
->    docker swarm join \
-    --token SWMTKN-1-49nj1cmql0jkz5s954yi3oex3nedyz0fb0xx14ie39trti4wxv-8vxv8rssmk743ojnwacrr2e7c \
-    192.168.99.100:2377> 
-
-
-
-## Datasource
-
-
-
-*"The Global Biodiversity Information Facility (GBIF) is an international open data infrastructure, funded by governments.
-It allows anyone, anywhere to access data about all types of life on Earth, shared across national boundaries via the Internet.""*
-`GBIF <http://gbif.org>``
-
-Biospytial uses the GBIF dataset as principal input provider.
-The data is then imported into a Postgis instance and managed by Django using REST and ORM interface.
-
-There is a network representation that will work with Neo4j instead of the pickle-Redis implementation.
+## Dataset needed for running the system
+The datasets are available in  binary format to be run by the *Biospytial* system.
+This include the necessary data for running the examples provided in the manuscript 
+submitted to a peer-reviewed journal. 
 
 
+## Content of the data package
+There are two folders here:
+* `postgisdb` : the binary data files used by the Relational Geoprocessing Unit (RGP) 
+* `neo4jdb` : the binary data files used by the Graph Storage and Processing Unit (GSPU)
 
- Each occurrence has information about:
+## Mounting the data into the system 
+The two folders should be mounted on their respective module (service in docker jargon).
+This is done by adding the absolute path of these folders into the docker compose file.
 
-* Location (Lat/Long  EPSG:4326)
-* Species
-* Genus
-* Family
-* Order
-* Class
-* Phylum
-* Kingdom
-* Timestamp
-* Country
-* Collect - Id
+* The name of the service for the RGP is *postgis*. 
+* The name of the service for the GSPU is *neo4j*.
 
-See model gbif for more information.
+The PATH to change is in the section: `volumes`
 
-Currently the entire GBIF database is mirrored
+### For example:
+Assuming that the path for the data is:
+`/home/foo/biospytial-data`
+The `volume` section should be changed to:
 
-Bios`py`tial uses the Django framework to build complex object representation of
- biological occurrences.
+```
+  volumes:
+   - '/home/foo/biospytial-data/postgisdb:/DataVolumes'
+```
+
+Similarly for the neo4j service:
+
+```
+  volumes:
+   - '/home/foo/biospytial-data/neo4jdb:/DataVolumes'
+```
+
+### Location
+The docker compose files are stored in the *Biospytial* source code, inside the folder `container_files`. 
+These files are:
+
+* `biospytial_stack.yml` (Linux) 
+* `biospytial_stackOSX.yml` (Mac) 
+
+### Data availability
+
+The availability of this data will be available to the general public upon acceptance.
 
 
-## Run postgis backend container
-## Use the following command to run the Postgis backend.
-docker run \
-    --name=postgis \
-    --network=biospytial_network \
-    -it \
-    --publish=5432:5432 \
-    --volume=[postgis_data_PATH]:/DataVolumes \
-    molgor/postgis_biospytial \
-    /bin/bash
+Date: July 19th, 2019
+Author: Juan Escamilla Molgora
 
-The containers need to be defined in the same network. In this case "biospytial_network"
-
-
-### Install Postgis function.
-Once the postgis container is up and running. Install the functions for buildinggrids.
-There are some SQL functions that are needed to be installed in the Postgis database.
-
-cd SQL_functions ;
-
-./install_mesh_functions.sql localhost biospytial
-
-#### localhost (server name)  biospytial (user name) 
 
 

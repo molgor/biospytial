@@ -11,6 +11,7 @@
 from raster_api.models import raster_models
 from raster_api.models import raster_models_dic
 from raster_api.tools import RasterData
+import biospytial.settings as setting
 import pandas
 import numpy
 
@@ -45,7 +46,7 @@ class RasterCollection(object):
         coords = self.tree.getPointCoordinates()
         return coords
     
-    def getAssociatedRasterAreaData(self,string_selection,aggregated=True):
+    def getAssociatedRasterAreaData(self,string_selection,aggregated=True,refresh_cache=False):
         """
         Returns the associated RasterData type for each cell where the occurrence happened.
         Options:
@@ -57,11 +58,11 @@ class RasterCollection(object):
         
         raster_model = raster_models_dic[string_selection]
         if aggregated:
-            polygons = self.tree.mergeCells()
+            polygons = self.tree.mergeCells(refresh_cache=refresh_cache)
             rasters =  RasterData(raster_model,polygons)
             rasters.getRaster()
         else:
-            cells = self.tree.getExactCells()
+            cells = self.tree.getExactCells(refresh_cache=refresh_cache)
             polygons = map(lambda c : c.polygon,cells)
             rasters = map(lambda polygon : RasterData(raster_model,polygon),polygons)             
             map(lambda raster : raster.getRaster() , rasters)
@@ -70,8 +71,7 @@ class RasterCollection(object):
         setattr(self,prefix + string_selection, rasters)
         return rasters        
 
-
-    
+ 
 
     def getEnvironmentalVariablesPoints(self,vars=['MaxTemperature', 'MeanTemperature','MinTemperature','Precipitation','Vapor','SolarRadiation','WindSpeed'],with_coordinates=True):
         """
@@ -152,7 +152,8 @@ class RasterPointNodesList(object):
         pd['std_yr_val'] = std
         pd['date'] = dates
         pd['date'] = pandas.to_datetime(pd['date'],format='%Y-%m-%dT%H:%M:%S')
-        pd = pd.where(pd > -9999) # the no data value
+        #import ipdb; ipdb.set_trace()
+        pd.replace(setting.NULL_DATA_INTEGER,setting.RASTERNODATAVALUE,inplace=True)
         return pd
  
 

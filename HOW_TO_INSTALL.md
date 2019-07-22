@@ -31,7 +31,7 @@ Use the script:
 ## Login to Biospytial (Jupyter notebook)
 The jupyter notebook is automatically loaded. To access it use a webbrowser and go to the following url:
 
-  *[http://localhost:8888](http://localhost:8888)
+  * [http://localhost:8888](http://localhost:8888)
 
 If a token is requested run the following command:
 
@@ -40,6 +40,13 @@ If a token is requested run the following command:
 ```
 Copy the 
 Use the token value and paste it in the webpage.
+
+### Example notebooks
+Currently there are two examples, more are coming!
+
+* [Jaguar example](http://localhost:8888/notebooks/examples/%5BOfficial%20Demo%5DCo-ocurrences_Jaguar.ipynb)
+* [Raster example](http://localhost:8888/notebooks/examples/Basic%20Raster%20Tools%20in%20Biospytial.ipynb)
+
 
 ## Login to Biospytial console
 Use the ssh service
@@ -51,7 +58,7 @@ The password is `biospytial.`
 
 >> It is recommended to change this password if it is intended to use in operational mode.
 
-### Troubleshutting
+###  Troubleshooting
 
 #### Restart ssh service 
 Sometimes the service is not well initialised. Restart the service with:

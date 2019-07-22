@@ -8,6 +8,12 @@ The following instructions are tested in a Linux computer.
 
 1. Download the data from the provided link. [email me if needed](https://ecomorphisms.holobio.me/en/contact/)
 
+2. Run the small 'installEngine.sh'
+
+```
+bash installEngine.sh
+```
+
 2.Modify the file `.env` in the main repository or in `container_files` (It is the same file)
  
  * Change the paths according to the path in your computer where the data was extracted.

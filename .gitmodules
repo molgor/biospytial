@@ -14,3 +14,6 @@
 [submodule "external_plugins/biospytial_rwrapper"]
 	path = external_plugins/biospytial_rwrapper
 	url = https://github.com/molgor/biospytial_rwrapper.git
+[submodule "external_plugins/biospytial_notebooks"]
+	path = external_plugins/biospytial_notebooks
+	url = ssh://git@git.holobio.me:2289/notebooks/biospytial_notebooks.git

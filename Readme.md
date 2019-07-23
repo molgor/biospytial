@@ -1,5 +1,5 @@
-﻿# BiosPytial
-![Biospytial logo](biospytial.png)
+﻿![Biospytial logo](biospytial.png)
+
 Biospytial is a modular open source knowledge engine designed to import, organise, analyse and visualise big spatial ecological datasets using the power of graph theory. 
 It handles species occurrences and their taxonomic classification for performing ecological analysis on biodiversity and species distributions.
 

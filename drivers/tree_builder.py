@@ -92,8 +92,11 @@ class LocalTree(object):
         # Experiment 1
         # this is a very good method for 
         #map(lambda l : setattr(self,'to_'+l.name.encode('utf-8').replace(" ","_").replace(",",""),l), children)
-        
-        map(lambda l : setattr(self,'to_'+l.name.replace(" ","_").replace(",",""),l), children)
+        # I remmember that I change in to this line because there was a problem with
+        # the coding. Now I found another problem so I'm going back. I think this
+        # error will be fixed once the migration to Python 3 is done.  
+        ## Patch, only in python 2
+        map(lambda l : setattr(self,'to_'+l.name.encode('ascii','ignore').replace(" ","_").replace(",",""),l), children)
         #self.setOccurrences()
 
     @property
@@ -615,7 +618,6 @@ class TreeNeo(LocalTree):
         """
         if list_occurrences:
             self.occurrences = list_occurrences
-            
             #self.involvedCells = ''
             self.windUpLevels()
             self.involvedCells = cell_objects

@@ -21,6 +21,8 @@ import numpy as np
 from itertools import imap, chain
 import networkx as nx
 from utilities import data_extraction as de
+from pandas.api.types import CategoricalDtype
+
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2017, JEM"
 __license__ = "GPL"
@@ -272,5 +274,52 @@ def getCentroidsFromListofTrees(list_of_trees):
     points = pd.DataFrame(npoints,columns=["Longitude","Latitude"])
     
     return points
+
+
+def getPresencesFromAncestralChainofNode(node,list_of_trees,as_dataframe=True,with_centroids=False,merge_with_this_environmental_data=[]):
+    """
+    Returns a dataframe with the presences of all the nodes 
+    contained in the ancestral chain of a given node.
+    The columns corresponds to each node in the linage order by the taxonomic level 
+    
+    Parameters: 
+        node : (TreeNode) the node to to whom the presences of ancestors should be obtained.
+        list_of_trees : list of TreeNeo objects
+        merge_with_this_environmental_data: If this is a pandas dataframe, concatenate with each presence.
+        as_dataframe: (Boolean) if true returns a dataframe, else returns a list. 
+        with_centroids: (Boolean) if true returns the centroids of each areal unit. 
+    """
+    
+    ng = node.getAncestors()
+    
+    ancestors = list(ng.nodes)
+    # sort ancestors by taxonomic level
+    ancestors.sort(key=lambda l : l.level)
+    names_anc = map(lambda l : l.name, ancestors)
+    anc_levels = map(lambda l : l.level, ancestors)
+    keys = dict(zip(names_anc,anc_levels))
+    presences = getPresencesForListOfNodes(ancestors,list_of_trees,with_centroids=with_centroids)
+    things = []
+    for name,presence in presences.iteritems():
+        d = pd.DataFrame(presence).stack().reset_index()
+        d.drop('level_0', axis=1, inplace=True)
+        d.columns = ['level','Y']
+        d['Y'] = d['Y'].astype('int')
+        ## with environmental data
+        if isinstance(merge_with_this_environmental_data,pd.DataFrame):
+            env_data = merge_with_this_environmental_data
+            tt = pd.concat([d,env_data],axis=1)
+            things.append(tt)
+        else:
+            things.append(d)
+    
+    if as_dataframe:
+            all_data = reduce(lambda l1,l2 : pd.concat([l1,l2],axis=0),things)
+            cat_type = CategoricalDtype(categories=names_anc,ordered=True)            
+            all_data['level'] = all_data['level'].astype(cat_type)
+            all_data['code']=all_data.level.cat.codes
+            return(all_data)
+    else:
+        return(things)
 
 

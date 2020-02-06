@@ -323,3 +323,38 @@ def getPresencesFromAncestralChainofNode(node,list_of_trees,as_dataframe=True,wi
         return(things)
 
 
+def calculateComplementaryTrees(list_of_trees,occurrences_of_interest,large_size_of_trees=False):
+    """
+    Returns a list composed of complementary trees given a list of occurrences of
+    interest.
+
+    Parameters: 
+        list_of_trees : A list of TreeNeo objects
+        occurrences_of_interest : a list of occurrences extracted from taxa of
+        interest given a certain context.
+        large_size_of_trees : Boolean, if True it will cast the occurrences of each
+        tree to a Set, this will increase the lookup on large colelction of
+        occurrences. However, casting to set will cause a delay and is only
+        recommended if its taking longer than expected.
+        
+
+    Note >
+    If the size of the occurrences in trees is large
+    """
+    trees = list_of_trees
+    occurrences_of_interest = set(occurrences_of_interest)
+    complementary_trees = []
+    n = len(trees)
+    for i,tree in enumerate(trees):
+        x = (float(i) / n )* 100
+        #logger.info("Calculating complementary tree. Done %s perc."%x)
+        s = "Calculating complementary tree. Done %s perc."%x
+        print '{0}\r'.format(s),
+        if large_size_of_trees :
+            ocs_in_tree = set(tree.occurrences)
+        else:
+            ocs_in_tree = tree.occurrences
+        compl_ocs = filter(lambda occurrence: occurrence not in occurrences_of_interest , ocs_in_tree)
+        complementary_trees.append(TreeNeo(compl_ocs,cell_objects=tree.getExactCells()))
+    print('\n')
+    return(complementary_trees)

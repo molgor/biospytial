@@ -304,7 +304,8 @@ LOGGING = {
         }, 
         'biospytial.traversals' : {
             'handlers' : ['console'],
-            'level' : 'INFO',
+            #'level' : 'INFO',
+            'level' : 'WARNING',
             'propagate': False
             
         },

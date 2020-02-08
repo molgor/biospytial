@@ -22,6 +22,7 @@ from itertools import imap, chain
 import networkx as nx
 from utilities import data_extraction as de
 from pandas.api.types import CategoricalDtype
+import copy 
 
 __author__ = "Juan Escamilla Mólgora"
 __copyright__ = "Copyright 2017, JEM"
@@ -358,3 +359,68 @@ def calculateComplementaryTrees(list_of_trees,occurrences_of_interest,large_size
         complementary_trees.append(TreeNeo(compl_ocs,cell_objects=tree.getExactCells()))
     print('\n')
     return(complementary_trees)
+
+
+def buildDesignMatrixForMultispeciesModel(list_of_presences_dfs,complementary_presence_df,covariates_dataframe):
+    """
+    Returns a stacked GeoDataFrame of all the taxa of interest (defined in the
+    list_of_presences_dfs) and the complementary sample (derived from the function:
+    calculateComplementaryTrees and the projected to some vector, typically binary).
+
+    The resulting table is composed of stacked design matrices for each each taxon of
+    interest and the covariates matrix, including geometry.
+    Parameters: 
+        list_of_presences_dfs : (List of dataframes). Usually derived from the
+        function: getPresencesForNode(TreeNode,list_of_trees). 
+        
+        complementary_presence_df (pandas Series) : a vector (usually binary) that maps each
+        complementary tree to a number. 
+        
+        covariates_dataframe : (Pandas Geodataframe) a dataframe corresponding to the
+        covariates, including the geometry. This will be stacked for each taxon. i.e.
+        they are repeated. 
+
+    Example:
+
+        complementary_trees = st.calculateComplementaryTrees(list_of_trees=trees[0],occurrences_of_interest=occurrences_of_interest,large_size_of_trees=True)
+
+        taxa_of_interest_nodes = map(lambda taxon : taxon.node,taxa_of_interest)
+
+        list_of_presences_dfs = map(lambda taxon : st.getPresencesForNode(TreeNode=taxon,list_of_trees=trees[0]),taxa_of_interest_nodes)
+
+        complementary_presences_list = [1.0 if tree.richness > 0 else 0.0 for tree in complementary_trees]
+        
+        complementary_presence_df = pd.DataFrame(complementary_presences_list,columns=['Complement'])
+
+        from raster_api.models import raster_models_dic
+
+        rstmods = raster_models_dic.keys()
+
+        data = map(lambda cell : st.getEnvironmentalCovariatesFromListOfCells(cell,vars=rstmods),cells)
+        ids = pd.DataFrame(map(lambda cell : (cell.id,cell.polygon_shapely),cells[0]),columns=['cell_ids','geometry'])
+        newdata = pd.concat([ids,data[0]],axis=1)
+        data_level = gpd.GeoDataFrame(newdata,geometry='geometry')
+
+    Note: 
+        This is a beta version, it has not been tested throughly.
+
+    """
+    llp = copy.copy(list_of_presences_dfs)
+    llp.append(complementary_presence_df)
+    n_levels = len(llp)
+    n_areas = len(llp[0])
+    plist= []
+    for l in range(n_levels):
+        level = pd.DataFrame( (l + 1) * np.ones(n_areas).astype('int'),columns=['level'])
+        p_df = llp[l]
+        name = p_df.columns[0]
+        names = pd.Series([name for i in range(n_areas)],name='taxon') 
+        p = pd.concat([p_df,level,names],axis=1)
+        p.columns=['Y','level','taxon']
+        pn = pd.concat([p,covariates_dataframe],axis = 1)
+        plist.append(pn)
+    
+    data = pd.concat(plist,axis=0)
+    data = data.set_index(['cell_ids','level'])
+    data = gpd.GeoDataFrame(data,geometry='geometry')
+    return(data)

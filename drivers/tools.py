@@ -54,7 +54,7 @@ def plotTree(treeneo, depth=6,label_depth=5):
     return x
 
 
-def to_interactivePlot(treeneo,depth=7,label_depth=7):
+def to_interactivePlot(treeneo,depth=7,label_depth=7,variable_nodes=True,variable_labels=True,node_size=3,label_size=3,**kwargs):
     """
     Creates and returns a set of Holoviews and Bokeh objets that 
     represent a given tree.
@@ -62,6 +62,14 @@ def to_interactivePlot(treeneo,depth=7,label_depth=7):
         treeneo : A TreeNeo object.
         depth : (Integer) the depth of the tree to be generated (1 :root, 7 : species)
         label_depth : (Integer) the depth for labels.
+        variable_nodes : (Bool) If True the size of the nodes is proportional to the
+        taxonomic level.
+        variable_labels : (Bool) If True the size of the labels (node's name) is
+        proportional to the frequency of appearance.
+        node_size : (Float) scale of the node's size, when variable_nodes is
+        set to True.
+        label_size : (Float) scale of the label size, when variable_labels
+        is set to True.
 
     """
 
@@ -87,21 +95,27 @@ def to_interactivePlot(treeneo,depth=7,label_depth=7):
             alpha = 0
         d =  alpha * 180 / np.pi
         return(d)
-    
+   
+    ## Check cmap present
+    cmap = kwargs.get('cmap',cm.YlGn)
     gt = treeneo.toNetworkx(depth_level=depth)
     pos = graphviz_layout(gt,prog='twopi',root='LUCA',args='')
+    if variable_nodes:
+        node_size = (8 - hv.dim('level'))* float(node_size) 
     graphvis = hv.Graph.from_networkx(gt,pos,label='nodes').opts(
                tools=['hover'],
                width=1000,
                height= 1000,
-               node_color='level',
+               node_color='freq',
+               #node_color='richness',
                node_alpha=0.5,
-               node_size=hv.dim('freq')* 100,
-               cmap=cm.YlGn,
+               node_size=node_size,
+               cmap=cmap,
                padding=0.2,
                show_legend=True,
                legend_position='bottom',
                edge_color='yellow',edge_alpha=0.5,
+               colorbar=True,
                bgcolor='dimgrey' )
     # Fancy vis of edges
     bundles = bundle_graph(graphvis).opts(
@@ -111,24 +125,33 @@ def to_interactivePlot(treeneo,depth=7,label_depth=7):
     cx = pos['LUCA'][0]
     cy = pos['LUCA'][1]
     # Make labels
-    for i in range(2,label_depth):
+    for i in range(1,label_depth):
         graphvis.nodes.data['namelabel'] = graphvis.nodes.data.apply(buildLabel,axis=1,labelid=i)
 
     # Create angles
     graphvis.nodes.data['angle'] = graphvis.nodes.data.apply(buildAngle,
             axis=1,centerx=cx,centery=cy)
     datalabels = graphvis.nodes.data[['x','y','namelabel','freq','angle','level']]
-    const = 3
+    const =  label_size
     constlab = 0.1
     #datalabels['namesize'] = datalabels['freq'] * const * ((8 - datalabels['level']) * constlab)
-    datalabels['namesize'] =(8 - datalabels['level']) * const
-    labels = hv.Labels(datalabels,['x','y'],
-             vdims=['namelabel','freq','angle','namesize','level']).opts(
-                     angle='angle',
-                     text_font_size='namesize',
-                     text_color='cornsilk',
-                     bgcolor='dimgray')
-    out = {'graph' : bundles , 'labels' :labels }
+    if variable_labels:
+        datalabels['namesize'] =(8 - datalabels['level']) * const
+        labels = hv.Labels(datalabels,['x','y'],
+                 vdims=['namelabel','freq','angle','namesize','level']).opts(
+                         angle='angle',
+                         text_font_size='namesize',
+                         text_color='cornsilk',
+                         bgcolor='dimgray')
+    else:
+        datalabels['namesize'] = str(const) + 'pt'
+        labels = hv.Labels(datalabels,['x','y'],
+                 vdims=['namelabel','freq','angle','namesize','level']).opts(
+                         angle='angle',
+                         text_font_size='namesize',
+                         text_color='cornsilk',
+                         bgcolor='dimgray')
+    out = {'graph' : bundles , 'labels' :labels,'data':datalabels }
     return(out)
 
 

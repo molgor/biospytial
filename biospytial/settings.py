@@ -49,8 +49,8 @@ INSTALLED_APPS = (
     'django_extensions',
     'drivers',
     'ecoregions',
-    'external_plugins.spystats.spystats',
-    'external_plugins.DjangoFIA',
+    #'external_plugins.spystats.spystats',
+    #'external_plugins.DjangoFIA',
 )
 
 MIDDLEWARE_CLASSES = (

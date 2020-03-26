@@ -6,6 +6,8 @@
 ## Check resulting docker compose file with:
 ## Use docker-compose -f biospytial_stack.yml -p biospytial config
 ##
+## Modify this file according to your configuration.
+## Rename it as .env
 ##
 ## General PATH where input and output data is stored.
 GENERAL_PATH=/mnt/data1
